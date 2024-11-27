@@ -8,6 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		71502C4F2CF08B5200B89BAF /* Env in Frameworks */ = {isa = PBXBuildFile; productRef = 71502C4E2CF08B5200B89BAF /* Env */; };
+		71502C7A2CF0F0B500B89BAF /* PowerSyncRepository in Frameworks */ = {isa = PBXBuildFile; productRef = 71502C792CF0F0B500B89BAF /* PowerSyncRepository */; };
+		71502C822CF1969400B89BAF /* AppFeature in Frameworks */ = {isa = PBXBuildFile; productRef = 71502C812CF1969400B89BAF /* AppFeature */; };
+		71502CA42CF2556D00B89BAF /* AppUI in Frameworks */ = {isa = PBXBuildFile; productRef = 71502CA32CF2556D00B89BAF /* AppUI */; };
+		71502D222CF6E06E00B89BAF /* AuthenticationClient in Frameworks */ = {isa = PBXBuildFile; productRef = 71502D212CF6E06E00B89BAF /* AuthenticationClient */; };
+		71502D242CF6E19800B89BAF /* UserClient in Frameworks */ = {isa = PBXBuildFile; productRef = 71502D232CF6E19800B89BAF /* UserClient */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,7 +46,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				71502CA42CF2556D00B89BAF /* AppUI in Frameworks */,
 				71502C4F2CF08B5200B89BAF /* Env in Frameworks */,
+				71502C822CF1969400B89BAF /* AppFeature in Frameworks */,
+				71502C7A2CF0F0B500B89BAF /* PowerSyncRepository in Frameworks */,
+				71502D242CF6E19800B89BAF /* UserClient in Frameworks */,
+				71502D222CF6E06E00B89BAF /* AuthenticationClient in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -94,6 +104,11 @@
 			name = "instagram-clone";
 			packageProductDependencies = (
 				71502C4E2CF08B5200B89BAF /* Env */,
+				71502C792CF0F0B500B89BAF /* PowerSyncRepository */,
+				71502C812CF1969400B89BAF /* AppFeature */,
+				71502CA32CF2556D00B89BAF /* AppUI */,
+				71502D212CF6E06E00B89BAF /* AuthenticationClient */,
+				71502D232CF6E19800B89BAF /* UserClient */,
 			);
 			productName = "instagram-clone";
 			productReference = 71502C192CF051FD00B89BAF /* instagram-clone.app */;
@@ -287,7 +302,13 @@
 				DEVELOPMENT_TEAM = 7V58U7PTNS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				GOOGLE_INFO_URL = "com.googleusercontent.apps.25794478109-koi1ttknfc2fsqb382a7vpg5bjp8lq0h";
 				INFOPLIST_FILE = App/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Need to access the camera.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Need to access the microphone.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "Need to use motion.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Need to use photo library.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Need to access the photo library.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -300,11 +321,12 @@
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_SWIFT_FLAGS = "-DDEBUG";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.lamberthyl.instagram-clone";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.lamberthyl.swift-instagram-clone";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -320,7 +342,13 @@
 				DEVELOPMENT_TEAM = 7V58U7PTNS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				GOOGLE_INFO_URL = "com.googleusercontent.apps.25794478109-koi1ttknfc2fsqb382a7vpg5bjp8lq0h";
 				INFOPLIST_FILE = App/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Need to access the camera.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Need to access the microphone.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "Need to use motion.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Need to use photo library.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Need to access the photo library.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -333,10 +361,11 @@
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_SWIFT_FLAGS = "-DRELEASE";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.lamberthyl.instagram-clone";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.lamberthyl.swift-instagram-clone";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -416,7 +445,13 @@
 				DEVELOPMENT_TEAM = 7V58U7PTNS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				GOOGLE_INFO_URL = "com.googleusercontent.apps.25794478109-koi1ttknfc2fsqb382a7vpg5bjp8lq0h";
 				INFOPLIST_FILE = App/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Need to access the camera.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Need to access the microphone.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "Need to use motion.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Need to use photo library.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Need to access the photo library.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -429,11 +464,12 @@
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_SWIFT_FLAGS = "-DSTAGING";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.lamberthyl.instagram-clone";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.lamberthyl.swift-instagram-clone";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Staging;
@@ -467,6 +503,26 @@
 		71502C4E2CF08B5200B89BAF /* Env */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Env;
+		};
+		71502C792CF0F0B500B89BAF /* PowerSyncRepository */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PowerSyncRepository;
+		};
+		71502C812CF1969400B89BAF /* AppFeature */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AppFeature;
+		};
+		71502CA32CF2556D00B89BAF /* AppUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AppUI;
+		};
+		71502D212CF6E06E00B89BAF /* AuthenticationClient */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AuthenticationClient;
+		};
+		71502D232CF6E19800B89BAF /* UserClient */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = UserClient;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

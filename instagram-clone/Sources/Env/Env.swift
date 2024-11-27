@@ -1,9 +1,11 @@
 import Foundation
 
-public protocol Env {
+public protocol Env: Equatable, Sendable {
 	var supabaseUrl: String { get }
 	var supabaseAnonKey: String { get }
 	var powerSyncUrl: String { get }
+	var iOSClientId: String { get }
+	var webClientId: String { get }
 }
 
 public struct Envionment: Env, Sendable {
@@ -11,16 +13,22 @@ public struct Envionment: Env, Sendable {
 	public let supabaseUrl: String
 	public let supabaseAnonKey: String
 	public let powerSyncUrl: String
+	public let iOSClientId: String
+	public let webClientId: String
 	private init(
 		envName: String,
 		supabaseUrl: String,
 		supabaseAnonKey: String,
-		powerSyncUrl: String
+		powerSyncUrl: String,
+		iOSClientId: String,
+		webClientId: String
 	) {
 		self.envName = envName
 		self.supabaseUrl = supabaseUrl
 		self.supabaseAnonKey = supabaseAnonKey
 		self.powerSyncUrl = powerSyncUrl
+		self.iOSClientId = iOSClientId
+		self.webClientId = webClientId
 	}
 
 	public static let current: Envionment = {
@@ -29,7 +37,9 @@ public struct Envionment: Env, Sendable {
 			envName: config["ENV_NAME"] as! String,
 			supabaseUrl: config["SUPABASE_URL"] as! String,
 			supabaseAnonKey: config["SUPABASE_ANON_KEY"] as! String,
-			powerSyncUrl: config["POWERSYNC_URL"] as! String
+			powerSyncUrl: config["POWERSYNC_URL"] as! String,
+			iOSClientId: config["IOS_CLIENT_ID"] as! String,
+			webClientId: config["WEB_CLIENT_ID"] as! String
 		)
 	}()
 

@@ -4,9 +4,46 @@
 <dict>
 	<key>APP_ENVIRONMENT</key>
 	<string>${APP_ENVIRONMENT}</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.lamberthyl.nativeapp</string>
+				<string>$(GOOGLE_INFO_URL)</string>
+			</array>
+		</dict>
+	</array>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
-		<string></string>
+		<string>sms</string>
+		<string>tel</string>
 	</array>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<key>GIDClientID</key>
+	<string>25794478109-koi1ttknfc2fsqb382a7vpg5bjp8lq0h.apps.googleusercontent.com</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+		<string>processing</string>
+	</array>
+<!--	<key>UIAppFonts</key>-->
+<!--	<array>-->
+<!--			<string>instagram-clone_AppUI.bundle/Inter-Bold.ttf</string>-->
+<!--			<string>instagram-clone_AppUI.bundle/Inter-ExtraBold.ttf</string>-->
+<!--			<string>instagram-clone_AppUI.bundle/Inter-ExtraLight.ttf</string>-->
+<!--			<string>instagram-clone_AppUI.bundle/Inter-Light.ttf</string>-->
+<!--			<string>instagram-clone_AppUI.bundle/Inter-Medium.ttf</string>-->
+<!--			<string>instagram-clone_AppUI.bundle/Inter-Regular.ttf</string>-->
+<!--			<string>instagram-clone_AppUI.bundle/Inter-SemiBold.ttf</string>-->
+<!--			<string>instagram-clone_AppUI.bundle/Montserrat-Medium.ttf</string>-->
+<!--	</array>-->
 </dict>
 </plist>
