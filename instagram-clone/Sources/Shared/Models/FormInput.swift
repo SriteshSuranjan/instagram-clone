@@ -28,9 +28,14 @@ extension FormInput {
 		}
 		return error == nil ? .valid : .invalid
 	}
-	
+	public var validated: Bool {
+		status == .valid
+	}
 	public func pure(_ value: Value) -> Self {
 		Self(value: value, pure: true, error: nil)
+	}
+	public func valid(_ value: Value) -> Self {
+		Self(value: value, pure: false, error: nil)
 	}
 	public func dirty(_ value: Value, error: Error) -> Self {
 		Self(value: value, pure: false, error: error)

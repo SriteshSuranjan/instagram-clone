@@ -9,24 +9,38 @@ import SwiftUI
 import UserClient
 
 final class AppDelegate: NSObject, UIApplicationDelegate {
-	let store = Store(
-		initialState: AppReducer.State()
-	) {
-		AppReducer()
-			.transformDependency(\.self) {
-				if let powerSyncRepository = PowerSyncRepository(env: Envionment.current) {
+	let store: StoreOf<AppReducer>
+	override init() {
+		let env = Envionment.current
+
+		// Initialize PowerSyncRepository
+
+		let powerSyncRepository = PowerSyncRepository.instanceWithInitilized(env: env)
+		// Initialize TokenStorage
+		let tokenStorage = InMemoryTokenStorage()
+
+		// Initialize GIDSignIn
+		let googleSignIn = GIDSignIn.sharedInstance
+
+		// Initialize SupabaseAuthenticationClient
+		let authClient = SupabaseAuthenticationClient(
+			powerSyncRepository: powerSyncRepository,
+			tokenStorage: tokenStorage,
+			googleSignIn: googleSignIn
+		)
+
+		self.store = Store(
+			initialState: AppReducer.State()
+		) {
+			AppReducer()
+				.transformDependency(\.self) {
 					$0.userClient = .liveSupabaseAuthenticationClient(
-						SupabaseAuthenticationClient(
-							powerSyncRepository: powerSyncRepository,
-							tokenStorage: InMemoryTokenStorage(),
-							googleSignIn: GIDSignIn.sharedInstance
-						),
-						supabaseClient: powerSyncRepository.supabase
+						authClient
 					)
-				} else {
-					$0.userClient = .liveValue
 				}
-			}
+		}
+
+		super.init()
 	}
 
 	func application(

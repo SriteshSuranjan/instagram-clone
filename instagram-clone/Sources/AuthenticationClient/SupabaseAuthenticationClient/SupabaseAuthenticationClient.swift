@@ -5,6 +5,45 @@ import Shared
 import Supabase
 
 @MainActor
+public final class GoogleSignService {
+	public static let shared = GoogleSignService(googleSignIn: .sharedInstance)
+	private func getTopViewController() -> UIViewController? {
+		let scenes = UIApplication.shared.connectedScenes
+		let windowScene = scenes.first as? UIWindowScene
+		let window = windowScene?.windows.first(where: { $0.isKeyWindow })
+					
+		var topController = window?.rootViewController
+		while let presentedController = topController?.presentedViewController {
+			topController = presentedController
+		}
+		return topController
+	}
+
+	let googleSignIn: GIDSignIn
+	public init(googleSignIn: GIDSignIn) {
+		self.googleSignIn = googleSignIn
+	}
+
+	public func logInWithGoogle() async throws {
+		let rootController = getTopViewController()
+		guard let rootController else {
+			throw AuthenticationError.logInWithGoogleFailure(
+				message: "Root Controller not available",
+				underlyingError: nil
+			)
+		}
+		let googleUser = try await googleSignIn.signIn(withPresenting: rootController).user
+		let idToken = googleUser.idToken
+		guard let idToken else {
+			throw AuthenticationError.logInWithGoogleFailure(
+				message: "No ID Token found.",
+				underlyingError: nil
+			)
+		}
+	}
+}
+
+@MainActor
 public final class SupabaseAuthenticationClient {
 	public let powerSyncRepository: PowerSyncRepository
 	let tokenStorage: TokenStorage
@@ -18,7 +57,9 @@ public final class SupabaseAuthenticationClient {
 		self.powerSyncRepository = powerSyncRepository
 		self.tokenStorage = tokenStorage
 		self.googleSignIn = googleSignIn
-		startListening()
+		Task {
+			await startListening()
+		}
 	}
 	
 	public func startListening() {
@@ -56,44 +97,80 @@ extension SupabaseAuthenticationClient {
 }
 
 extension SupabaseAuthenticationClient: AuthenticationClient {
-	public func logInWithPassword(_ password: String, email: String?, phone: String?) async throws {
-		guard email != nil || phone != nil else {
-			throw AuthenticatonError.logInWithPasswordCanceled(message: "You must provide either ann email or a phone number.")
-		}
-		if let email {
-			try await powerSyncRepository.supabase.auth.signIn(email: email, password: password)
-		} else if let phone {
-			try await powerSyncRepository.supabase.auth.signIn(phone: phone, password: password)
+	public func logInWithPassword(_ password: String, email: String?, phone: String?) async throws (AuthenticationError) {
+		do {
+			guard email != nil || phone != nil else {
+				throw AuthenticationError.logInWithPasswordCanceled(
+					message: "You must provide either ann email or a phone number.",
+					underlyingError: nil
+				)
+			}
+			if let email {
+				try await powerSyncRepository.supabase.auth.signIn(email: email, password: password)
+			} else if let phone {
+				try await powerSyncRepository.supabase.auth.signIn(phone: phone, password: password)
+			}
+		} catch let error as AuthenticationError {
+			throw error
+		} catch {
+			throw .logInWithPasswordFailure(message: "LogIn Failed", underlyingError: error)
 		}
 	}
 	
 	public func logInWithGoogle() async throws {
-		guard let rootController = getTopViewController() else {
-			throw AuthenticatonError.logInWithPasswordCanceled(message: "Root Controller not available")
-		}
-		let googleUser = try await googleSignIn.signIn(withPresenting: rootController).user
-		let idToken = googleUser.idToken
-		guard let idToken else {
-			throw AuthenticatonError.logInWithGoogleFailure(message: "No ID Token found.")
-		}
-		try await powerSyncRepository.supabase.auth.signInWithIdToken(
-			credentials: OpenIDConnectCredentials(
-				provider: .google,
-				idToken: idToken.tokenString
+		do {
+			let rootController = getTopViewController()
+			guard let rootController else {
+				throw AuthenticationError.logInWithGoogleFailure(
+					message: "Root Controller not available",
+					underlyingError: nil
+				)
+			}
+			let signInResult = try await googleSignIn.signIn(withPresenting: rootController)
+			let googleUser = signInResult.user
+			let idToken = googleUser.idToken
+			guard let idToken else {
+				throw AuthenticationError.logInWithGoogleFailure(
+					message: "No ID Token found.",
+					underlyingError: nil
+				)
+			}
+			try await powerSyncRepository.supabase.auth.signInWithIdToken(
+				credentials: OpenIDConnectCredentials(
+					provider: .google,
+					idToken: idToken.tokenString
+				)
 			)
-		)
+		} catch let error as AuthenticationError {
+			throw error
+		} catch {
+			if (error as NSError).code == GIDSignInError.canceled.rawValue {
+				throw AuthenticationError.logInWithGoogleCanceled(message: "Sign in with Google canceled. No user found!", underlyingError: nil)
+			}
+			throw AuthenticationError.logInWithGoogleFailure(
+				message: "Log In with Google failed",
+				underlyingError: error
+			)
+		}
 	}
 	
 	public func logInWithGithub() async throws {
-		try await powerSyncRepository.supabase.auth.signInWithOAuth(
-			provider: .github,
-			redirectTo: URL(string: "com.lamberthyl.nativeapp://login-callback")
-		)
+		do {
+			try await powerSyncRepository.supabase.auth.signInWithOAuth(
+				provider: .github,
+				redirectTo: URL(string: "com.lamberthyl.nativeapp://login-callback")
+			)
+		} catch {
+			throw AuthenticationError.logInWithGoogleFailure(
+				message: "Log In with Github failed",
+				underlyingError: error
+			)
+		}
 	}
 	
 	public func signUpWithPassword(_ password: String, fullName: String, userName: String, avatarUrl: String?, email: String?, phone: String?, pushToken: String?) async throws {
 		guard email != nil || phone != nil else {
-			throw AuthenticatonError.logInWithPasswordCanceled(message: "You must provide either ann email or a phone number.")
+			throw AuthenticationError.logInWithPasswordCanceled(message: "You must provide either ann email or a phone number.", underlyingError: nil)
 		}
 		var data: [String: AnyJSON] = [
 			"full_name": .string(fullName),
@@ -141,9 +218,6 @@ extension SupabaseAuthenticationClient: AuthenticationClient {
 				}
 			}
 		}
-//		powerSyncRepository.authState
-//			.map { $0.1?.user.toUser ?? .anonymous }
-//			.eraseToStream()
 	}
 }
 

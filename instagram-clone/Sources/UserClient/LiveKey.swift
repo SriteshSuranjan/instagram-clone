@@ -8,7 +8,7 @@ import PowerSyncRepository
 extension UserClient: DependencyKey {
 	public static let liveValue = UserClient(
 		user: unimplemented("Use AuthenticationClient Implementation Inject please.", placeholder: .never),
-		authStateChanges: unimplemented("Use AuthenticationClient Implementation Inject please.", placeholder: .never),
+//		authStateChanges: unimplemented("Use AuthenticationClient Implementation Inject please.", placeholder: .never),
 		logInWithGoogle: unimplemented("Use AuthenticationClient Implementation Inject please."),
 		logInWithGithub: unimplemented("Use AuthenticationClient Implementation Inject please."),
 		logInWithPassword: unimplemented("Use AuthenticationClient Implementation Inject please."),
@@ -18,20 +18,12 @@ extension UserClient: DependencyKey {
 		logOut: unimplemented("Use AuthenticationClient Implementation Inject please.")
 	)
 	public static func liveSupabaseAuthenticationClient(
-		_ client: AuthenticationClient,
-		supabaseClient: SupabaseClient
+		_ client: AuthenticationClient
 	) -> UserClient {
 		UserClient(
 			user: {
 				client.user
 					.map { Shared.User.fromAuthenticationUser($0) }
-					.eraseToStream()
-			},
-			authStateChanges: {
-				supabaseClient
-					.auth
-					.authStateChanges
-					.map { $0.0 }
 					.eraseToStream()
 			},
 			logInWithGoogle: {

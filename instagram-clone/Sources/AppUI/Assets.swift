@@ -62,6 +62,7 @@ public enum Assets {
 		public static let bottomSheetBackgroundColor = Color(R.color.bottomSheet_backgroundColor)
 		public static let bottomSheetSurfaceTintColor = Color(R.color.bottomSheet_surfaceTintColor)
 		public static let bottomSheetModalBackgroundColor = Color(R.color.bottomSheet_modalBackgroundColor)
+		public static let focusColor = Color(R.color.focusColor)
 		
 		public static let primaryGradient: [Color] = [
 			Color(R.color.purple),
@@ -104,15 +105,15 @@ public struct AppImageResource {
 	public func view(
 		width: CGFloat? = nil,
 		height: CGFloat? = nil,
+		renderMode: Image.TemplateRenderingMode? = .template,
 		contentMode: ContentMode = .fit,
 		tint: Color? = nil
 	) -> some View {
 		Image(imageResource.name, bundle: .module)
-			.renderingMode(.template)
+			.renderingMode(renderMode)
 			.resizable()
 			.aspectRatio(contentMode: contentMode)
 			.frame(maxWidth: width ?? .infinity, maxHeight: height ?? .infinity)
-			.foregroundStyle(tint ?? .primary)
 	}
 }
 

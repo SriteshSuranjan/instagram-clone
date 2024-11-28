@@ -53,12 +53,12 @@ public struct LoginFormReducer {
 						return .none
 					}
 					return .run { [previousEmail = state.email] send in
-						let shouldValidate = !previousEmail.invalid
+						let shouldValidate = previousEmail.status == .pure
 						if shouldValidate {
 							@Dependency(\.validatorClient.emailValidator) var emailValidator
 							_ = try emailValidator.validate(previousEmail.value)
 						}
-						let updatedEmail = previousEmail.pure(previousEmail.value)
+						let updatedEmail = previousEmail.valid(previousEmail.value)
 						await send(.updateEmail(updatedEmail), animation: .snappy)
 					} catch: { [previousEmail = state.email] error, send in
 						guard let emailError = error as? EmailValidationError else {
@@ -72,12 +72,12 @@ public struct LoginFormReducer {
 						return .none
 					}
 					return .run { [previousPassword = state.password] send in
-						let shouldValidate = !previousPassword.invalid
+						let shouldValidate = previousPassword.status == .pure
 						if shouldValidate {
 							@Dependency(\.validatorClient.passwordValidator) var passwordValidator
 							_ = try passwordValidator.validate(previousPassword.value)
 						}
-						let updatedPassword = previousPassword.pure(previousPassword.value)
+						let updatedPassword = previousPassword.valid(previousPassword.value)
 						await send(.updatePassword(updatedPassword), animation: .snappy)
 					} catch: { [previousPassword = state.password] error, send in
 						guard let passwordError = error as? PasswordValidationError else {
@@ -119,11 +119,14 @@ public struct LoginFormReducer {
 				state.passwordInput = updatedPasswordInput
 				return .run { [previousPassword = state.password] send in
 					let shouldValidate = previousPassword.invalid
+					let updatedPasswordState: Password
 					if shouldValidate {
 						@Dependency(\.validatorClient.passwordValidator) var passwordValidator
 						_ = try passwordValidator.validate(updatedPasswordInput)
+						updatedPasswordState = previousPassword.valid(updatedPasswordInput)
+					} else {
+						updatedPasswordState = previousPassword.pure(updatedPasswordInput)
 					}
-					let updatedPasswordState = previousPassword.pure(updatedPasswordInput)
 					await send(.updatePassword(updatedPasswordState), animation: .snappy)
 				} catch: { [previousPassword = state.password] error, send in
 					guard let passwordError = error as? PasswordValidationError else {
@@ -140,11 +143,15 @@ public struct LoginFormReducer {
 				state.emailInput = updatedEmailInput
 				return .run { [previousEmail = state.email] send in
 					let shouldValidate = previousEmail.invalid
+					let updatedEmailState: Email
 					if shouldValidate {
 						@Dependency(\.validatorClient.emailValidator) var emailValidator
 						_ = try emailValidator.validate(updatedEmailInput)
+						updatedEmailState = previousEmail.valid(updatedEmailInput)
+					} else {
+						updatedEmailState = previousEmail.pure(updatedEmailInput)
 					}
-					let updatedEmailState = previousEmail.pure(updatedEmailInput)
+					
 					await send(.updateEmail(updatedEmailState), animation: .snappy)
 				} catch: { [previousEmail = state.email] error, send in
 					guard let emailError = error as? EmailValidationError else {
@@ -173,7 +180,6 @@ public struct LoginForm: View {
 			emailTextField()
 			passwordTextField()
 		}
-		.padding(.horizontal, AppSpacing.xlg)
 		.bind($store.focus, to: $focus)
 	}
 

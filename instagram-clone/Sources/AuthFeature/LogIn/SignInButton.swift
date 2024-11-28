@@ -26,6 +26,5 @@ public struct SignInButton: View {
 				.opacity(isLoading ? 0 : 1)
 			}
 		}
-		.padding(.horizontal, AppSpacing.xlg)
 	}
 }

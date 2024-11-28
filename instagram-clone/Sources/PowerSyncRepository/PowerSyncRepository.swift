@@ -123,6 +123,15 @@ public actor PowerSyncRepository {
 		)
 		connector = UncheckedSendable(nil)
 	}
+	public static func instanceWithInitilized(env: any Env) -> PowerSyncRepository {
+		guard let powerSyncRepository = PowerSyncRepository(env: env) else {
+			fatalError("")
+		}
+		Task {
+			await powerSyncRepository.initialize()
+		}
+		return powerSyncRepository
+	}
 
 	public var authState: AsyncStream<(
 		event: AuthChangeEvent,

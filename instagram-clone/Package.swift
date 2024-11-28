@@ -135,6 +135,7 @@ let package = Package(
 				"AppUI",
 				"ValidatorClient",
 				"Shared",
+				"UserClient",
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
 		),

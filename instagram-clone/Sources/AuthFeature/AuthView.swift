@@ -25,7 +25,6 @@ public struct AuthReducer {
 	public var body: some ReducerOf<Self> {
 		Scope(state: \.logIn, action: \.logIn) {
 			LoginReducer()
-				._printChanges()
 		}
 		Reduce { state, action in
 			switch action {

@@ -7,7 +7,7 @@ import Supabase
 @DependencyClient
 public struct UserClient: Sendable {
 	public var user: @Sendable () -> AsyncStream<Shared.User> = { .never }
-	public var authStateChanges: @Sendable () -> AsyncStream<AuthChangeEvent> = { .never }
+//	public var authStateChanges: @Sendable () -> AsyncStream<AuthChangeEvent> = { .never }
 	public var logInWithGoogle: @Sendable () async throws -> Void
 	public var logInWithGithub: @Sendable () async throws -> Void
 	public var logInWithPassword: @Sendable (_ password: String, _ email: String?, _ phone: String) async throws -> Void
