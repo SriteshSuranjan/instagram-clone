@@ -45,7 +45,7 @@ public struct Envionment: Env, Sendable {
 
 	private static func loadConfiguration() -> [String: Any] {
 		let filename: String = {
-			if let config = ProcessInfo.processInfo.environment["BUILD_CONFIGURATION"] {
+			if let config = Bundle.main.object(forInfoDictionaryKey: "BuildEnvironment") as? String {
 				switch config {
 				case "DEBUG": return "env.debug"
 				case "STAGING": return "env.staging"

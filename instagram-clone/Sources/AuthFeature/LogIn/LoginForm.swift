@@ -48,47 +48,41 @@ public struct LoginFormReducer {
 				state.previousFocus = .password
 				return .none
 			case .binding(.set(\State.focus, nil)):
-				if state.previousFocus == .email {
-					if state.email.invalid {
-						return .none
-					}
-					return .run { [previousEmail = state.email] send in
-						let shouldValidate = previousEmail.status == .pure
-						if shouldValidate {
-							@Dependency(\.validatorClient.emailValidator) var emailValidator
-							_ = try emailValidator.validate(previousEmail.value)
-						}
-						let updatedEmail = previousEmail.valid(previousEmail.value)
-						await send(.updateEmail(updatedEmail), animation: .snappy)
-					} catch: { [previousEmail = state.email] error, send in
-						guard let emailError = error as? EmailValidationError else {
-							return
-						}
-						let updatedEmailState = previousEmail.dirty(previousEmail.value, error: emailError)
-						await send(.updateEmail(updatedEmailState), animation: .snappy)
-					}
-				} else if state.previousFocus == .password {
-					if state.email.invalid {
-						return .none
-					}
-					return .run { [previousPassword = state.password] send in
-						let shouldValidate = previousPassword.status == .pure
-						if shouldValidate {
-							@Dependency(\.validatorClient.passwordValidator) var passwordValidator
-							_ = try passwordValidator.validate(previousPassword.value)
-						}
-						let updatedPassword = previousPassword.valid(previousPassword.value)
-						await send(.updatePassword(updatedPassword), animation: .snappy)
-					} catch: { [previousPassword = state.password] error, send in
-						guard let passwordError = error as? PasswordValidationError else {
-							return
-						}
-						let updatedPasswordState = previousPassword.dirty(previousPassword.value, error: passwordError)
-						await send(.updatePassword(updatedPasswordState), animation: .snappy)
-					}
-				}
+				let emailEffect: Effect<Action> = state.email.invalid ? .none : .run { [previousEmail = state.email] send in
+					let shouldValidate = previousEmail.status == .pure
+					 if shouldValidate {
+						 @Dependency(\.validatorClient.emailValidator) var emailValidator
+						 _ = try emailValidator.validate(previousEmail.value)
+					 }
+					 let updatedEmail = previousEmail.valid(previousEmail.value)
+					 await send(.updateEmail(updatedEmail), animation: .snappy)
+				 } catch: { [previousEmail = state.email] error, send in
+					 guard let emailError = error as? EmailValidationError else {
+						 return
+					 }
+					 let updatedEmailState = previousEmail.dirty(previousEmail.value, error: emailError)
+					 await send(.updateEmail(updatedEmailState), animation: .snappy)
+				 }
+				let passwordEffect: Effect<Action> = state.password.invalid ? .none : .run { [previousPassword = state.password] send in
+					let shouldValidate = previousPassword.status == .pure
+					 if shouldValidate {
+						 @Dependency(\.validatorClient.passwordValidator) var passwordValidator
+						 _ = try passwordValidator.validate(previousPassword.value)
+					 }
+					 let updatedPassword = previousPassword.valid(previousPassword.value)
+					 await send(.updatePassword(updatedPassword), animation: .snappy)
+				 } catch: { [previousPassword = state.password] error, send in
+					 guard let passwordError = error as? PasswordValidationError else {
+						 return
+					 }
+					 let updatedPasswordState = previousPassword.dirty(previousPassword.value, error: passwordError)
+					 await send(.updatePassword(updatedPasswordState), animation: .snappy)
+				 }
 				state.previousFocus = nil
-				return .none
+				return .merge(
+					emailEffect,
+					passwordEffect
+				)
 			case .binding:
 				return .none
 			case .resignTextFieldFocus:
@@ -176,72 +170,34 @@ public struct LoginForm: View {
 	}
 
 	public var body: some View {
-		VStack {
-			emailTextField()
-			passwordTextField()
+		VStack(spacing: AppSpacing.md) {
+			AuthTextField(
+				placeholder: "Email",
+				errorMessage: store.emailValidationErrorMessage,
+				isSecure: false,
+				showSensitive: false,
+				input: $store.emailInput.sending(\.updateEmailInput)
+			)
+			.focused($focus, equals: .email)
+			
+			AuthTextField(
+				placeholder: "Password",
+				errorMessage: store.passwordValidationErrorMessage,
+				isSecure: true,
+				showSensitive: store.showPassword,
+				input: $store.passwordInput.sending(\.updatePasswordInput)
+			) {
+				Button {
+					store.send(.toggleShowPassword, animation: .none)
+				} label: {
+					showPasswordIconView()
+						.foregroundStyle(Assets.Colors.customAdaptiveColor(colorScheme, light: Assets.Colors.gray))
+				}
+				.noneEffect()
+			}
+			.focused($focus, equals: .password)
 		}
 		.bind($store.focus, to: $focus)
-	}
-
-	@ViewBuilder
-	private func emailTextField() -> some View {
-		VStack(alignment: .leading, spacing: 0) {
-			TextField("Email", text: $store.emailInput.sending(\.updateEmailInput))
-				.focused($focus, equals: .email)
-				.appTextField(
-					font: textTheme.bodyLarge.font,
-					foregroundColor: Assets.Colors.bodyColor,
-					accentColor: Assets.Colors.bodyColor,
-					backgroundColor: Assets.Colors.customReversedAdaptiveColor(colorScheme, light: Assets.Colors.brightGray, dark: Assets.Colors.dark),
-					keyboardType: .emailAddress,
-					returnKeyType: .next
-				)
-			if let emailErrorMessage = store.emailValidationErrorMessage {
-				HStack {
-					Text(emailErrorMessage)
-						.font(textTheme.bodyLarge.font)
-						.foregroundStyle(Assets.Colors.red)
-						.transition(.move(edge: .top))
-					Spacer()
-				}
-			}
-		}
-		.padding(.top, AppSpacing.md)
-	}
-
-	@ViewBuilder
-	private func passwordTextField() -> some View {
-		VStack {
-			displayPasswordTextField()
-				.focused($focus, equals: .password)
-				.appTextField(
-					font: textTheme.bodyLarge.font,
-					foregroundColor: Assets.Colors.bodyColor,
-					accentColor: Assets.Colors.bodyColor,
-					backgroundColor: Assets.Colors.customReversedAdaptiveColor(colorScheme, light: Assets.Colors.brightGray, dark: Assets.Colors.dark),
-					keyboardType: .default,
-					returnKeyType: .done,
-					trailingView: {
-						Button {
-							store.send(.toggleShowPassword, animation: .none)
-						} label: {
-							showPasswordIconView()
-								.foregroundStyle(Assets.Colors.customAdaptiveColor(colorScheme, light: Assets.Colors.gray))
-						}
-						.noneEffect()
-					}
-				)
-			if let passwordErrorMessage = store.passwordValidationErrorMessage {
-				HStack {
-					Text(passwordErrorMessage)
-						.font(textTheme.bodyLarge.font)
-						.foregroundStyle(Assets.Colors.red)
-						.transition(.move(edge: .top))
-					Spacer()
-				}
-			}
-		}
-		.padding(.top, AppSpacing.md)
 	}
 
 	@ViewBuilder

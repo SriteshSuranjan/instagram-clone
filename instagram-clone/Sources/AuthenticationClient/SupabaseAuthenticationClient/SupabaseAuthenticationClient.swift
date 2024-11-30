@@ -195,7 +195,7 @@ extension SupabaseAuthenticationClient: AuthenticationClient {
 	}
 	
 	public func sendPasswordResetEmail(_ email: String, redirectTo: String?) async throws {
-		try await powerSyncRepository.supabase.auth.resetPasswordForEmail(email, redirectTo: URL(string: redirectTo ?? ""))
+		try await powerSyncRepository.supabase.auth.resetPasswordForEmail(email, redirectTo: URL(string: "com.lamberthyl.nativeapp://login-callback")!)
 	}
 	
 	public func resetPassword(token: String, email: String, newPassword: String) async throws {

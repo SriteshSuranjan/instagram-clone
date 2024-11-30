@@ -169,6 +169,13 @@ extension AuthenticationError: LocalizedError {
 			return error
 		}
 	}
+	
+	public var errorCode: Int? {
+		if let nsError = underlyingError as? NSError {
+			return nsError.code
+		}
+		return nil
+	}
 }
 
 // extension AuthenticationError: LocalizedError {

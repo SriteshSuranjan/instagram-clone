@@ -88,3 +88,17 @@ extension Color {
 		self.init(red: red, green: green, blue: blue)
 	}
 }
+
+public extension Color {
+	public enum MaterialGray {
+		public static let shade100 = Color(white: 0.96)
+		public static let shade200 = Color(white: 0.93)
+		public static let shade300 = Color(white: 0.88)
+		public static let shade400 = Color(white: 0.74)
+		public static let shade500 = Color(white: 0.62)
+		public static let shade600 = Color(white: 0.54)
+		public static let shade700 = Color(white: 0.46)
+		public static let shade800 = Color(white: 0.38)
+		public static let shade900 = Color(white: 0.30)
+	}
+}

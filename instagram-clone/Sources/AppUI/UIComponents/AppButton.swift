@@ -3,8 +3,7 @@ import SwiftUI
 public typealias SimpleAppButton = AppButton<EmptyView, EmptyView>
 
 /// Button 的样式配置
-@MainActor
-public struct AppButtonStyle: Sendable {
+public struct AppButtonStyle {
 	let foregroundColor: Color?
 	let backgroundColor: Color?
 	let textStyle: AppTextStyle?

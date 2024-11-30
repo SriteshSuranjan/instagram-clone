@@ -2,8 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>APP_ENVIRONMENT</key>
-	<string>${APP_ENVIRONMENT}</string>
+	<key>BuildEnvironment</key>
+	<string>$(BUILD_ENV)</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -34,16 +34,5 @@
 		<string>remote-notification</string>
 		<string>processing</string>
 	</array>
-<!--	<key>UIAppFonts</key>-->
-<!--	<array>-->
-<!--			<string>instagram-clone_AppUI.bundle/Inter-Bold.ttf</string>-->
-<!--			<string>instagram-clone_AppUI.bundle/Inter-ExtraBold.ttf</string>-->
-<!--			<string>instagram-clone_AppUI.bundle/Inter-ExtraLight.ttf</string>-->
-<!--			<string>instagram-clone_AppUI.bundle/Inter-Light.ttf</string>-->
-<!--			<string>instagram-clone_AppUI.bundle/Inter-Medium.ttf</string>-->
-<!--			<string>instagram-clone_AppUI.bundle/Inter-Regular.ttf</string>-->
-<!--			<string>instagram-clone_AppUI.bundle/Inter-SemiBold.ttf</string>-->
-<!--			<string>instagram-clone_AppUI.bundle/Montserrat-Medium.ttf</string>-->
-<!--	</array>-->
 </dict>
 </plist>

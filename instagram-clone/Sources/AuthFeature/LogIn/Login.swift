@@ -3,8 +3,8 @@ import ComposableArchitecture
 import Foundation
 import Shared
 import SwiftUI
-import ValidatorClient
 import UserClient
+import ValidatorClient
 
 @Reducer
 public struct LoginReducer: Sendable {
@@ -14,21 +14,24 @@ public struct LoginReducer: Sendable {
 		var status: LoginSubmissionStatus = .idle
 		var loginForm = LoginFormReducer.State()
 		var signInButtonDisabled: Bool {
-			let disabled  = status != .idle ||
-			loginForm.email.invalid ||
-			loginForm.password.invalid
+			let disabled = status.isLoading ||
+			status.isGoogleAuthInProgress ||
+			status.isGithubAuthInProgress ||
+				loginForm.email.invalid ||
+				loginForm.password.invalid
 			return disabled
 		}
+
 		var googleSignInButtonDisabled: Bool {
 			status == .loading ||
-			status == .githubAuthInProgress ||
-			status == .googleAuthInProgress
+				status == .githubAuthInProgress ||
+				status == .googleAuthInProgress
 		}
 		
 		var githubSignInButtonDisabled: Bool {
 			status == .loading ||
-			status == .githubAuthInProgress ||
-			status == .googleAuthInProgress
+				status == .githubAuthInProgress ||
+				status == .googleAuthInProgress
 		}
 		
 		var googleSignInButtonIsLoading: Bool {
@@ -84,9 +87,9 @@ public struct LoginReducer: Sendable {
 			
 			var isError: Bool {
 				self == .error ||
-				isUserNotFound ||
-				isNetworkError ||
-				isInvalidCredentials
+					isUserNotFound ||
+					isNetworkError ||
+					isInvalidCredentials
 			}
 		}
 	}
@@ -94,8 +97,9 @@ public struct LoginReducer: Sendable {
 	public enum Action: BindableAction {
 		case actionPasswordLogin(email: String, password: String)
 		case authProviderLogInFailed(error: AuthenticationError, provider: AuthProvider)
-		case logInFailed(AuthenticationError)
 		case binding(BindingAction<State>)
+		case delegate(Delegate)
+		case logInFailed(AuthenticationError)
 		case loginForm(LoginFormReducer.Action)
 		case onTapSignInButton
 		case onAuthUserChanged(User)
@@ -104,22 +108,27 @@ public struct LoginReducer: Sendable {
 		case resignFocus
 		
 		case logout
+		
+		public enum Delegate {
+			case onTapForgotPasswordButton
+			case onTapSignUpButton
+		}
 	}
 
 	@Dependency(\.userClient) var userClient
 	
 	public var body: some ReducerOf<Self> {
+		BindingReducer()
 		Scope(state: \.loginForm, action: \.loginForm) {
 			LoginFormReducer()
 		}
-		BindingReducer()
 		Reduce {
 			state,
-			action in
+				action in
 			switch action {
 			case let .actionPasswordLogin(email, password):
 				state.status = .loading
-				return .run { send in
+				return .run { _ in
 					try await userClient.logInWithPassword(password: password, email: email, phone: "")
 				} catch: { error, send in
 					guard let authenticationError = error as? AuthenticationError else {
@@ -136,13 +145,15 @@ public struct LoginReducer: Sendable {
 				return .none
 			case .binding:
 				return .none
+			case .delegate:
+				return .none
 			case .loginForm:
 				return .none
 			case .onTapSignInButton:
 				return Effect.concatenate(
 					.send(.loginForm(.resignTextFieldFocus)),
 					.run { [email = state.loginForm.email, password = state.loginForm.password] send in
-						guard email.validated && password.validated else {
+						guard email.validated, password.validated else {
 							return
 						}
 						await send(.actionPasswordLogin(email: email.value, password: password.value))
@@ -165,7 +176,7 @@ public struct LoginReducer: Sendable {
 				case .github:
 					state.status = .githubAuthInProgress
 				}
-				return .run { [provider] send in
+				return .run { [provider] _ in
 					switch provider {
 					case .google: try await userClient.logInWithGoogle()
 					case .github: try await userClient.logInWithGithub()
@@ -180,7 +191,7 @@ public struct LoginReducer: Sendable {
 				state.status = .idle
 				// TODO: switch error condition
 //				switch error {
-//					
+//
 //				}
 				return .none
 			case .resignFocus:
@@ -202,42 +213,55 @@ public struct LoginView: View {
 	}
 
 	public var body: some View {
-		VStack {
-			ScrollView {
-				logoView()
-				LoginForm(store: store.scope(state: \.loginForm, action: \.loginForm))
-				ForgotPasswordButton {
+		ZStack(alignment: .bottom) {
+			ScrollView(showsIndicators: false) {
+				VStack {
+					logoView()
+					LoginForm(store: store.scope(state: \.loginForm, action: \.loginForm))
+					ForgotPasswordButton {
+						store.send(.delegate(.onTapForgotPasswordButton))
+					}
+						.frame(maxWidth: .infinity, alignment: .trailing)
+					AuthButton(isLoading: store.status.isLoading, text: "Sign In") {
+						store.send(.onTapSignInButton)
+					}
+					.disabled(store.signInButtonDisabled)
+					.padding(.top, AppSpacing.xlg)
 					
-				}
-				.frame(maxWidth: .infinity, alignment: .trailing)
-				SignInButton(isLoading: store.status.isLoading) {
-					store.send(.onTapSignInButton)
-				}
-				.disabled(store.signInButtonDisabled)
-				.padding(.top, AppSpacing.xlg)
-				
-				OrDivider()
-					.padding(.horizontal, AppSpacing.md)
-				AuthProviderSignInButton(
-					provider: .google,
-					isLoading: store.googleSignInButtonIsLoading) {
+					OrDivider()
+						.padding(.horizontal, AppSpacing.md)
+					AuthProviderSignInButton(
+						provider: .google,
+						isLoading: store.googleSignInButtonIsLoading
+					) {
 						store.send(.onTapAuthProviderButton(.google))
 					}
 					.disabled(store.googleSignInButtonDisabled)
 					.padding(.bottom, AppSpacing.md)
-				AuthProviderSignInButton(
-					provider: .github,
-					isLoading: store.githubSignInButtonIsLoading) {
+					AuthProviderSignInButton(
+						provider: .github,
+						isLoading: store.githubSignInButtonIsLoading
+					) {
 						store.send(.onTapAuthProviderButton(.github))
 					}
 					.disabled(store.githubSignInButtonDisabled)
-				
-				Button("Log out", role: .destructive) {
-					store.send(.logout)
+					
+					Button("Log out", role: .destructive) {
+						store.send(.logout)
+					}
+					.buttonStyle(.borderedProminent)
 				}
-				.buttonStyle(.borderedProminent)
 			}
+			VStack {
+				Spacer() // 添加这个将按钮推到底部
+				SignUpNewAccountButton {
+					store.send(.delegate(.onTapSignUpButton))
+				}
+			}
+			.frame(maxWidth: .infinity)
+			.ignoresSafeArea(.keyboard)
 		}
+		.scrollDismissesKeyboard(.automatic)
 		.padding(.horizontal, AppSpacing.xlg)
 		.toolbar(.hidden, for: .navigationBar)
 		.task {

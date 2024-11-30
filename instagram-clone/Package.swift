@@ -62,6 +62,10 @@ let package = Package(
 			name: "UserClient",
 			targets: ["UserClient"]
 		),
+		.library(
+			name: "InstagramBlocksUI",
+			targets: ["InstagramBlocksUI"]
+		),
 	],
 	dependencies: [
 		.package(url: "https://github.com/powersync-ja/powersync-kotlin", exact: "1.0.0-BETA5.0"),
@@ -136,6 +140,7 @@ let package = Package(
 				"ValidatorClient",
 				"Shared",
 				"UserClient",
+				"InstagramBlocksUI",
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
 		),
@@ -189,6 +194,14 @@ let package = Package(
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
 		),
+		.target(
+			name: "InstagramBlocksUI",
+			dependencies: [
+				"Shared",
+				"AppUI",
+				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+			]
+		),
 	],
-	swiftLanguageVersions: [.v6]
+	swiftLanguageVersions: [.v5]
 )
