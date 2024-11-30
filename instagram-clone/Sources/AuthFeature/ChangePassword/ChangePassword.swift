@@ -45,6 +45,7 @@ public struct ChangePasswordReducer {
 		case alert(PresentationAction<Alert>)
 		case actionChangePassword(validOTP: String, validPassword: String)
 		case binding(BindingAction<State>)
+		case cancelChangePasswordRequest
 		case changePasswordFailed
 		case changePasswordSuccess
 		case onTapChangePassword
@@ -75,10 +76,13 @@ public struct ChangePasswordReducer {
 			action in
 			switch action {
 			case .alert(.presented(.onLeavePageButtonTapped)):
-				return Effect.concatenate(
-					.cancel(id: CancelID.requestChangePassword),
-					.send(.delegate(.onTapBackButton))
-				)
+				state.alert = nil
+				return .run { send in
+					await send(.cancelChangePasswordRequest)
+					await send(.delegate(.onTapBackButton))
+				}
+			case .cancelChangePasswordRequest:
+				return .cancel(id: CancelID.requestChangePassword)
 			case .alert:
 				return .none
 			case let .actionChangePassword(validOTP, validPassword):
@@ -142,16 +146,20 @@ public struct ChangePasswordReducer {
 				)
 			case .onTapBackButton:
 				state.alert = AlertState(
-					title: TextState("Are you sure you want to go back?"),
-					message: TextState("If you go back now, you'll loose all the edits you've made."),
-					buttons: [
+					title: {
+						TextState("Are you sure you want to go back?")
+					},
+					actions: {
 						ButtonState(role: .cancel) {
 							TextState("Cancel")
-						},
+						}
 						ButtonState(role: .destructive, action: .send(.onLeavePageButtonTapped)) {
 							TextState("Go back")
 						}
-					]
+					},
+					message: {
+						TextState("If you go back now, you'll loose all the edits you've made.")
+					}
 				)
 				return .none
 			case .toggleShowPassword:

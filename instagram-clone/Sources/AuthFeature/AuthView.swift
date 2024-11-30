@@ -49,7 +49,7 @@ public struct AuthReducer {
 					state.paths.pop(from: id)
 					return .none
 				case .changePassword(.delegate(.onTapBackButton)):
-					state.paths.pop(from: id)
+					state.paths.removeAll()
 					return .none
 				case let .forgotPassword(.delegate(.sendPasswordResetSuccess(validEmail))):
 					state.paths.append(.changePassword(ChangePasswordReducer.State(email: validEmail)))
