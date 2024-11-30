@@ -63,6 +63,8 @@ public enum Assets {
 		public static let bottomSheetSurfaceTintColor = Color(R.color.bottomSheet_surfaceTintColor)
 		public static let bottomSheetModalBackgroundColor = Color(R.color.bottomSheet_modalBackgroundColor)
 		public static let focusColor = Color(R.color.focusColor)
+		public static let snackbarSuccessBackground = Color(R.color.snackbarSuccess)
+		public static let snackbarErrorBackground = Color(R.color.snackbarError)
 		
 		public static let primaryGradient: [Color] = [
 			Color(R.color.purple),

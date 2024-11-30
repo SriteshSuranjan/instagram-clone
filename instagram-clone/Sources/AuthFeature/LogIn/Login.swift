@@ -5,6 +5,7 @@ import Shared
 import SwiftUI
 import UserClient
 import ValidatorClient
+import SnackbarMessagesClient
 
 @Reducer
 public struct LoginReducer: Sendable {
@@ -116,6 +117,7 @@ public struct LoginReducer: Sendable {
 	}
 
 	@Dependency(\.userClient) var userClient
+	@Dependency(\.snackbarMessagesClient) var snackbarMessagesClient
 	
 	public var body: some ReducerOf<Self> {
 		BindingReducer()
@@ -130,6 +132,13 @@ public struct LoginReducer: Sendable {
 				state.status = .loading
 				return .run { _ in
 					try await userClient.logInWithPassword(password: password, email: email, phone: "")
+					await snackbarMessagesClient.show(
+						message: .success(
+							title: "Log in Successfully",
+							description: "You are now connected to Supabase",
+							backgroundColor: Assets.Colors.snackbarSuccessBackground
+						)
+					)
 				} catch: { error, send in
 					guard let authenticationError = error as? AuthenticationError else {
 						return
@@ -193,7 +202,15 @@ public struct LoginReducer: Sendable {
 //				switch error {
 //
 //				}
-				return .none
+				return .run { _ in
+					await snackbarMessagesClient.show(
+						message: .error(
+							title: "Log in Failed",
+							description: error.errorDescription,
+							backgroundColor: Assets.Colors.snackbarErrorBackground
+						)
+					)
+				}
 			case .resignFocus:
 				return .send(.loginForm(.resignTextFieldFocus))
 				

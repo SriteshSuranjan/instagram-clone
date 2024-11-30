@@ -66,6 +66,10 @@ let package = Package(
 			name: "InstagramBlocksUI",
 			targets: ["InstagramBlocksUI"]
 		),
+		.library(
+			name: "SnackbarMessagesClient",
+			targets: ["SnackbarMessagesClient"]
+		),
 	],
 	dependencies: [
 		.package(url: "https://github.com/powersync-ja/powersync-kotlin", exact: "1.0.0-BETA5.0"),
@@ -78,7 +82,7 @@ let package = Package(
 		.package(url: "https://github.com/google/GoogleSignIn-iOS", from: "7.0.0"),
 		.package(url: "https://github.com/mac-cain13/R.swift.git", from: "7.0.0"),
 		.package(url: "https://github.com/airbnb/lottie-spm.git", from: "4.5.0"),
-		.package(url: "https://github.com/exyte/SVGView.git", from: "1.0.6"),
+		.package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.6.0")
 	],
 	targets: [
 		.target(name: "ApiRepository"),
@@ -122,6 +126,7 @@ let package = Package(
 				"Env",
 				"LaunchFeature",
 				"FirebaseCoreClient",
+				"SnackbarMessagesClient",
 				.product(name: "Supabase", package: "supabase-swift"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 				.product(name: "GoogleSignIn", package: "GoogleSignIn-iOS"),
@@ -141,6 +146,8 @@ let package = Package(
 				"Shared",
 				"UserClient",
 				"InstagramBlocksUI",
+				"SnackbarMessagesClient",
+				.product(name: "Tagged", package: "swift-tagged"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
 		),
@@ -163,7 +170,6 @@ let package = Package(
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 				.product(name: "RswiftLibrary", package: "R.swift"),
 				.product(name: "Lottie", package: "lottie-spm"),
-				.product(name: "SVGView", package: "SVGView"),
 			],
 			resources: [
 				.process("Resources/Images/Images.xcassets"),
@@ -199,6 +205,14 @@ let package = Package(
 			dependencies: [
 				"Shared",
 				"AppUI",
+				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+			]
+		),
+		.target(
+			name: "SnackbarMessagesClient",
+			dependencies: [
+				"Shared",
+				.product(name: "Tagged", package: "swift-tagged"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
 		),

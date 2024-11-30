@@ -233,6 +233,7 @@ public struct FilledAppButtonStyle: PrimitiveButtonStyle {
 			.padding(style.padding)
 			.background(style.backgroundColor ?? .blue)
 			.cornerRadius(style.cornerRadius)
+			.contentShape(Rectangle())
 //			.scaleEffect(configuration.isPressed ? 0.98 : 1.0)
 //			.animation(.easeInOut(duration: 0.2), value: configuration.isPressed)
 	}
@@ -250,6 +251,7 @@ public struct OutlinedAppButtonStyle: PrimitiveButtonStyle {
 				RoundedRectangle(cornerRadius: style.cornerRadius)
 					.stroke(style.foregroundColor ?? .blue, lineWidth: 1)
 			)
+			.frame(maxWidth: style.fullWidth ? .infinity : nil)
 //			.scaleEffect(configuration.isPressed ? 0.98 : 1.0)
 //			.animation(.easeInOut(duration: 0.2), value: configuration.isPressed)
 	}

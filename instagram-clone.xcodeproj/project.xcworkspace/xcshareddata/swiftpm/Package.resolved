@@ -1,5 +1,5 @@
 {
-  "originHash" : "d37a37f48d17d8295997c07d2b79c36c31c42ab189d194883c6cdbcef51af72a",
+  "originHash" : "6d146d908860828120fca23ef308a3e0f78ee0844ef92ae25f5911c2fb303237",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -200,15 +200,6 @@
       }
     },
     {
-      "identity" : "svgview",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/exyte/SVGView.git",
-      "state" : {
-        "revision" : "6465962facdd25cb96eaebc35603afa2f15d2c0d",
-        "version" : "1.0.6"
-      }
-    },
-    {
       "identity" : "swift-argument-parser",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-argument-parser",
@@ -359,6 +350,15 @@
       "state" : {
         "revision" : "0687f71944021d616d34d922343dcef086855920",
         "version" : "600.0.1"
+      }
+    },
+    {
+      "identity" : "swift-tagged",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-tagged",
+      "state" : {
+        "revision" : "3907a9438f5b57d317001dc99f3f11b46882272b",
+        "version" : "0.10.0"
       }
     },
     {
