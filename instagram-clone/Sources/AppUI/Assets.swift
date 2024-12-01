@@ -1,7 +1,6 @@
 import RswiftResources
 import SwiftUI
 import Lottie
-import SVGView
 
 @MainActor
 public enum Assets {

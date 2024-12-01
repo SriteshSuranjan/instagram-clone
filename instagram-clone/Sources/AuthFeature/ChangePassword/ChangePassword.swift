@@ -4,6 +4,7 @@ import AppUI
 import ValidatorClient
 import UserClient
 import Shared
+import SnackbarMessagesClient
 
 @Reducer
 public struct ChangePasswordReducer {
@@ -21,9 +22,7 @@ public struct ChangePasswordReducer {
 		var showPassword = false
 		@Presents var alert: AlertState<Action.Alert>?
 		var changePasswodButtonDisabled: Bool {
-			status == .loading ||
-			otp.invalid ||
-			password.invalid
+			status == .loading
 		}
 		let email: String
 		public init(email: String) {
@@ -45,6 +44,8 @@ public struct ChangePasswordReducer {
 		case alert(PresentationAction<Alert>)
 		case actionChangePassword(validOTP: String, validPassword: String)
 		case binding(BindingAction<State>)
+		case otpDidEndEditing
+		case passwordDidEndEditing
 		case cancelChangePasswordRequest
 		case changePasswordFailed
 		case changePasswordSuccess
@@ -68,6 +69,7 @@ public struct ChangePasswordReducer {
 		case requestChangePassword
 	}
 	@Dependency(\.userClient) var userClient
+	@Dependency(\.snackbarMessagesClient) var snackbarMessagesClient
 	
 	public var body: some ReducerOf<Self> {
 		BindingReducer()
@@ -94,7 +96,9 @@ public struct ChangePasswordReducer {
 					await send(.changePasswordFailed)
 				}
 					.cancellable(id: CancelID.requestChangePassword, cancelInFlight: true)
-			case .binding(.set(\State.focus, nil)):
+			case .binding:
+				return .none
+			case .otpDidEndEditing:
 				let otpEffect: Effect<Action> = state.otp.invalid ? .none : .run { [previousOTP = state.otp] send in
 					let shouldValidate = previousOTP.status == .pure
 					if shouldValidate {
@@ -111,6 +115,8 @@ public struct ChangePasswordReducer {
 					let updatedOTPState = previousOTP.dirty(previousOTP.value, error: otpValidationError)
 					await send(.updateOTP(updatedOTPState), animation: .snappy)
 				}
+				return otpEffect
+			case .passwordDidEndEditing:
 				let passwordEffect: Effect<Action> = state.password.invalid ? .none : .run { [previousPassword = state.password] send in
 					let shouldValidate = previousPassword.status == .pure
 					if shouldValidate {
@@ -120,30 +126,39 @@ public struct ChangePasswordReducer {
 					let updatedPassword = previousPassword.valid(previousPassword.value)
 					await send(.updatePassword(updatedPassword), animation: .snappy)
 				}
-				return .merge(
-					otpEffect,
-					passwordEffect
-				)
-			case .binding:
-				return .none
+				return passwordEffect
 			case .changePasswordFailed:
 				state.status = .failure
-				return .none
+				return .run { _ in
+					await snackbarMessagesClient.show(
+						SnackbarMessage.error(
+							title: "Change password failed",
+							description: "Please check the otp code in your email",
+							backgroundColor: Assets.Colors.snackbarSuccessBackground
+						)
+					)
+				}
 			case .changePasswordSuccess:
 				state.status = .success
-				return .none
+				return .run { _ in
+					await snackbarMessagesClient.show(
+						SnackbarMessage.success(
+							title: "Change password successfully",
+							backgroundColor: Assets.Colors.snackbarSuccessBackground
+						)
+					)
+				}
 			case .delegate:
 				return .none
 			case .onTapChangePassword:
-				return Effect.concatenate(
-					.send(.binding(.set(\State.focus, nil))),
-					.run { [otp = state.otp, password = state.password] send in
-						guard otp.validated, password.validated else {
-							return
-						}
-						await send(.actionChangePassword(validOTP: otp.value, validPassword: password.value))
-					}
-				)
+				return .run { [otp = state.otp, password = state.password] send in
+					await send(.otpDidEndEditing)
+					await send(.passwordDidEndEditing)
+					guard otp.validated, password.validated else {
+						 return
+					 }
+					 await send(.actionChangePassword(validOTP: otp.value, validPassword: password.value))
+				 }
 			case .onTapBackButton:
 				state.alert = AlertState(
 					title: {

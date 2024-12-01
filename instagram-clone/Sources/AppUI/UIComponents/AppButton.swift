@@ -15,7 +15,7 @@ public struct AppButtonStyle {
 		backgroundColor: Color? = nil,
 		textStyle: AppTextStyle? = UITextStyle.button,
 		cornerRadius: CGFloat = 4,
-		padding: EdgeInsets = EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16),
+		padding: EdgeInsets = EdgeInsets(top: 14, leading: 16, bottom: 14, trailing: 16),
 		fullWidth: Bool = false
 	) {
 		self.foregroundColor = foregroundColor
@@ -170,7 +170,6 @@ public struct AppButton<Child: View, Icon: View>: View {
 		}
 		.buttonStyle(buildButtonStyle())
 		
-		
 	}
 		
 	@ViewBuilder
@@ -219,6 +218,8 @@ struct UnifiedAppButtonStyle: ButtonStyle {
 					}
 				}
 			)
+			.opacity(configuration.isPressed ? 0.5 : 1.0)
+			.animation(.easeInOut(duration: 0.2), value: configuration.isPressed)
 			.contentShape(Rectangle())
 	}
 }
@@ -252,7 +253,5 @@ public struct OutlinedAppButtonStyle: PrimitiveButtonStyle {
 					.stroke(style.foregroundColor ?? .blue, lineWidth: 1)
 			)
 			.frame(maxWidth: style.fullWidth ? .infinity : nil)
-//			.scaleEffect(configuration.isPressed ? 0.98 : 1.0)
-//			.animation(.easeInOut(duration: 0.2), value: configuration.isPressed)
 	}
 }

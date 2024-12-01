@@ -17,9 +17,7 @@ public struct LoginReducer: Sendable {
 		var signInButtonDisabled: Bool {
 			let disabled = status.isLoading ||
 			status.isGoogleAuthInProgress ||
-			status.isGithubAuthInProgress ||
-				loginForm.email.invalid ||
-				loginForm.password.invalid
+			status.isGithubAuthInProgress
 			return disabled
 		}
 
@@ -159,15 +157,14 @@ public struct LoginReducer: Sendable {
 			case .loginForm:
 				return .none
 			case .onTapSignInButton:
-				return Effect.concatenate(
-					.send(.loginForm(.resignTextFieldFocus)),
-					.run { [email = state.loginForm.email, password = state.loginForm.password] send in
-						guard email.validated, password.validated else {
-							return
-						}
-						await send(.actionPasswordLogin(email: email.value, password: password.value))
+				return .run { [email = state.loginForm.email, password = state.loginForm.password] send in
+					await send(.loginForm(.emailDidEndEditing))
+					await send(.loginForm(.passwordDidEndEditing))
+					guard email.validated, password.validated else {
+						return
 					}
-				)
+					await send(.actionPasswordLogin(email: email.value, password: password.value))
+				}
 			case .task:
 				return .run { send in
 					for await user in userClient.user() {
@@ -246,7 +243,8 @@ public struct LoginView: View {
 					.padding(.top, AppSpacing.xlg)
 					
 					OrDivider()
-						.padding(.horizontal, AppSpacing.md)
+						.padding(.horizontal, AppSpacing.xxlg)
+						.padding(.vertical, AppSpacing.md)
 					AuthProviderSignInButton(
 						provider: .google,
 						isLoading: store.googleSignInButtonIsLoading
@@ -254,7 +252,6 @@ public struct LoginView: View {
 						store.send(.onTapAuthProviderButton(.google))
 					}
 					.disabled(store.googleSignInButtonDisabled)
-					.padding(.bottom, AppSpacing.md)
 					AuthProviderSignInButton(
 						provider: .github,
 						isLoading: store.githubSignInButtonIsLoading
@@ -263,10 +260,10 @@ public struct LoginView: View {
 					}
 					.disabled(store.githubSignInButtonDisabled)
 					
-					Button("Log out", role: .destructive) {
-						store.send(.logout)
-					}
-					.buttonStyle(.borderedProminent)
+//					Button("Log out", role: .destructive) {
+//						store.send(.logout)
+//					}
+//					.buttonStyle(.borderedProminent)
 				}
 			}
 			VStack {

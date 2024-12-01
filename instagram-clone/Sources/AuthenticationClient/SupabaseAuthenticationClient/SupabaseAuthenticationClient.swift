@@ -34,7 +34,7 @@ public final class GoogleSignService {
 		}
 		let googleUser = try await googleSignIn.signIn(withPresenting: rootController).user
 		let idToken = googleUser.idToken
-		guard let idToken else {
+		guard idToken != nil else {
 			throw AuthenticationError.logInWithGoogleFailure(
 				message: "No ID Token found.",
 				underlyingError: nil

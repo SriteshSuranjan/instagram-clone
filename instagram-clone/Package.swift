@@ -70,6 +70,26 @@ let package = Package(
 			name: "SnackbarMessagesClient",
 			targets: ["SnackbarMessagesClient"]
 		),
+		.library(
+			name: "HomeFeature",
+			targets: ["HomeFeature"]
+		),
+		.library(
+			name: "FeedFeature",
+			targets: ["FeedFeature"]
+		),
+		.library(
+			name: "TimelineFeature",
+			targets: ["TimelineFeature"]
+		),
+		.library(
+			name: "ReelsFeature",
+			targets: ["ReelsFeature"]
+		),
+		.library(
+			name: "UserProfileFeature",
+			targets: ["UserProfileFeature"]
+		),
 	],
 	dependencies: [
 		.package(url: "https://github.com/powersync-ja/powersync-kotlin", exact: "1.0.0-BETA5.0"),
@@ -98,7 +118,12 @@ let package = Package(
 				.define("RELEASE", .when(configuration: .release))
 			]
 		),
-		.target(name: "Shared"),
+		.target(
+			name: "Shared",
+			dependencies: [
+				.product(name: "Tagged", package: "swift-tagged"),
+			]
+		),
 		.target(name: "LaunchFeature", dependencies: ["AppUI"]),
 		.target(
 			name: "PowerSyncRepository",
@@ -127,6 +152,7 @@ let package = Package(
 				"LaunchFeature",
 				"FirebaseCoreClient",
 				"SnackbarMessagesClient",
+				"HomeFeature",
 				.product(name: "Supabase", package: "supabase-swift"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 				.product(name: "GoogleSignIn", package: "GoogleSignIn-iOS"),
@@ -212,6 +238,65 @@ let package = Package(
 			name: "SnackbarMessagesClient",
 			dependencies: [
 				"Shared",
+				.product(name: "Tagged", package: "swift-tagged"),
+				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+			]
+		),
+		.target(
+			name: "HomeFeature",
+			dependencies: [
+				"Shared",
+				"AppUI",
+				"InstagramBlocksUI",
+				"SnackbarMessagesClient",
+				"FeedFeature",
+				"TimelineFeature",
+				"ReelsFeature",
+				"UserProfileFeature",
+				.product(name: "Tagged", package: "swift-tagged"),
+				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+			]
+		),
+		.target(
+			name: "FeedFeature",
+			dependencies: [
+				"Shared",
+				"AppUI",
+				"InstagramBlocksUI",
+				"SnackbarMessagesClient",
+				.product(name: "Tagged", package: "swift-tagged"),
+				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+			]
+		),
+		.target(
+			name: "TimelineFeature",
+			dependencies: [
+				"Shared",
+				"AppUI",
+				"InstagramBlocksUI",
+				"SnackbarMessagesClient",
+				.product(name: "Tagged", package: "swift-tagged"),
+				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+			]
+		),
+		.target(
+			name: "ReelsFeature",
+			dependencies: [
+				"Shared",
+				"AppUI",
+				"InstagramBlocksUI",
+				"SnackbarMessagesClient",
+				.product(name: "Tagged", package: "swift-tagged"),
+				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+			]
+		),
+		.target(
+			name: "UserProfileFeature",
+			dependencies: [
+				"Shared",
+				"AppUI",
+				"InstagramBlocksUI",
+				"SnackbarMessagesClient",
 				.product(name: "Tagged", package: "swift-tagged"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]

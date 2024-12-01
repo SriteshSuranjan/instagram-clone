@@ -62,7 +62,7 @@ public struct AppTextFieldModifier<LeadingView: View, TrailingView: View>: ViewM
 			}
 			.padding(padding)
 			.frame(maxWidth: maxWidth ?? .infinity)
-			.frame(height: height ?? 44)
+			.frame(height: height ?? 50)
 			.background(backgroundColor ?? Color(.systemBackground))
 			.clipShape(RoundedRectangle(cornerRadius: cornerRadius))
 			.overlay(
@@ -88,7 +88,7 @@ public extension View {
 		contentType: UITextContentType? = nil,
 		padding: EdgeInsets = EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12),
 		maxWidth: CGFloat? = .infinity,
-		height: CGFloat? = 48,
+		height: CGFloat? = 56,
 		cornerRadius: CGFloat = 4,
 		borderColor: Color = .clear,
 		borderWidth: CGFloat = 0,

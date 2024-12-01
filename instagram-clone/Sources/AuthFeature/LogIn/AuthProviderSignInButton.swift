@@ -44,7 +44,7 @@ public struct AuthProviderSignInButton: View {
 						.foregroundStyle(Assets.Colors.bodyColor)
 				}
 			}
-			.frame(height: 40)
+			.frame(height: 44)
 			.frame(maxWidth: .infinity)
 			.background(RoundedRectangle(cornerRadius: 4).fill(Assets.Colors.focusColor))
 		}

@@ -10,7 +10,6 @@ public struct LoginFormReducer {
 	public init() {}
 	@ObservableState
 	public struct State: Equatable {
-		var previousFocus: Field?
 		var focus: Field?
 		var emailInput: String = ""
 		var passwordInput: String = ""
@@ -30,6 +29,8 @@ public struct LoginFormReducer {
 	public enum Action: BindableAction {
 		case binding(BindingAction<State>)
 		case resignTextFieldFocus
+		case emailDidEndEditing
+		case passwordDidEndEditing
 		case toggleShowPassword
 		case updateEmailInput(String)
 		case updatePasswordInput(String)
@@ -41,13 +42,9 @@ public struct LoginFormReducer {
 		BindingReducer()
 		Reduce { state, action in
 			switch action {
-			case .binding(.set(\State.focus, .email)):
-				state.previousFocus = .email
+			case .binding:
 				return .none
-			case .binding(.set(\State.focus, .password)):
-				state.previousFocus = .password
-				return .none
-			case .binding(.set(\State.focus, nil)):
+			case .emailDidEndEditing:
 				let emailEffect: Effect<Action> = state.email.invalid ? .none : .run { [previousEmail = state.email] send in
 					let shouldValidate = previousEmail.status == .pure
 					 if shouldValidate {
@@ -63,6 +60,11 @@ public struct LoginFormReducer {
 					 let updatedEmailState = previousEmail.dirty(previousEmail.value, error: emailError)
 					 await send(.updateEmail(updatedEmailState), animation: .snappy)
 				 }
+				if state.focus == .email {
+					state.focus = nil
+				}
+				return emailEffect
+			case .passwordDidEndEditing:
 				let passwordEffect: Effect<Action> = state.password.invalid ? .none : .run { [previousPassword = state.password] send in
 					let shouldValidate = previousPassword.status == .pure
 					 if shouldValidate {
@@ -78,13 +80,10 @@ public struct LoginFormReducer {
 					 let updatedPasswordState = previousPassword.dirty(previousPassword.value, error: passwordError)
 					 await send(.updatePassword(updatedPasswordState), animation: .snappy)
 				 }
-				state.previousFocus = nil
-				return .merge(
-					emailEffect,
-					passwordEffect
-				)
-			case .binding:
-				return .none
+				if state.focus == .password {
+					state.focus = nil
+				}
+				return passwordEffect
 			case .resignTextFieldFocus:
 				return .send(.binding(.set(\State.focus, nil)))
 			case .toggleShowPassword:
@@ -179,6 +178,11 @@ public struct LoginForm: View {
 				input: $store.emailInput.sending(\.updateEmailInput)
 			)
 			.focused($focus, equals: .email)
+			.onChange(of: focus) { oldValue, newValue in
+				if oldValue == .email {
+					store.send(.emailDidEndEditing)
+				}
+			}
 			
 			AuthTextField(
 				placeholder: "Password",
@@ -191,11 +195,17 @@ public struct LoginForm: View {
 					store.send(.toggleShowPassword, animation: .none)
 				} label: {
 					showPasswordIconView()
+						.imageScale(.medium)
 						.foregroundStyle(Assets.Colors.customAdaptiveColor(colorScheme, light: Assets.Colors.gray))
 				}
 				.noneEffect()
 			}
 			.focused($focus, equals: .password)
+			.onChange(of: focus) { oldValue, newValue in
+				if oldValue == .password {
+					store.send(.passwordDidEndEditing)
+				}
+			}
 		}
 		.bind($store.focus, to: $focus)
 	}

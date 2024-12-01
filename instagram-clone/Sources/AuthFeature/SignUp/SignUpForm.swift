@@ -14,7 +14,6 @@ public struct SignUpFormReducer {
 		var fullName = FullName()
 		var userName = UserName()
 		var password = Password()
-		var previousFocus: Field?
 		var focus: Field?
 		var emailInput: String = ""
 		var passwordInput: String = ""
@@ -37,6 +36,10 @@ public struct SignUpFormReducer {
 	}
 	public enum Action: BindableAction {
 		case binding(BindingAction<State>)
+		case emailDidEndEditing
+		case fullNameDidEndEditing
+		case userNameDidEndEditing
+		case passwordDidEndEditing
 		case resignTextFieldFocus
 		case toggleShowPassword
 		case updateEmailInput(String)
@@ -55,19 +58,9 @@ public struct SignUpFormReducer {
 		BindingReducer()
 		Reduce { state, action in
 			switch action {
-			case .binding(.set(\State.focus, .email)):
-				state.previousFocus = .email
+			case .binding:
 				return .none
-			case .binding(.set(\State.focus, .password)):
-				state.previousFocus = .password
-				return .none
-			case .binding(.set(\State.focus, .fullName)):
-				state.previousFocus = .fullName
-				return .none
-			case .binding(.set(\State.focus, .userName)):
-				state.previousFocus = .userName
-				return .none
-			case .binding(.set(\State.focus, nil)):
+			case .emailDidEndEditing:
 				let emailEffect: Effect<Action> = state.email.invalid ? .none : .run { [previousEmail = state.email] send in
 					let shouldValidate = previousEmail.status == .pure
 					 if shouldValidate {
@@ -83,6 +76,8 @@ public struct SignUpFormReducer {
 					 let updatedEmailState = previousEmail.dirty(previousEmail.value, error: emailError)
 					 await send(.updateEmail(updatedEmailState), animation: .snappy)
 				 }
+				return emailEffect
+			case .fullNameDidEndEditing:
 				let fullNameEffect: Effect<Action> = state.fullName.invalid ? .none : .run { [previousFullName = state.fullName] send in
 					let shouldValidate = previousFullName.status == .pure
 					 if shouldValidate {
@@ -98,6 +93,8 @@ public struct SignUpFormReducer {
 					 let updatedFullNameState = previousFullName.dirty(previousFullName.value, error: fullNameError)
 					 await send(.updateFullName(updatedFullNameState), animation: .snappy)
 				 }
+				return fullNameEffect
+			case .userNameDidEndEditing:
 				let userNameEffect: Effect<Action> = state.userName.invalid ? .none : .run { [previousUserName = state.userName] send in
 					let shouldValidate = previousUserName.status == .pure
 					 if shouldValidate {
@@ -113,6 +110,8 @@ public struct SignUpFormReducer {
 					 let updatedUserNameState = previousUserName.dirty(previousUserName.value, error: userNameError)
 					 await send(.updateUserName(updatedUserNameState), animation: .snappy)
 				 }
+				return userNameEffect
+			case .passwordDidEndEditing:
 				let passwordEffect: Effect<Action> = state.password.invalid ? .none : .run { [previousPassword = state.password] send in
 					let shouldValidate = previousPassword.status == .pure
 					 if shouldValidate {
@@ -128,15 +127,7 @@ public struct SignUpFormReducer {
 					 let updatedPasswordState = previousPassword.dirty(previousPassword.value, error: passwordError)
 					 await send(.updatePassword(updatedPasswordState), animation: .snappy)
 				 }
-				state.previousFocus = nil
-				return .merge(
-					emailEffect,
-					fullNameEffect,
-					userNameEffect,
-					passwordEffect
-				)
-			case .binding:
-				return .none
+				return passwordEffect
 			case .resignTextFieldFocus:
 				return .send(.binding(.set(\State.focus, nil)))
 			case .toggleShowPassword:
@@ -291,12 +282,22 @@ public struct SignUpForm: View {
 				input: $store.emailInput.sending(\.updateEmailInput)
 			)
 			.focused($focus, equals: .email)
+			.onChange(of: focus) { oldValue, newValue in
+				if oldValue == .email && newValue != .email {
+					store.send(.emailDidEndEditing)
+				}
+			}
 			AuthTextField(
 				placeholder: "Name",
 				errorMessage: store.fullNameValidationErrorMessage,
 				input: $store.fullNameInput.sending(\.updateFullNameInput)
 			)
 			.focused($focus, equals: .fullName)
+			.onChange(of: focus) { oldValue, newValue in
+				if oldValue == .fullName && newValue != .fullName {
+					store.send(.fullNameDidEndEditing)
+				}
+			}
 			
 			AuthTextField(
 				placeholder: "Username",
@@ -304,6 +305,11 @@ public struct SignUpForm: View {
 				input: $store.userNameInput.sending(\.updateUserNameInput)
 			)
 			.focused($focus, equals: .userName)
+			.onChange(of: focus) { oldValue, newValue in
+				if oldValue == .userName && newValue != .userName {
+					store.send(.userNameDidEndEditing)
+				}
+			}
 			
 			AuthTextField(
 				placeholder: "Password",
@@ -321,6 +327,11 @@ public struct SignUpForm: View {
 				.noneEffect()
 			}
 			.focused($focus, equals: .password)
+			.onChange(of: focus) { oldValue, newValue in
+				if oldValue == .password && newValue != .password {
+					store.send(.passwordDidEndEditing)
+				}
+			}
 		}
 		.bind($store.focus, to: $focus)
 	}

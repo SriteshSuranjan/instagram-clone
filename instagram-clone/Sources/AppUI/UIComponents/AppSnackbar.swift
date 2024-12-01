@@ -21,7 +21,6 @@ public struct AppSnackbarView: View {
 				}
 			}
 		}
-		.transition(.snackbarInsertionAndRemoval)
 	}
 
 	@ViewBuilder
@@ -36,7 +35,7 @@ public struct AppSnackbarView: View {
 				if let icon = message.icon {
 					icon.image
 						.scaledToFit()
-						.imageScale(.large)
+						.imageScale(.medium)
 						.fontWeight(.bold)
 						.frame(width: message.iconSize ?? AppSize.iconSizeSmall, height: message.iconSize ?? AppSize.iconSizeSmall)
 				}
@@ -95,12 +94,10 @@ public extension View {
 public struct SnackbarModifier: ViewModifier {
 	@Binding var snackbarMessages: [SnackbarMessage]
 	public func body(content: Content) -> some View {
-		ZStack(alignment: .top) {
-			content
-			if !snackbarMessages.isEmpty {
+		content
+			.overlay(alignment: .top) {
 				AppSnackbarView(snackbarMessages: $snackbarMessages)
 			}
-		}
 	}
 }
 

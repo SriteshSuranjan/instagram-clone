@@ -8,6 +8,7 @@ import SwiftUI
 import UserClient
 import Shared
 import SnackbarMessagesClient
+import HomeFeature
 
 @Reducer
 public struct AppReducer {
@@ -17,6 +18,7 @@ public struct AppReducer {
 	public enum View {
 		case launch(LaunchReducer)
 		case auth(AuthReducer)
+		case home(HomeReducer)
 	}
 
 	@ObservableState
@@ -29,7 +31,7 @@ public struct AppReducer {
 			destination: View.State? = nil
 		) {
 			self.appDelegate = appDelegate
-			self.view = .auth(AuthReducer.State())
+			self.view = .launch(LaunchReducer.State())
 		}
 	}
 
@@ -38,10 +40,10 @@ public struct AppReducer {
 	
 	public enum Action: BindableAction {
 		case appDelegate(AppDelegateReducer.Action)
+		case authUserResponse(User)
 		case binding(BindingAction<State>)
 		case showSnackbarMessages([SnackbarMessage])
 		case task
-		case loadAuth
 		case view(View.Action)
 	}
 
@@ -57,21 +59,36 @@ public struct AppReducer {
 			Scope(state: \.auth, action: \.auth) {
 				AuthReducer()
 			}
+			Scope(state: \.home, action: \.home) {
+				HomeReducer()
+			}
 		}
 		
 		
 		Reduce { state, action in
 			switch action {
+			case let .authUserResponse(user):
+				if user.isAnonymous {
+					state.view = .auth(AuthReducer.State())
+				} else {
+					state.view = .home(HomeReducer.State(authenticatedUser: user))
+				}
+				return .none
 			case .binding:
 				return .none
 			case .task:
 				return .run { @MainActor send in
+					async let currentUser: Void = {
+						for await user in userClient.user() {
+							await send(.authUserResponse(user))
+						}
+					}()
 					async let snackbarMessages: Void = {
 						for await snackbarMessages in await snackbarMessagesClient.snackbarMessages() {
 							await send(.showSnackbarMessages(snackbarMessages), animation: .bouncy)
 						}
 					}()
-					_ = await snackbarMessages
+					_ = await (currentUser, snackbarMessages)
 				}
 			case .appDelegate:
 				return .none
@@ -81,10 +98,6 @@ public struct AppReducer {
 				return .none
 
 			case .view:
-				return .none
-
-			case .loadAuth:
-				state.view = .auth(AuthReducer.State())
 				return .none
 			}
 		}
@@ -106,6 +119,8 @@ public struct AppView: View {
 				LaunchView(store: launchStore)
 			case let .auth(authStore):
 				AuthView(store: authStore)
+			case let .home(homeStore):
+				HomeView(store: homeStore)
 			}
 		}
 		.task { await store.send(.task).finish() }

@@ -4,6 +4,7 @@ import ComposableArchitecture
 import AppUI
 import InstagramBlocksUI
 import Shared
+import SnackbarMessagesClient
 
 @Reducer
 public struct SignUpReducer {
@@ -13,13 +14,7 @@ public struct SignUpReducer {
 		var signUpForm = SignUpFormReducer.State()
 		var status: SignUpSubmissionStatus = .idle
 		var signUpButtonDisabled: Bool {
-			let disabled = status.isLoading ||
-			signUpForm.email.invalid ||
-			signUpForm.fullName.invalid ||
-			signUpForm.userName.invalid ||
-			signUpForm.password.invalid
-			debugPrint(signUpForm.email.invalid, signUpForm.fullName.invalid, signUpForm.userName.invalid, signUpForm.password.invalid)
-			return disabled
+			status.isLoading
 		}
 		public init() {}
 		
@@ -63,12 +58,15 @@ public struct SignUpReducer {
 	}
 	
 	@Dependency(\.userClient) var userClient
+	@Dependency(\.snackbarMessagesClient) var snackbarMessagesClient
 	
 	public var body: some ReducerOf<Self> {
 		Scope(state: \.signUpForm, action: \.signUpForm) {
 			SignUpFormReducer()
 		}
-		Reduce { state, action in
+		Reduce {
+			state,
+			action in
 			switch action {
 			case let .actionSignUp(email, fullName, userName, password):
 				state.status = .inProgress
@@ -84,16 +82,19 @@ public struct SignUpReducer {
 			case .delegate:
 				return .none
 			case .onTapSignUpButton:
-				return Effect.concatenate(
-					.send(.signUpForm(.resignTextFieldFocus)),
-					.run { [email = state.signUpForm.email, password = state.signUpForm.password, fullName = state.signUpForm.fullName, userName = state.signUpForm.userName] send in
-						guard email.validated, password.validated,
-									fullName.validated, userName.validated else {
-							return
-						}
-						await send(.actionSignUp(email: email.value, fullName: fullName.value, userName: userName.value, password: password.value))
+				return .run { [email = state.signUpForm.email, password = state.signUpForm.password, fullName = state.signUpForm.fullName, userName = state.signUpForm.userName] send in
+					await send(.signUpForm(.emailDidEndEditing))
+					await send(.signUpForm(.fullNameDidEndEditing))
+					await send(.signUpForm(.userNameDidEndEditing))
+					await send(.signUpForm(.passwordDidEndEditing))
+					guard email.validated,
+								password.validated,
+								fullName.validated,
+								userName.validated else {
+						return
 					}
-				)
+					await send(.actionSignUp(email: email.value, fullName: fullName.value, userName: userName.value, password: password.value))
+				}
 			case .resignFocus:
 				return .send(.signUpForm(.resignTextFieldFocus))
 			case .signUpForm:
@@ -103,18 +104,34 @@ public struct SignUpReducer {
 				switch result {
 				case .success:
 					signUpSubmissionStatus = .idle
-					debugPrint("Sign Up Succeded")
+					return .run { _ in
+						await snackbarMessagesClient.show(
+							SnackbarMessage.success(
+								title: "Sign up successfully",
+								backgroundColor: Assets.Colors.snackbarSuccessBackground
+							)
+						)
+					}
 				case let .failure(error):
-					debugPrint(error)
 					if let errorCode = error.errorCode,
 						 errorCode == 400  {
 						signUpSubmissionStatus = .emailAlreadyRegistered
 					} else {
 						signUpSubmissionStatus = .error
 					}
+					state.status = signUpSubmissionStatus
+					return .run { [errorDescription = error.errorDescription] _ in
+						await snackbarMessagesClient.show(
+							SnackbarMessage.error(
+								title: "Sign up failed",
+								description: errorDescription,
+								backgroundColor: Assets.Colors.snackbarErrorBackground
+							)
+						)
+					}
 				}
-				state.status = signUpSubmissionStatus
-				return .none
+				
+				
 			case .task:
 				return .none
 			}
