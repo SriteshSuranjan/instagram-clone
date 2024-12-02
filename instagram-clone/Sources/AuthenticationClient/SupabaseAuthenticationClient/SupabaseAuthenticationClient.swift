@@ -204,7 +204,7 @@ extension SupabaseAuthenticationClient: AuthenticationClient {
 	}
 	
 	public func logOut() async throws {
-		try await powerSyncRepository.db.wrappedValue.disconnectAndClear(clearLocal: true)
+		try await powerSyncRepository.db.disconnectAndClear(clearLocal: true)
 		try await powerSyncRepository.supabase.auth.signOut()
 		googleSignIn.signOut()
 	}

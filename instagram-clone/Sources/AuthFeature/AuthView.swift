@@ -1,28 +1,30 @@
-import SwiftUI
 import ComposableArchitecture
+import SwiftUI
 
 @Reducer
 public struct AuthReducer {
 	public init() {}
-	
+
 	@Reducer(state: .equatable)
 	public enum Path {
 		case signUp(SignUpReducer)
 		case forgotPassword(ForgotPasswordReducer)
 		case changePassword(ChangePasswordReducer)
 	}
-	
+
 	@ObservableState
 	public struct State: Equatable {
 		var logIn = LoginReducer.State()
 		var paths = StackState<Path.State>()
 		public init() {}
 	}
+
 	public enum Action {
 		case logIn(LoginReducer.Action)
 		case task
 		case paths(StackAction<Path.State, Path.Action>)
 	}
+
 	public var body: some ReducerOf<Self> {
 		Scope(state: \.logIn, action: \.logIn) {
 			LoginReducer()
@@ -69,6 +71,7 @@ public struct AuthView: View {
 	public init(store: StoreOf<AuthReducer>) {
 		self.store = store
 	}
+
 	public var body: some View {
 		NavigationStack(
 			path: $store.scope(state: \.paths, action: \.paths)
@@ -84,6 +87,5 @@ public struct AuthView: View {
 				ChangePasswordView(store: changePasswordStore)
 			}
 		}
-
 	}
 }

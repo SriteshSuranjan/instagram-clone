@@ -2,6 +2,7 @@ import AppFeature
 import AppUI
 import AuthenticationClient
 import ComposableArchitecture
+import DatabaseClient
 import Env
 import GoogleSignIn
 import PowerSyncRepository
@@ -12,30 +13,25 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 	let store: StoreOf<AppReducer>
 	override init() {
 		let env = Envionment.current
-
-		// Initialize PowerSyncRepository
-
 		let powerSyncRepository = PowerSyncRepository.instanceWithInitilized(env: env)
-		// Initialize TokenStorage
 		let tokenStorage = InMemoryTokenStorage()
-
-		// Initialize GIDSignIn
 		let googleSignIn = GIDSignIn.sharedInstance
-
-		// Initialize SupabaseAuthenticationClient
 		let authClient = SupabaseAuthenticationClient(
 			powerSyncRepository: powerSyncRepository,
 			tokenStorage: tokenStorage,
 			googleSignIn: googleSignIn
 		)
-
+		let databaseClient = PowerSyncDatabaseClient(
+			powerSyncRepository: powerSyncRepository
+		)
 		self.store = Store(
 			initialState: AppReducer.State()
 		) {
 			AppReducer()
 				.transformDependency(\.self) {
-					$0.userClient = .liveSupabaseAuthenticationClient(
-						authClient
+					$0.userClient = .liveUserClient(
+						authClient: authClient,
+						databaseClient: databaseClient
 					)
 				}
 		}

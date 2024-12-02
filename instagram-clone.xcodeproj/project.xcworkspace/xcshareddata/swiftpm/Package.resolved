@@ -1,5 +1,5 @@
 {
-  "originHash" : "6d146d908860828120fca23ef308a3e0f78ee0844ef92ae25f5911c2fb303237",
+  "originHash" : "6562b59204ed641454ecddf18d08af1e1c503c1ae5747e07cec7e00ed0c9c430",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -125,6 +125,15 @@
       "state" : {
         "revision" : "2d12673670417654f08f5f90fdd62926dc3a2648",
         "version" : "100.0.0"
+      }
+    },
+    {
+      "identity" : "kingfisher",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/onevcat/Kingfisher.git",
+      "state" : {
+        "revision" : "b6256f191b4c1d8d09f4df94bae69e5ac6e42c81",
+        "version" : "8.1.1"
       }
     },
     {
@@ -296,6 +305,15 @@
       "state" : {
         "revision" : "7b1d88ec23f80b0b5d4832d51af7647fa5062d8e",
         "version" : "1.1.1"
+      }
+    },
+    {
+      "identity" : "swift-gen",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-gen.git",
+      "state" : {
+        "revision" : "5bd20fb662e1ead7ee47df6bb0a15398295f2e06",
+        "version" : "0.4.0"
       }
     },
     {

@@ -35,7 +35,7 @@ public struct AppReducer {
 		}
 	}
 
-	@Dependency(\.userClient) var userClient
+	@Dependency(\.userClient.authClient) var authClient
 	@Dependency(\.snackbarMessagesClient) var snackbarMessagesClient
 	
 	public enum Action: BindableAction {
@@ -79,7 +79,7 @@ public struct AppReducer {
 			case .task:
 				return .run { @MainActor send in
 					async let currentUser: Void = {
-						for await user in userClient.user() {
+						for await user in authClient.user() {
 							await send(.authUserResponse(user))
 						}
 					}()

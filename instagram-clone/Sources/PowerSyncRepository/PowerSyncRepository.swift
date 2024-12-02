@@ -103,15 +103,15 @@ public actor PowerSyncRepository {
 	private let supabseURL: URL
 	private let factory = DatabaseDriverFactory()
 	public let supabase: SupabaseClient
-	public let db: UncheckedSendable<PowerSyncDatabase>
-	private var connector: UncheckedSendable<SupabaseConnector?>
+	public let db: PowerSyncDatabase
+	private var connector: SupabaseConnector?
 	public init?(env: any Env) {
 		guard let supabaseURL = URL(string: env.supabaseUrl) else {
 			return nil
 		}
 		self.supabseURL = supabaseURL
 		self.env = env
-		self.db = UncheckedSendable(PowerSyncDatabase(factory: factory, schema: .appSchema, dbFilename: "instagram-clone.sqlite"))
+		self.db = PowerSyncDatabase(factory: factory, schema: .appSchema, dbFilename: "instagram-clone.sqlite")
 		self.supabase = SupabaseClient(
 			supabaseURL: supabaseURL,
 			supabaseKey: env.supabaseAnonKey,
@@ -121,7 +121,6 @@ public actor PowerSyncRepository {
 				global: .init(logger: SupaLogger())
 			)
 		)
-		connector = UncheckedSendable(nil)
 	}
 	public static func instanceWithInitilized(env: any Env) -> PowerSyncRepository {
 		guard let powerSyncRepository = PowerSyncRepository(env: env) else {
@@ -155,9 +154,9 @@ public actor PowerSyncRepository {
 	@Dependency(\.logger[subsystem: "PowerSync", category: "PowerSyncRepository"]) var logger
 	private func openDatabase() async {
 		if isLoggedIn {
-			connector = UncheckedSendable(SupabaseConnector(db: db.wrappedValue, env: env, supabaseURL: supabseURL))
+			connector = SupabaseConnector(db: db, env: env, supabaseURL: supabseURL)
 			do {
-				try await db.wrappedValue.connect(connector: connector.wrappedValue!, crudThrottleMs: 1000, retryDelayMs: 5000, params: [:])
+				try await db.connect(connector: connector!, crudThrottleMs: 1000, retryDelayMs: 5000, params: [:])
 			} catch {
 				logger.error("\(String(describing: error.localizedDescription))")
 			}
@@ -165,13 +164,13 @@ public actor PowerSyncRepository {
 		do {
 			for await (event, _) in supabase.auth.authStateChanges {
 				if event == .signedIn || event == .passwordRecovery {
-					connector = UncheckedSendable(SupabaseConnector(db: db.wrappedValue, env: env, supabaseURL: supabseURL))
-					try await db.wrappedValue.connect(connector: connector.wrappedValue!, crudThrottleMs: 1000, retryDelayMs: 5000, params: [:])
+					connector = SupabaseConnector(db: db, env: env, supabaseURL: supabseURL)
+					try await db.connect(connector: connector!, crudThrottleMs: 1000, retryDelayMs: 5000, params: [:])
 				} else if event == .signedOut {
-					connector.wrappedValue = nil
-					try await db.wrappedValue.disconnect()
+					connector = nil
+					try await db.disconnect()
 				} else if event == .tokenRefreshed {
-					_ = try await connector.wrappedValue?.safePrefetchCredentials()
+					_ = try await connector?.safePrefetchCredentials()
 				}
 			}
 		} catch {

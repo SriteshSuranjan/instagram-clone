@@ -13,6 +13,7 @@
 		71502CA42CF2556D00B89BAF /* AppUI in Frameworks */ = {isa = PBXBuildFile; productRef = 71502CA32CF2556D00B89BAF /* AppUI */; };
 		71502D222CF6E06E00B89BAF /* AuthenticationClient in Frameworks */ = {isa = PBXBuildFile; productRef = 71502D212CF6E06E00B89BAF /* AuthenticationClient */; };
 		71502D242CF6E19800B89BAF /* UserClient in Frameworks */ = {isa = PBXBuildFile; productRef = 71502D232CF6E19800B89BAF /* UserClient */; };
+		71745F782CFCCE61007571A1 /* DatabaseClient in Frameworks */ = {isa = PBXBuildFile; productRef = 71745F772CFCCE61007571A1 /* DatabaseClient */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -52,6 +53,7 @@
 				71502C7A2CF0F0B500B89BAF /* PowerSyncRepository in Frameworks */,
 				71502D242CF6E19800B89BAF /* UserClient in Frameworks */,
 				71502D222CF6E06E00B89BAF /* AuthenticationClient in Frameworks */,
+				71745F782CFCCE61007571A1 /* DatabaseClient in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -109,6 +111,7 @@
 				71502CA32CF2556D00B89BAF /* AppUI */,
 				71502D212CF6E06E00B89BAF /* AuthenticationClient */,
 				71502D232CF6E19800B89BAF /* UserClient */,
+				71745F772CFCCE61007571A1 /* DatabaseClient */,
 			);
 			productName = "instagram-clone";
 			productReference = 71502C192CF051FD00B89BAF /* instagram-clone.app */;
@@ -535,6 +538,10 @@
 		71502D232CF6E19800B89BAF /* UserClient */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = UserClient;
+		};
+		71745F772CFCCE61007571A1 /* DatabaseClient */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DatabaseClient;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

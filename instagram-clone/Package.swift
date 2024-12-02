@@ -90,6 +90,10 @@ let package = Package(
 			name: "UserProfileFeature",
 			targets: ["UserProfileFeature"]
 		),
+		.library(
+			name: "DatabaseClient",
+			targets: ["DatabaseClient"]
+		),
 	],
 	dependencies: [
 		.package(url: "https://github.com/powersync-ja/powersync-kotlin", exact: "1.0.0-BETA5.0"),
@@ -102,7 +106,9 @@ let package = Package(
 		.package(url: "https://github.com/google/GoogleSignIn-iOS", from: "7.0.0"),
 		.package(url: "https://github.com/mac-cain13/R.swift.git", from: "7.0.0"),
 		.package(url: "https://github.com/airbnb/lottie-spm.git", from: "4.5.0"),
-		.package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.6.0")
+		.package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.6.0"),
+		.package(url: "https://github.com/pointfreeco/swift-gen.git", from: "0.4.0"),
+		.package(url: "https://github.com/onevcat/Kingfisher.git", from: "8.0.0")
 	],
 	targets: [
 		.target(name: "ApiRepository"),
@@ -122,6 +128,7 @@ let package = Package(
 			name: "Shared",
 			dependencies: [
 				.product(name: "Tagged", package: "swift-tagged"),
+				.product(name: "RswiftLibrary", package: "R.swift"),
 			]
 		),
 		.target(name: "LaunchFeature", dependencies: ["AppUI"]),
@@ -193,9 +200,12 @@ let package = Package(
 		.target(
 			name: "AppUI",
 			dependencies: [
+				"Shared",
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 				.product(name: "RswiftLibrary", package: "R.swift"),
 				.product(name: "Lottie", package: "lottie-spm"),
+				.product(name: "Gen", package: "swift-gen"),
+				.product(name: "Kingfisher", package: "Kingfisher")
 			],
 			resources: [
 				.process("Resources/Images/Images.xcassets"),
@@ -222,6 +232,7 @@ let package = Package(
 				"Shared",
 				"PowerSyncRepository",
 				"AuthenticationClient",
+				"DatabaseClient",
 				.product(name: "Supabase", package: "supabase-swift"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
@@ -253,6 +264,7 @@ let package = Package(
 				"TimelineFeature",
 				"ReelsFeature",
 				"UserProfileFeature",
+				"UserClient",
 				.product(name: "Tagged", package: "swift-tagged"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
@@ -297,7 +309,24 @@ let package = Package(
 				"AppUI",
 				"InstagramBlocksUI",
 				"SnackbarMessagesClient",
+				"UserClient",
 				.product(name: "Tagged", package: "swift-tagged"),
+				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+			]
+		),
+		.target(
+			name: "DatabaseClient",
+			dependencies: [
+				"Shared",
+				"PowerSyncRepository",
+				.product(
+					name: "PowerSync",
+					package: "powersync-kotlin"
+				),
+				.product(
+					name: "PowerSyncSQLiteCore",
+					package: "powersync-sqlite-core-swift"
+				),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
 		),

@@ -68,7 +68,7 @@ public struct ChangePasswordReducer {
 	enum CancelID: Hashable {
 		case requestChangePassword
 	}
-	@Dependency(\.userClient) var userClient
+	@Dependency(\.userClient.authClient) var authClient
 	@Dependency(\.snackbarMessagesClient) var snackbarMessagesClient
 	
 	public var body: some ReducerOf<Self> {
@@ -90,7 +90,7 @@ public struct ChangePasswordReducer {
 			case let .actionChangePassword(validOTP, validPassword):
 				state.status = .loading
 				return .run { [email = state.email] send in
-					try await userClient.resetPassword(token: validOTP, email: email, newPassword: validPassword)
+					try await authClient.resetPassword(token: validOTP, email: email, newPassword: validPassword)
 					await send(.changePasswordSuccess)
 				} catch: { error, send in
 					await send(.changePasswordFailed)

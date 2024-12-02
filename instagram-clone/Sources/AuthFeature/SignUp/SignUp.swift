@@ -57,7 +57,7 @@ public struct SignUpReducer {
 		}
 	}
 	
-	@Dependency(\.userClient) var userClient
+	@Dependency(\.userClient.authClient) var authClient
 	@Dependency(\.snackbarMessagesClient) var snackbarMessagesClient
 	
 	public var body: some ReducerOf<Self> {
@@ -71,7 +71,7 @@ public struct SignUpReducer {
 			case let .actionSignUp(email, fullName, userName, password):
 				state.status = .inProgress
 				return .run { send in
-					try await userClient.signUpWithPassword(password: password, fullName: fullName, username: userName, avatarUrl: nil, email: email, phone: nil, pushToken: nil)
+					try await authClient.signUpWithPassword(password: password, fullName: fullName, username: userName, avatarUrl: nil, email: email, phone: nil, pushToken: nil)
 					await send(.signUpResponse(.success(())))
 				} catch: {error, send in
 					guard let signUpError = error as? AuthenticationError else {

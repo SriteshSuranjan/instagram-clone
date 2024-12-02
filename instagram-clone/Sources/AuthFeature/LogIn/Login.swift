@@ -114,7 +114,7 @@ public struct LoginReducer: Sendable {
 		}
 	}
 
-	@Dependency(\.userClient) var userClient
+	@Dependency(\.userClient.authClient) var authClient
 	@Dependency(\.snackbarMessagesClient) var snackbarMessagesClient
 	
 	public var body: some ReducerOf<Self> {
@@ -129,7 +129,7 @@ public struct LoginReducer: Sendable {
 			case let .actionPasswordLogin(email, password):
 				state.status = .loading
 				return .run { _ in
-					try await userClient.logInWithPassword(password: password, email: email, phone: "")
+					try await authClient.logInWithPassword(password: password, email: email, phone: "")
 					await snackbarMessagesClient.show(
 						message: .success(
 							title: "Log in Successfully",
@@ -166,11 +166,7 @@ public struct LoginReducer: Sendable {
 					await send(.actionPasswordLogin(email: email.value, password: password.value))
 				}
 			case .task:
-				return .run { send in
-					for await user in userClient.user() {
-						await send(.onAuthUserChanged(user))
-					}
-				}
+				return .none
 			case let .onAuthUserChanged(user):
 				state.status = .idle
 				debugPrint(user)
@@ -184,8 +180,8 @@ public struct LoginReducer: Sendable {
 				}
 				return .run { [provider] _ in
 					switch provider {
-					case .google: try await userClient.logInWithGoogle()
-					case .github: try await userClient.logInWithGithub()
+					case .google: try await authClient.logInWithGoogle()
+					case .github: try await authClient.logInWithGithub()
 					}
 				} catch: { [provider] error, send in
 					guard let authenticationError = error as? AuthenticationError else {
@@ -213,7 +209,7 @@ public struct LoginReducer: Sendable {
 				
 			case .logout:
 				return .run { _ in
-					try await userClient.logOut()
+					try await authClient.logOut()
 				}
 			}
 		}

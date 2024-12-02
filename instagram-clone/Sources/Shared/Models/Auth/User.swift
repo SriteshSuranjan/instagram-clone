@@ -46,4 +46,11 @@ public struct User: Equatable, Codable, Identifiable, Sendable {
 	public var displayUsername: String {
 		username ?? fullName ?? "Unknown"
 	}
+	public var avatarName: PersonNameComponents {
+		PersonNameComponents(
+			givenName: fullName,
+			nickname: username
+		)
+	}
 }
+

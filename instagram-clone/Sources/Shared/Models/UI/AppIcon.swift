@@ -1,8 +1,9 @@
 import SwiftUI
+import RswiftResources
 
-public enum AppIcon: Equatable {
+public enum AppIcon {
 	case system(String)
-	case asset(ImageResource)
+	case asset(RswiftResources.ImageResource)
 	
 	public var image: Image {
 		switch self {

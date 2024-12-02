@@ -52,7 +52,7 @@ public struct ForgotPasswordReducer {
 		}
 	}
 	
-	@Dependency(\.userClient) var userClient
+	@Dependency(\.userClient.authClient) var authClient
 	@Dependency(\.snackbarMessagesClient) var snackbarMessagesClient
 	
 	public var body: some ReducerOf<Self> {
@@ -64,7 +64,7 @@ public struct ForgotPasswordReducer {
 			case let .actionSendPasswordReset(validEmail):
 				state.status = .loading
 				return .run { send in
-					try await userClient.sendPasswordResetEmail(email: validEmail, redirectTo: nil)
+					try await authClient.sendPasswordResetEmail(email: validEmail, redirectTo: nil)
 					await send(.sendPasswordResetSuccess)
 				} catch: { error, send in
 					guard let authenticationError = error as? AuthenticationError else {

@@ -3,7 +3,6 @@ import ComposableArchitecture
 import AppUI
 import ValidatorClient
 import Shared
-import UserClient
 
 @Reducer
 public struct SignUpFormReducer {
@@ -51,8 +50,6 @@ public struct SignUpFormReducer {
 		case updateFullName(FullName)
 		case updateUserName(UserName)
 	}
-	
-	@Dependency(\.userClient) var userClient
 	
 	public var body: some ReducerOf<Self> {
 		BindingReducer()

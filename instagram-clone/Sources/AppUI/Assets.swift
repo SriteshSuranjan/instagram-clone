@@ -98,7 +98,7 @@ public struct Animations {
 
 @MainActor
 public struct AppImageResource {
-	private let imageResource: RswiftResources.ImageResource
+	public let imageResource: RswiftResources.ImageResource
 	public init(imageResource: RswiftResources.ImageResource) {
 		self.imageResource = imageResource
 	}
