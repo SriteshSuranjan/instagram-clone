@@ -17,7 +17,7 @@ public struct User: Equatable, Codable, Identifiable, Sendable {
 		pushToken: String? = nil,
 		isNewUser: Bool = true
 	) {
-		self.id = id
+		self.id = id.lowercased()
 		self.email = email
 		self.username = username
 		self.fullName = fullName
@@ -28,6 +28,14 @@ public struct User: Equatable, Codable, Identifiable, Sendable {
 	public static let anonymous = User(id: "")
 	public var isAnonymous: Bool {
 		self == .anonymous
+	}
+	public static func ==(lhs: User, rhs: User) -> Bool {
+		lhs.id == rhs.id &&
+		lhs.email == rhs.email &&
+		lhs.fullName == rhs.fullName &&
+		lhs.username == rhs.username &&
+		lhs.avatarUrl == rhs.avatarUrl &&
+		lhs.pushToken == rhs.pushToken
 	}
 	public static func fromAuthenticationUser(_ user: AuthenticationUser) -> User {
 		User(

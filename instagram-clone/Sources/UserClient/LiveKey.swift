@@ -75,7 +75,14 @@ extension UserDatabaseClient: DependencyKey {
 	public static let liveValue = UserDatabaseClient(
 		currentUserId: unimplemented("Use live implementation please.", placeholder: ""),
 		isOwner: unimplemented("Use live implementation please.", placeholder: false),
-		profile: unimplemented("Use live implementation please.", placeholder: .never)
+		profile: unimplemented("Use live implementation please.", placeholder: .never),
+		postsCount: unimplemented("Use live implementation please.", placeholder: .never),
+		followersCount: unimplemented("Use live implementation please.", placeholder: .never),
+		followingsCount: unimplemented("Use live implementation please.", placeholder: .never),
+		followingStatus: unimplemented("Use live implementation please.", placeholder: .never),
+		isFollowed: unimplemented("Use live implementation please.", placeholder: false),
+		follow: unimplemented("Use live implementation please."),
+		unFollow: unimplemented("Use live implementation please.")
 	)
 	public static func livePowerSyncDatabaseClient(
 		_ client: DatabaseClient
@@ -87,6 +94,27 @@ extension UserDatabaseClient: DependencyKey {
 			},
 			profile: { userId in
 				await client.profile(of: userId)
+			},
+			postsCount: { userId in
+				await client.postsAmount(of: userId)
+			},
+			followersCount: { userId in
+				await client.followersCount(of: userId)
+			},
+			followingsCount: { userId  in
+				await client.followingsCount(of: userId)
+			},
+			followingStatus: { userId, followerId in
+				await client.followingStatus(of: userId, followerId: followerId)
+			},
+			isFollowed: { followerId, userId in
+				try await client.isFollowed(followerId: followerId, userId: userId)
+			},
+			follow: { followedToId, followerId in
+				try await client.follow(followedToId: followedToId, followerId: followerId)
+			},
+			unFollow: { unFollowedId, unFollowerId in
+				try await client.unFollow(unFollowedId: unFollowedId, unFollowerId: unFollowerId)
 			}
 		)
 	}

@@ -1,5 +1,5 @@
-import SwiftUI
 import Gen
+import SwiftUI
 
 /// Defines the color palette for the App UI Kit.
 public enum AppColors {
@@ -90,11 +90,11 @@ extension Color {
 	}
 }
 
-extension Color {
-	public static let random: Color = {
-		let red = Gen.double(in: 0...255)
-		let green = Gen.double(in: 0...255)
-		let blue = Gen.double(in: 0...255)
+public extension Color {
+	static let random: Color = {
+		let red = Gen.double(in: 0...1)
+		let green = Gen.double(in: 0...1)
+		let blue = Gen.double(in: 0...1)
 		return Color(red: red.run(), green: green.run(), blue: blue.run())
 	}()
 }
@@ -112,3 +112,30 @@ public extension Color {
 		public static let shade900 = Color(white: 0.30)
 	}
 }
+
+public let letterColors = [
+	"A"..."G": [
+		Color(hex: 0xF3E7A2),
+		Color(hex: 0xEDBB8A),
+		Color(hex: 0xE79474),
+		Color(hex: 0xE1685C)
+	],
+	"H"..."N": [
+		Color(hex: 0xF3E7A2),
+		Color(hex: 0xEDBB8A),
+		Color(hex: 0xE79474),
+		Color(hex: 0xE1685C)
+	],
+	"O"..."U": [
+		Color(hex: 0xF3E7A2),
+		Color(hex: 0xEDBB8A),
+		Color(hex: 0xE79474),
+		Color(hex: 0xE1685C)
+	],
+	"V"..."Z": [
+		Color(hex: 0xF3E7A2),
+		Color(hex: 0xEDBB8A),
+		Color(hex: 0xE79474),
+		Color(hex: 0xE1685C)
+	]
+]

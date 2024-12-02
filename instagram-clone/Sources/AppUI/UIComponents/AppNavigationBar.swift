@@ -1,5 +1,5 @@
-import SwiftUI
 import Shared
+import SwiftUI
 
 public struct AppNavigationBar: View {
 	let title: String
@@ -15,6 +15,7 @@ public struct AppNavigationBar: View {
 		self.backButtonAction = backButtonAction
 		self.actions = actions
 	}
+
 	public var body: some View {
 		HStack(spacing: AppSpacing.xlg) {
 			if let backButtonAction {
@@ -22,10 +23,11 @@ public struct AppNavigationBar: View {
 					backButtonAction()
 				} label: {
 					Image(systemName: "chevron.backward")
-						
+						.font(textTheme.headlineMedium.font)
 				}
 			}
 			Text(title)
+				.font(textTheme.headlineMedium.font)
 			Spacer()
 			ForEach(actions.reversed()) { action in
 				Button {
@@ -37,11 +39,12 @@ public struct AppNavigationBar: View {
 							width: AppSize.iconSize,
 							height: AppSize.iconSize
 						)
+						.font(textTheme.bodyLarge.font)
 				}
 				.fadeEffect()
 			}
 		}
-		.font(textTheme.headlineMedium.font)
+
 		.foregroundStyle(Assets.Colors.bodyColor)
 	}
 }

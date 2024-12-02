@@ -1,9 +1,10 @@
-import Foundation
-import SwiftUI
-import ComposableArchitecture
 import AppUI
-import UserClient
+import ComposableArchitecture
+import Foundation
+import InstagramBlocksUI
 import Shared
+import SwiftUI
+import UserClient
 
 @Reducer
 public struct UserProfileReducer {
@@ -13,24 +14,28 @@ public struct UserProfileReducer {
 		let authenticatedUserId: String
 		let profileUserId: String
 		var profileUser: User?
+		var profileHeader: UserProfileHeaderReducer.State?
 		public init(authenticatedUserId: String, profileUserId: String) {
 			self.authenticatedUserId = authenticatedUserId
 			self.profileUserId = profileUserId
 		}
-		var isOwnder: Bool {
+
+		var isOwner: Bool {
 			authenticatedUserId == profileUserId
 		}
 	}
+
 	public enum Action: BindableAction {
 		case binding(BindingAction<State>)
 		case onTapLogoutButton
 		case task
 		case profileUser(User)
+		case profileHeader(UserProfileHeaderReducer.Action)
 	}
-	
+
 	@Dependency(\.userClient.authClient) var authClient
 	@Dependency(\.userClient.databaseClient) var databaseClient
-	
+
 	public var body: some ReducerOf<Self> {
 		BindingReducer()
 		Reduce { state, action in
@@ -52,8 +57,16 @@ public struct UserProfileReducer {
 				}
 			case let .profileUser(user):
 				state.profileUser = user
+				if state.profileHeader == nil {
+					state.profileHeader = UserProfileHeaderReducer.State(profileUser: user, isOwner: state.isOwner)
+				}
+				return .none
+			case .profileHeader:
 				return .none
 			}
+		}
+		.ifLet(\.profileHeader, action: \.profileHeader) {
+			UserProfileHeaderReducer()
 		}
 	}
 }
@@ -64,37 +77,34 @@ public struct UserProfileView: View {
 	public init(store: StoreOf<UserProfileReducer>) {
 		self.store = store
 	}
+
 	public var body: some View {
 		ScrollView {
 			LazyVStack {
 				AppNavigationBar(
 					title: store.profileUser?.displayUsername ?? "",
 					backButtonAction: nil,
-					actions: [
-						AppNavigationBarTrailingAction(icon: .system("gearshape")) {
-							
-						},
-						AppNavigationBarTrailingAction(icon: .system("plus.app")) {
-							
-						},
-					]
+					actions: store.isOwner ? [
+						AppNavigationBarTrailingAction(icon: .system("gearshape")) {},
+						AppNavigationBarTrailingAction(icon: .system("plus.app")) {},
+					] : [AppNavigationBarTrailingAction(icon: .system("ellipsis")) {}]
 				)
 				.padding(.horizontal, AppSpacing.md)
+				if let headerStore = store.scope(state: \.profileHeader, action: \.profileHeader) {
+					UserProfileHeaderView(store: headerStore)
+						.padding(AppSpacing.md)
+				}
 			}
-			Button(role: .destructive) {
-				store.send(.onTapLogoutButton)
-			} label: {
-				Text("UserProfile")
-					.font(textTheme.headlineSmall.font)
-			}
-			.buttonStyle(.borderedProminent)
+//			Button(role: .destructive) {
+//				store.send(.onTapLogoutButton)
+//			} label: {
+//				Text("UserProfile")
+//					.font(textTheme.headlineSmall.font)
+//			}
+//			.buttonStyle(.borderedProminent)
 		}
 		.task {
 			await store.send(.task).finish()
 		}
-		
 	}
 }
-
-
-

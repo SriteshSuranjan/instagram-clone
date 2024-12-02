@@ -28,4 +28,11 @@ public struct UserDatabaseClient: Sendable {
 	public var currentUserId: @Sendable () async -> String?
 	public var isOwner: @Sendable (_ userId: String) async -> Bool = { _ in false }
 	public var profile: @Sendable (_ userId: String) async -> AsyncStream<Shared.User> = { _ in .never }
+	public var postsCount: @Sendable (_ userId: String) async -> AsyncStream<Int> = { _ in .never }
+	public var followersCount: @Sendable (_ userId: String) async -> AsyncStream<Int> = { _ in .never }
+	public var followingsCount: @Sendable (_ userId: String) async -> AsyncStream<Int> = { _ in .never }
+	public var followingStatus: @Sendable (_ userId: String, _ followerId: String?) async -> AsyncStream<Bool> = { _, _ in .never }
+	public var isFollowed: @Sendable (_ followerId: String, _ userId: String) async throws -> Bool
+	public var follow: @Sendable (_ followedToId: String, _ followerId: String?) async throws -> Void
+	public var unFollow: @Sendable (_ unFollowedId: String, _ unFollowerId: String?) async throws -> Void
 }
