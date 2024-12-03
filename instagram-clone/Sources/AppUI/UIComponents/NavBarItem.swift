@@ -35,8 +35,9 @@ public struct NavBarItemView<Child: View>: View {
 				child()
 			} else {
 				icon?.image
+					.imageScale(.large)
 			}
 		}
-			.frame(width: 28, height: 28)
+			.frame(width: 56, height: 56)
 	}
 }

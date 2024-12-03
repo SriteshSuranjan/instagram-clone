@@ -108,7 +108,7 @@ let package = Package(
 		.package(url: "https://github.com/airbnb/lottie-spm.git", from: "4.5.0"),
 		.package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.6.0"),
 		.package(url: "https://github.com/pointfreeco/swift-gen.git", from: "0.4.0"),
-		.package(url: "https://github.com/onevcat/Kingfisher.git", from: "8.0.0")
+		.package(url: "https://github.com/onevcat/Kingfisher.git", from: "8.0.0"),
 	],
 	targets: [
 		.target(name: "ApiRepository"),
@@ -331,5 +331,5 @@ let package = Package(
 			]
 		),
 	],
-	swiftLanguageVersions: [.v5]
+	swiftLanguageModes: [.v5]
 )

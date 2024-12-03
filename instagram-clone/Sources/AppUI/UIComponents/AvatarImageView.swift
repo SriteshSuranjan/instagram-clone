@@ -43,8 +43,16 @@ public struct AvatarImageView: View {
 		} else {
 			AvatarPlaceholderView(
 				title: title,
-				size: size.radius
+				size: size.radius,
+				font: titleFont
 			)
+		}
+	}
+	var titleFont: Font {
+		switch size {
+		case .small: return textTheme.bodyLarge.font
+		case .medium: return textTheme.titleLarge.font
+		case .large: return textTheme.headlineLarge.font
 		}
 	}
 }
@@ -52,10 +60,12 @@ public struct AvatarImageView: View {
 public struct AvatarPlaceholderView: View {
 	let title: PersonNameComponents
 	let size: CGFloat
+	let font: Font
 	@Environment(\.textTheme) var textTheme
-	public init(title: PersonNameComponents, size: CGFloat) {
+	public init(title: PersonNameComponents, size: CGFloat, font: Font) {
 		self.title = title
 		self.size = size
+		self.font = font
 	}
 
 	private var determinedColor: Color {
@@ -77,7 +87,7 @@ public struct AvatarPlaceholderView: View {
 			.frame(width: size, height: size)
 			.overlay {
 				Text(title, format: .name(style: .abbreviated))
-					.font(textTheme.headlineLarge.font.bold())
+					.font(font.bold())
 					.foregroundStyle(.white)
 			}
 			.clipShape(Circle())

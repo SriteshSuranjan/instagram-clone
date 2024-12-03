@@ -6,10 +6,10 @@ import ReelsFeature
 import Shared
 import SwiftUI
 import TimelineFeature
-import UserProfileFeature
 import UserClient
+import UserProfileFeature
 
-public enum HomeTab: Identifiable, Hashable {
+public enum HomeTab: Identifiable, Hashable, CaseIterable {
 	case feed
 	case timeline
 	case reels
@@ -39,7 +39,7 @@ public struct HomeReducer {
 	@ObservableState
 	public struct State: Equatable {
 		var authenticatedUser: User
-		var currentTab: HomeTab = .feed
+		var currentTab: HomeTab = .userProfile
 		var feed = FeedReducer.State()
 		var timeline = TimelineReducer.State()
 		var reels = ReelsReducer.State()
@@ -59,7 +59,7 @@ public struct HomeReducer {
 		case authenticatedUserProfileUpdated(User)
 		case userProfile(UserProfileReducer.Action)
 	}
-	
+
 	@Dependency(\.userClient.databaseClient) var databaseClient
 
 	public var body: some ReducerOf<Self> {
@@ -106,40 +106,67 @@ public struct HomeReducer {
 public struct HomeView: View {
 	@Bindable var store: StoreOf<HomeReducer>
 	@Environment(\.textTheme) var textTheme
+	@State private var currentTab: HomeTab = .userProfile
 	public init(store: StoreOf<HomeReducer>) {
 		self.store = store
 	}
 
 	public var body: some View {
-		TabView(selection: $store.currentTab) {
-			FeedView(store: store.scope(state: \.feed, action: \.feed))
-				.tabItem {
-					IconNavBarItemView.feed()
+		NavigationView {
+			ZStack(alignment: .bottom) {
+				TabView(selection: $currentTab) {
+					FeedView(store: store.scope(state: \.feed, action: \.feed))
+						.tag(HomeTab.feed)
+					TimelineView(store: store.scope(state: \.timeline, action: \.timeline))
+						.tag(HomeTab.timeline)
+					ReelsView(store: store.scope(state: \.reels, action: \.reels))
+						.tag(HomeTab.reels)
+					UserProfileView(store: store.scope(state: \.userProfile, action: \.userProfile))
+						.tag(HomeTab.userProfile)
 				}
-				.tag(HomeTab.feed)
-			TimelineView(store: store.scope(state: \.timeline, action: \.timeline))
-				.tabItem {
-					IconNavBarItemView.timeline()
-				}
-				.tag(HomeTab.timeline)
-			ReelsView(store: store.scope(state: \.reels, action: \.reels))
-				.tabItem {
-					IconNavBarItemView.reels()
-				}
-				.tag(HomeTab.reels)
-
-			UserProfileView(store: store.scope(state: \.userProfile, action: \.userProfile))
-				.tabItem {
-					Label(
-						title: { Text(store.authenticatedUser.avatarName, format: .name(style: .abbreviated)) },
-						icon: { Image(systemName: "person.circle") }
-					)
-				}
-				.tag(HomeTab.userProfile)
 				.task {
 					await store.send(.task).finish()
 				}
+
+				HStack {
+					ForEach(HomeTab.allCases) { tab in
+						Button {
+							withAnimation {
+								currentTab = tab
+							}
+						} label: {
+							switch tab {
+							case .feed:
+								IconNavBarItemView.feed()
+							case .timeline:
+								IconNavBarItemView.timeline()
+							case .reels:
+								IconNavBarItemView.reels()
+							case .userProfile:
+								Group {
+									if currentTab == .userProfile {
+										AvatarImageView(title: store.authenticatedUser.avatarName, size: .small, url: store.authenticatedUser.avatarUrl)
+											.padding(4)
+											.overlay {
+												Circle()
+													.stroke(Assets.Colors.bodyColor, lineWidth: 2)
+											}
+									} else {
+										AvatarImageView(title: store.authenticatedUser.avatarName, size: .small, url: store.authenticatedUser.avatarUrl)
+									}
+								}
+								.animation(.snappy, value: currentTab)
+							}
+						}
+						.foregroundStyle(currentTab == tab ? Assets.Colors.bodyColor : Color(.systemGray5))
+						.frame(maxWidth: .infinity)
+					}
+				}
+				.frame(height: 64)
+				.background(Assets.Colors.appBarBackgroundColor)
+			}
+
+			.toolbar(.hidden, for: .navigationBar)
 		}
-		.tint(Assets.Colors.bodyColor)
 	}
 }

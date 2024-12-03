@@ -41,7 +41,7 @@ public struct AppNavigationBar: View {
 						)
 						.font(textTheme.bodyLarge.font)
 				}
-				.fadeEffect()
+				.fadeEffect(config: ButtonAnimationConfig(opacity: 0.3))
 			}
 		}
 
