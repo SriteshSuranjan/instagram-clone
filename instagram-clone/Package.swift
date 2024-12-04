@@ -94,6 +94,10 @@ let package = Package(
 			name: "DatabaseClient",
 			targets: ["DatabaseClient"]
 		),
+		.library(
+			name: "MediaPickerFeature",
+			targets: ["MediaPickerFeature"]
+		),
 	],
 	dependencies: [
 		.package(url: "https://github.com/powersync-ja/powersync-kotlin", exact: "1.0.0-BETA5.0"),
@@ -312,7 +316,9 @@ let package = Package(
 				"InstagramBlocksUI",
 				"SnackbarMessagesClient",
 				"UserClient",
+				"MediaPickerFeature",
 				.product(name: "Tagged", package: "swift-tagged"),
+				.product(name: "YPImagePicker", package: "YPImagePicker"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
 		),
@@ -332,6 +338,15 @@ let package = Package(
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
 		),
+		.target(
+			name: "MediaPickerFeature",
+			dependencies: [
+				"Shared",
+				"AppUI",
+				.product(name: "YPImagePicker", package: "YPImagePicker"),
+				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+			]
+		)
 	],
 	swiftLanguageModes: [.v5]
 )

@@ -2,6 +2,11 @@ import SwiftUI
 import ComposableArchitecture
 import AppUI
 
+public enum ProfileAddMediaType {
+	case reels
+	case posts
+	case stories
+}
 
 @Reducer
 public struct UserProfileAddMediaReducer {
@@ -12,12 +17,18 @@ public struct UserProfileAddMediaReducer {
 	}
 	public enum Action: BindableAction {
 		case binding(BindingAction<State>)
+		case delegate(Delegate)
+		public enum Delegate {
+			case onTapAddMediaButton(ProfileAddMediaType)
+		}
 	}
 	public var body: some ReducerOf<Self> {
 		BindingReducer()
 		Reduce { state, action in
 			switch action {
 			case .binding:
+				return .none
+			case .delegate:
 				return .none
 			}
 		}
@@ -38,7 +49,7 @@ public struct UserProfileAddMediaView: View {
 			Divider()
 			VStack(spacing: AppSpacing.spaceUnit) {
 				Button {
-					
+					store.send(.delegate(.onTapAddMediaButton(.reels)))
 				} label: {
 					HStack(spacing: AppSpacing.spaceUnit) {
 						Image(systemName: "play.rectangle.on.rectangle.fill")
@@ -50,7 +61,7 @@ public struct UserProfileAddMediaView: View {
 				.frame(height: 50)
 				.frame(maxWidth: .infinity, alignment: .leading)
 				Button {
-					
+					store.send(.delegate(.onTapAddMediaButton(.posts)))
 				} label: {
 					HStack(spacing: AppSpacing.spaceUnit) {
 						Image(systemName: "photo.badge.plus")
@@ -63,7 +74,7 @@ public struct UserProfileAddMediaView: View {
 				.frame(height: 50)
 				.frame(maxWidth: .infinity, alignment: .leading)
 				Button {
-					
+					store.send(.delegate(.onTapAddMediaButton(.stories)))
 				} label: {
 					HStack(spacing: AppSpacing.spaceUnit) {
 						Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90.camera")
