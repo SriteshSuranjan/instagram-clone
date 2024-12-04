@@ -6,6 +6,8 @@ import Shared
 import SwiftUI
 import UserClient
 import MediaPickerFeature
+import CreatePostFeature
+import YPImagePicker
 
 enum ProfileTab: Hashable {
 	case posts
@@ -106,6 +108,14 @@ public struct UserProfileReducer {
 				return .none
 			case .onTapMoreButton:
 				return .none
+			case let .path(.element(id, subAction)):
+				switch subAction {
+				case let .mediaPicker(.delegate(.didSelectMediaItems(items))):
+					let selectedImageDetails = SelectedImageDetails(selectedFiles: items.map(SelectedByte.selectedByte(with:)), aspectRatio: 1.0, multiSelectionMode: true)
+					state.path.append(.createPost(.init(selectedImageDetails: selectedImageDetails)))
+					return .none
+				default: return .none
+				}
 			case .path:
 				return .none
 			}
@@ -117,6 +127,19 @@ public struct UserProfileReducer {
 			Destination.body
 		}
 		.forEach(\.path, action: \.path)
+	}
+}
+
+extension SelectedByte {
+	static func selectedByte(with item: YPMediaItem) -> SelectedByte {
+		switch item {
+		case .photo(let p):
+			debugPrint(p.url, p.exifMeta, p.asset)
+			return .init(selectedFile: p.url!, selectedData: p.image.pngData() ?? Data(), isImage: true)
+		case .video(let v):
+			debugPrint(v.url, v.asset)
+			return .init(selectedFile: v.url, selectedData: v.thumbnail.pngData() ?? Data(), isImage: false)
+		}
 	}
 }
 

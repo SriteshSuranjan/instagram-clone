@@ -31,7 +31,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 				.transformDependency(\.self) {
 					$0.userClient = .liveUserClient(
 						authClient: authClient,
-						databaseClient: databaseClient
+						databaseClient: databaseClient,
+						powerSyncRepository: powerSyncRepository
 					)
 				}
 		}

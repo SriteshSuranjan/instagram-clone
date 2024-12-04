@@ -177,4 +177,44 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 			}
 		}
 	}
+	
+	public func createPost(postId: String, caption: String, mediaJsonString: String) async throws -> Post? {
+		guard let currentUserId = await currentUserId else {
+			return nil
+		}
+		async let createPost = powerSyncRepository.db.execute(
+			sql: """
+			INSERT INTO posts(id, user_id, caption, media, created_at) 
+			VALUES(?, ?, ?, ?, ?)
+			RETURNING *
+			""",
+			parameters: [postId, currentUserId, caption, mediaJsonString, Date.now.ISO8601Format()]
+		)
+		async let userProfile = powerSyncRepository.db.get(
+			sql: "SELECT * FROM profiles WHERE id = ?",
+			parameters: [currentUserId],
+			mapper: { cursor in
+				guard let id = cursor.getString(index: 0) else {
+					return User.anonymous
+				}
+				let fullName = cursor.getString(index: 1)
+				let email = cursor.getString(index: 2)
+				let userName = cursor.getString(index: 3)
+				let avatarUrl = cursor.getString(index: 4)
+				let pushToken = cursor.getString(index: 5)
+				return User(
+					id: id,
+					email: email,
+					username: userName,
+					fullName: fullName,
+					avatarUrl: avatarUrl,
+					pushToken: pushToken,
+					isNewUser: false
+				)
+			}
+		)
+		let (postResult, author) = try await (createPost, userProfile)
+		debugPrint(postResult, author)
+		return nil
+	}
 }

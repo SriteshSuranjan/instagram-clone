@@ -98,6 +98,14 @@ let package = Package(
 			name: "MediaPickerFeature",
 			targets: ["MediaPickerFeature"]
 		),
+		.library(
+			name: "CreatePostFeature",
+			targets: ["CreatePostFeature"]
+		),
+		.library(
+			name: "BlurHashClient",
+			targets: ["BlurHashClient"]
+		),
 	],
 	dependencies: [
 		.package(url: "https://github.com/powersync-ja/powersync-kotlin", exact: "1.0.0-BETA5.0"),
@@ -113,7 +121,8 @@ let package = Package(
 		.package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.6.0"),
 		.package(url: "https://github.com/pointfreeco/swift-gen.git", from: "0.4.0"),
 		.package(url: "https://github.com/onevcat/Kingfisher.git", from: "8.0.0"),
-		.package(url: "https://github.com/Yummypets/YPImagePicker.git", from: "5.0.0")
+		.package(url: "https://github.com/Yummypets/YPImagePicker.git", from: "5.0.0"),
+		.package(url: "https://github.com/iankoex/UnifiedBlurHash.git", from: "1.0.0")
 	],
 	targets: [
 		.target(name: "ApiRepository"),
@@ -317,6 +326,7 @@ let package = Package(
 				"SnackbarMessagesClient",
 				"UserClient",
 				"MediaPickerFeature",
+				"CreatePostFeature",
 				.product(name: "Tagged", package: "swift-tagged"),
 				.product(name: "YPImagePicker", package: "YPImagePicker"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
@@ -346,7 +356,25 @@ let package = Package(
 				.product(name: "YPImagePicker", package: "YPImagePicker"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
-		)
+		),
+		.target(
+			name: "CreatePostFeature",
+			dependencies: [
+				"Shared",
+				"AppUI",
+				"BlurHashClient",
+				.product(name: "UnifiedBlurHash", package: "UnifiedBlurHash"),
+				.product(name: "YPImagePicker", package: "YPImagePicker"),
+				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+			]
+		),
+		.target(
+			name: "BlurHashClient",
+			dependencies: [
+				.product(name: "UnifiedBlurHash", package: "UnifiedBlurHash"),
+				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+			]
+		),
 	],
 	swiftLanguageModes: [.v5]
 )

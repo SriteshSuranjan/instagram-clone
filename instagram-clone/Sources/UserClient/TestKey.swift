@@ -13,4 +13,8 @@ extension DependencyValues {
 		get { self[UserDatabaseClient.self] }
 		set { self[UserDatabaseClient.self] = newValue }
 	}
+	public var storageUploaderClient: SupabaseStorageUploaderClient {
+		get { self[SupabaseStorageUploaderClient.self] }
+		set { self[SupabaseStorageUploaderClient.self] = newValue }
+	}
 }

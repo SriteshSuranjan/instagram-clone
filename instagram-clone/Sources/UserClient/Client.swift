@@ -9,6 +9,7 @@ import Supabase
 public struct UserClient: Sendable {
 	public let authClient: UserAuthClient
 	public let databaseClient: UserDatabaseClient
+	public let storageUploaderClient: SupabaseStorageUploaderClient
 }
 
 @DependencyClient
@@ -35,4 +36,10 @@ public struct UserDatabaseClient: Sendable {
 	public var isFollowed: @Sendable (_ followerId: String, _ userId: String) async throws -> Bool
 	public var follow: @Sendable (_ followedToId: String, _ followerId: String?) async throws -> Void
 	public var unFollow: @Sendable (_ unFollowedId: String, _ unFollowerId: String?) async throws -> Void
+	public var createPost: @Sendable (_ caption: String, _ mediaJsonString: String) async throws -> Post?
+}
+
+@DependencyClient
+public struct SupabaseStorageUploaderClient: Sendable {
+	public var uploadBinary: @Sendable (_ storageName: String, _ filePath: String, _ fileData: Data, _ fileOptions: FileOptions) async throws -> FileUploadResponse
 }

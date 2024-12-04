@@ -14,6 +14,7 @@ public protocol UserBaseRepository: Sendable {
 
 public protocol PostsBaseRepository: Sendable {
 	func postsAmount(of userId: String) async -> AsyncStream<Int>
+	func createPost(postId: String, caption: String, mediaJsonString: String) async throws -> Post?
 }
 
 public protocol DatabaseClient: UserBaseRepository, PostsBaseRepository {}

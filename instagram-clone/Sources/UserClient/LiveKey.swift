@@ -9,11 +9,13 @@ import DatabaseClient
 extension UserClient: DependencyKey {
 	public static let liveValue = UserClient(
 		authClient: unimplemented("Use static live Implementation Inject please. ", placeholder: .liveValue),
-		databaseClient: unimplemented("Use static live Implementation Inject please. ", placeholder: .liveValue)
+		databaseClient: unimplemented("Use static live Implementation Inject please. ", placeholder: .liveValue),
+		storageUploaderClient: unimplemented("Use static live Implementation Inject please. ", placeholder: .liveValue)
 	)
 	public static func liveUserClient(
 		authClient: AuthenticationClient,
-		databaseClient: DatabaseClient
+		databaseClient: DatabaseClient,
+		powerSyncRepository: PowerSyncRepository
 	) -> UserClient {
 		UserClient(
 			authClient: UserAuthClient.liveSupabaseAuthenticationClient(
@@ -21,6 +23,9 @@ extension UserClient: DependencyKey {
 			),
 			databaseClient: UserDatabaseClient.livePowerSyncDatabaseClient(
 				databaseClient
+			),
+			storageUploaderClient: SupabaseStorageUploaderClient.liveSupabaseStorageUploaderClient(
+				powerSyncRepository
 			)
 		)
 	}
@@ -82,7 +87,8 @@ extension UserDatabaseClient: DependencyKey {
 		followingStatus: unimplemented("Use live implementation please.", placeholder: .never),
 		isFollowed: unimplemented("Use live implementation please.", placeholder: false),
 		follow: unimplemented("Use live implementation please."),
-		unFollow: unimplemented("Use live implementation please.")
+		unFollow: unimplemented("Use live implementation please."),
+		createPost: unimplemented("Use live implementation please.")
 	)
 	public static func livePowerSyncDatabaseClient(
 		_ client: DatabaseClient
@@ -115,6 +121,22 @@ extension UserDatabaseClient: DependencyKey {
 			},
 			unFollow: { unFollowedId, unFollowerId in
 				try await client.unFollow(unFollowedId: unFollowedId, unFollowerId: unFollowerId)
+			},
+			createPost: { caption, mediaJsonString in
+				@Dependency(\.uuid) var uuid
+				return try await client.createPost(postId: uuid().uuidString.lowercased(), caption: caption, mediaJsonString: mediaJsonString)
+			}
+		)
+	}
+}
+
+extension SupabaseStorageUploaderClient: DependencyKey {
+	public static let liveValue = SupabaseStorageUploaderClient(uploadBinary: unimplemented("Use live implementation please."))
+	public static func liveSupabaseStorageUploaderClient(_ powerSyncReository: PowerSyncRepository) -> SupabaseStorageUploaderClient {
+		SupabaseStorageUploaderClient(
+			uploadBinary: { storageName, filePath, fileData, fileOptions in
+				try await powerSyncReository.supabase.storage.from(storageName)
+					.upload(filePath, data: fileData, options: fileOptions)
 			}
 		)
 	}
