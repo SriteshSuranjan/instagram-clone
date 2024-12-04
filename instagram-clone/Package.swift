@@ -109,6 +109,7 @@ let package = Package(
 		.package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.6.0"),
 		.package(url: "https://github.com/pointfreeco/swift-gen.git", from: "0.4.0"),
 		.package(url: "https://github.com/onevcat/Kingfisher.git", from: "8.0.0"),
+		.package(url: "https://github.com/Yummypets/YPImagePicker.git", from: "5.0.0")
 	],
 	targets: [
 		.target(name: "ApiRepository"),
@@ -205,7 +206,8 @@ let package = Package(
 				.product(name: "RswiftLibrary", package: "R.swift"),
 				.product(name: "Lottie", package: "lottie-spm"),
 				.product(name: "Gen", package: "swift-gen"),
-				.product(name: "Kingfisher", package: "Kingfisher")
+				.product(name: "Kingfisher", package: "Kingfisher"),
+				.product(name: "YPImagePicker", package: "YPImagePicker")
 			],
 			resources: [
 				.process("Resources/Images/Images.xcassets"),

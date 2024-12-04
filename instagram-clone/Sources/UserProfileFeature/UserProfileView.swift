@@ -118,10 +118,10 @@ public struct UserProfileView: View {
 						title: store.profileUser?.displayUsername ?? "",
 						backButtonAction: nil,
 						actions: store.isOwner ? [
-							AppNavigationBarTrailingAction(icon: .system("gearshape")) {
+							AppNavigationBarTrailingAction(icon: .asset(Assets.Icons.setting.imageResource)) {
 								store.send(.onTapSettingsButton)
 							},
-							AppNavigationBarTrailingAction(icon: .system("plus.app")) {
+							AppNavigationBarTrailingAction(icon: .asset(Assets.Icons.addButton.imageResource)) {
 								store.send(.onTapAddMediaButton)
 							},
 						] : [AppNavigationBarTrailingAction(icon: .system("ellipsis")) {
@@ -135,11 +135,7 @@ public struct UserProfileView: View {
 					}
 					Section {
 						Color.clear.frame(height: 50)
-						LazyVStack {
-							ForEach(0 ..< 100, id: \.self) { index in
-								Text("\(index)")
-							}
-						}
+						Text("Posts")
 					} header: {
 						VStack(spacing: 0) {
 							ScrollTabBarView(selection: $store.activeTab) {

@@ -1,5 +1,5 @@
 {
-  "originHash" : "2ba3353ad572add879717a73ae8ab109ee5e62bc2dff8d00d44a176ac282d4ef",
+  "originHash" : "a34556671911d65e1e0718392b5df7c4df0587d35660b11b8127706280a7d8ca",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -191,12 +191,30 @@
       }
     },
     {
+      "identity" : "prynttrimmerview",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/HHK1/PryntTrimmerView",
+      "state" : {
+        "revision" : "ac1b60a22c7e6a6514de7a66d2f3d5b537c956d5",
+        "version" : "4.0.2"
+      }
+    },
+    {
       "identity" : "r.swift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mac-cain13/R.swift.git",
       "state" : {
         "revision" : "a9abc6b0afe0fc4a5a71e1d7d2872143dff2d2f1",
         "version" : "7.8.0"
+      }
+    },
+    {
+      "identity" : "stevia",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/freshOS/Stevia",
+      "state" : {
+        "revision" : "cfb1a1d2159277bb553c3dc46f3f742c0275566d",
+        "version" : "5.1.2"
       }
     },
     {
@@ -395,6 +413,15 @@
       "state" : {
         "revision" : "a3f634d1a409c7979cabc0a71b3f26ffa9fc8af1",
         "version" : "1.4.3"
+      }
+    },
+    {
+      "identity" : "ypimagepicker",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Yummypets/YPImagePicker.git",
+      "state" : {
+        "revision" : "2db04eb020e3ef03828d3207d85250e110fa5919",
+        "version" : "5.2.2"
       }
     }
   ],

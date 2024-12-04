@@ -40,6 +40,7 @@ public struct HomeReducer {
 	public struct State: Equatable {
 		var authenticatedUser: User
 		var currentTab: HomeTab = .userProfile
+		var showAppLoadingIndeterminate = false
 		var feed = FeedReducer.State()
 		var timeline = TimelineReducer.State()
 		var reels = ReelsReducer.State()
@@ -58,6 +59,7 @@ public struct HomeReducer {
 		case reels(ReelsReducer.Action)
 		case authenticatedUserProfileUpdated(User)
 		case userProfile(UserProfileReducer.Action)
+		case updateAppLoadingIndeterminate(show: Bool)
 	}
 
 	@Dependency(\.userClient.databaseClient) var databaseClient
@@ -97,6 +99,12 @@ public struct HomeReducer {
 			case .reels:
 				return .none
 			case .userProfile:
+				return .none
+			case let .updateAppLoadingIndeterminate(show):
+				guard state.showAppLoadingIndeterminate != show else {
+					return .none
+				}
+				state.showAppLoadingIndeterminate = show
 				return .none
 			}
 		}
@@ -158,6 +166,7 @@ public struct HomeView: View {
 								.animation(.snappy, value: currentTab)
 							}
 						}
+						.noneEffect()
 						.foregroundStyle(currentTab == tab ? Assets.Colors.bodyColor : Color(.systemGray5))
 						.frame(maxWidth: .infinity)
 					}
@@ -165,8 +174,15 @@ public struct HomeView: View {
 				.frame(height: 64)
 				.background(Assets.Colors.appBarBackgroundColor)
 			}
-
 			.toolbar(.hidden, for: .navigationBar)
+			.safeAreaInset(edge: .bottom) {
+				if store.showAppLoadingIndeterminate {
+					AppLoadingIndeterminateView()
+						.transition(.move(edge: .bottom).combined(with: .opacity))
+						.frame(maxWidth: .infinity)
+						.frame(height: 3)
+				}
+			}
 		}
 	}
 }
