@@ -106,6 +106,18 @@ let package = Package(
 			name: "BlurHashClient",
 			targets: ["BlurHashClient"]
 		),
+		.library(
+			name: "AppLoadingIndeterminateClient",
+			targets: ["AppLoadingIndeterminateClient"]
+		),
+		.library(
+			name: "BottomBarVisiblePreference",
+			targets: ["BottomBarVisiblePreference"]
+		),
+		.library(
+			name: "UploadTaskClient",
+			targets: ["UploadTaskClient"]
+		),
 	],
 	dependencies: [
 		.package(url: "https://github.com/powersync-ja/powersync-kotlin", exact: "1.0.0-BETA5.0"),
@@ -174,6 +186,9 @@ let package = Package(
 				"FirebaseCoreClient",
 				"SnackbarMessagesClient",
 				"HomeFeature",
+				"AppLoadingIndeterminateClient",
+				"UploadTaskClient",
+				"BlurHashClient",
 				.product(name: "Supabase", package: "supabase-swift"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 				.product(name: "GoogleSignIn", package: "GoogleSignIn-iOS"),
@@ -280,6 +295,7 @@ let package = Package(
 				"ReelsFeature",
 				"UserProfileFeature",
 				"UserClient",
+				"BottomBarVisiblePreference",
 				.product(name: "Tagged", package: "swift-tagged"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
@@ -327,6 +343,7 @@ let package = Package(
 				"UserClient",
 				"MediaPickerFeature",
 				"CreatePostFeature",
+				.product(name: "UnifiedBlurHash", package: "UnifiedBlurHash"),
 				.product(name: "Tagged", package: "swift-tagged"),
 				.product(name: "YPImagePicker", package: "YPImagePicker"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
@@ -353,6 +370,7 @@ let package = Package(
 			dependencies: [
 				"Shared",
 				"AppUI",
+				"BottomBarVisiblePreference",
 				.product(name: "YPImagePicker", package: "YPImagePicker"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
@@ -362,9 +380,10 @@ let package = Package(
 			dependencies: [
 				"Shared",
 				"AppUI",
-				"BlurHashClient",
+				"UploadTaskClient",
 				.product(name: "UnifiedBlurHash", package: "UnifiedBlurHash"),
 				.product(name: "YPImagePicker", package: "YPImagePicker"),
+				.product(name: "Supabase", package: "supabase-swift"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
 		),
@@ -372,6 +391,20 @@ let package = Package(
 			name: "BlurHashClient",
 			dependencies: [
 				.product(name: "UnifiedBlurHash", package: "UnifiedBlurHash"),
+				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+			]
+		),
+		.target(
+			name: "AppLoadingIndeterminateClient",
+			dependencies: [
+				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+			]
+		),
+		.target(name: "BottomBarVisiblePreference"),
+		.target(
+			name: "UploadTaskClient",
+			dependencies: [
+				"Shared",
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
 		),

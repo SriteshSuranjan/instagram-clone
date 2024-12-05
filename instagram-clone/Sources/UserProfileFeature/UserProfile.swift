@@ -1,12 +1,12 @@
 import AppUI
 import ComposableArchitecture
+import CreatePostFeature
 import Foundation
 import InstagramBlocksUI
+import MediaPickerFeature
 import Shared
 import SwiftUI
 import UserClient
-import MediaPickerFeature
-import CreatePostFeature
 import YPImagePicker
 
 enum ProfileTab: Hashable {
@@ -114,6 +114,9 @@ public struct UserProfileReducer {
 					let selectedImageDetails = SelectedImageDetails(selectedFiles: items.map(SelectedByte.selectedByte(with:)), aspectRatio: 1.0, multiSelectionMode: true)
 					state.path.append(.createPost(.init(selectedImageDetails: selectedImageDetails)))
 					return .none
+				case .createPost(.delegate(.popToRoot)):
+					state.path.removeAll()
+					return .none
 				default: return .none
 				}
 			case .path:
@@ -133,11 +136,9 @@ public struct UserProfileReducer {
 extension SelectedByte {
 	static func selectedByte(with item: YPMediaItem) -> SelectedByte {
 		switch item {
-		case .photo(let p):
-			debugPrint(p.url, p.exifMeta, p.asset)
-			return .init(selectedFile: p.url!, selectedData: p.image.pngData() ?? Data(), isImage: true)
-		case .video(let v):
-			debugPrint(v.url, v.asset)
+		case let .photo(p):
+			return .init(selectedFile: p.url ?? URL(string: "nil://placeholder")!, selectedData: p.image.pngData() ?? Data(), isImage: true)
+		case let .video(v):
 			return .init(selectedFile: v.url, selectedData: v.thumbnail.pngData() ?? Data(), isImage: false)
 		}
 	}

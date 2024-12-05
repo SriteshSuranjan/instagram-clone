@@ -41,5 +41,7 @@ public struct UserDatabaseClient: Sendable {
 
 @DependencyClient
 public struct SupabaseStorageUploaderClient: Sendable {
-	public var uploadBinary: @Sendable (_ storageName: String, _ filePath: String, _ fileData: Data, _ fileOptions: FileOptions) async throws -> FileUploadResponse
+	public var uploadBinaryWithFilePath: @Sendable (_ storageName: String, _ filePath: String, _ fileOptions: FileOptions) async throws -> FileUploadResponse
+	public var uploadBinaryWithData: @Sendable (_ storageName: String, _ filePath: String, _ fileData: Data, _ fileOptions: FileOptions) async throws -> FileUploadResponse
+	public var getPublicUrl: @Sendable (_ storageName: String, _ path: String) async throws -> String?
 }

@@ -1,12 +1,13 @@
+import AppUI
 import AVFoundation
 import AVKit
+import ComposableArchitecture
 import Foundation
 import Photos
 import SwiftUI
 import UIKit
 import YPImagePicker
-import ComposableArchitecture
-import AppUI
+import BottomBarVisiblePreference
 
 public struct MediaPickerView: UIViewControllerRepresentable {
 	// 配置选项
@@ -17,22 +18,24 @@ public struct MediaPickerView: UIViewControllerRepresentable {
 		var cropRatio: Double
 		var startOnScreen: YPPickerScreen
 		var showsFilters: Bool
+		var showVideoTrim: Bool
 		var shouldSaveToAlbum: Bool
-		public init(
-			maxItems: Int = 1,
-			reels: Bool = true,
-			showsCrop: Bool = false,
-			cropRatio: Double = 1.0,
-			startOnScreen: YPPickerScreen = .library,
-			showsFilters: Bool = true,
-			shouldSaveToAlbum: Bool = false
-		) {
+		public init(maxItems: Int = 1,
+		            reels: Bool = true,
+		            showsCrop: Bool = false,
+		            cropRatio: Double = 1.0,
+		            startOnScreen: YPPickerScreen = .library,
+		            showsFilters: Bool = false,
+		            showVideoTrim: Bool = false,
+		            shouldSaveToAlbum: Bool = false)
+		{
 			self.maxItems = maxItems
 			self.reels = reels
 			self.showsCrop = showsCrop
 			self.cropRatio = cropRatio
 			self.startOnScreen = startOnScreen
 			self.showsFilters = showsFilters
+			self.showVideoTrim = showVideoTrim
 			self.shouldSaveToAlbum = shouldSaveToAlbum
 		}
 	}
@@ -55,6 +58,8 @@ public struct MediaPickerView: UIViewControllerRepresentable {
 		config.library.maxNumberOfItems = configuration.maxItems
 		config.startOnScreen = configuration.startOnScreen
 		config.shouldSaveNewPicturesToAlbum = configuration.shouldSaveToAlbum
+		config.showsPhotoFilters = configuration.showsFilters
+		config.showsVideoTrimmer = configuration.showVideoTrim
 
 		// 设置支持的媒体类型
 		config.library.mediaType = configuration.reels ? .video : .photoAndVideo
@@ -69,8 +74,9 @@ public struct MediaPickerView: UIViewControllerRepresentable {
 		config.library.itemOverlayType = .grid
 		config.hidesStatusBar = false
 		config.hidesBottomBar = false
-		config.video.compression = AVAssetExportPresetPassthrough
+		config.video.compression = AVAssetExportPresetMediumQuality
 		config.video.libraryTimeLimit = 500.0
+		config.library.skipSelectionsGallery = true
 
 		let picker = YPImagePicker(configuration: config)
 		picker.didFinishPicking { items, cancelled in
@@ -88,9 +94,9 @@ public struct MediaPickerView: UIViewControllerRepresentable {
 extension YPMediaItem: @retroactive Equatable {
 	public static func ==(lhs: YPMediaItem, rhs: YPMediaItem) -> Bool {
 		switch (lhs, rhs) {
-		case (let .photo(lhsPhoto), let .photo(rhsPhoto)):
+		case (let .photo(lhsPhoto), .photo(let rhsPhoto)):
 			return lhsPhoto.asset == rhsPhoto.asset
-		case (let .video(lhsVideo), let .video(rhsVideo)):
+		case (let .video(lhsVideo), .video(let rhsVideo)):
 			return lhsVideo.asset == rhsVideo.asset
 		default: return false
 		}
@@ -107,30 +113,30 @@ public struct MediaPickerReducer {
 			self.pickerConfiguration = pickerConfiguration
 		}
 	}
+
 	public enum Action: BindableAction {
 		case binding(BindingAction<State>)
 		case onTapNextButton([YPMediaItem])
 		case onTapCancelButton
 		case delegate(Delegate)
-		
+
 		public enum Delegate {
 			case didSelectMediaItems([YPMediaItem])
 		}
 	}
-	
+
 	@Dependency(\.dismiss) var dismiss
 	public var body: some ReducerOf<Self> {
 		BindingReducer()
-		Reduce { state, action in
+		Reduce { _, action in
 			switch action {
 			case .binding:
 				return .none
 			case .delegate:
 				return .none
-			case let .onTapNextButton(items):
+			case .onTapNextButton(let items):
 				return .run { send in
 					await send(.delegate(.didSelectMediaItems(items)))
-					await dismiss()
 				}
 			case .onTapCancelButton:
 				return .run { _ in
@@ -146,6 +152,7 @@ public struct MediaPicker: View {
 	public init(store: StoreOf<MediaPickerReducer>) {
 		self.store = store
 	}
+
 	public var body: some View {
 		MediaPickerView(configuration: store.pickerConfiguration) { items, cancelled in
 			guard !cancelled else {
@@ -155,7 +162,7 @@ public struct MediaPicker: View {
 			store.send(.onTapNextButton(items))
 		}
 		.toolbar(.hidden, for: .navigationBar)
-		.preference(key: CustomTabBarVisiblePreference.self, value: false)
+//		.preference(key: BottomBarVisiblePreference.self, value: BottomBarVisible(loadingBarVisible: true))
 	}
 }
 

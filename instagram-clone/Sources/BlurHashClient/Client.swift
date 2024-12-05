@@ -1,10 +1,9 @@
 import Foundation
-import UIKit
 import DependenciesMacros
-import UnifiedBlurHash
+import UIKit
 
 @DependencyClient
 public struct BlurHashClient: Sendable {
-	public var encode: @Sendable (UIImage) async -> String?
-	public var decode: @Sendable (String) async -> UnifiedImage?
+	public var encode: @Sendable (Data) async -> String?
+	public var decode: @Sendable (String) async -> UIImage?
 }

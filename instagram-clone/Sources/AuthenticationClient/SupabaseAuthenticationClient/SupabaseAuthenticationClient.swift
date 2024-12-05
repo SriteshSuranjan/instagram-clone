@@ -57,9 +57,7 @@ public final class SupabaseAuthenticationClient {
 		self.powerSyncRepository = powerSyncRepository
 		self.tokenStorage = tokenStorage
 		self.googleSignIn = googleSignIn
-		Task {
-			await startListening()
-		}
+		startListening()
 	}
 	
 	public func startListening() {

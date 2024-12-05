@@ -9,6 +9,9 @@ import UserClient
 import Shared
 import SnackbarMessagesClient
 import HomeFeature
+import BottomBarVisiblePreference
+import AppLoadingIndeterminateClient
+import UploadTaskClient
 
 @Reducer
 public struct AppReducer {
@@ -26,6 +29,7 @@ public struct AppReducer {
 		var appDelegate: AppDelegateReducer.State
 		var view: View.State
 		var snackbarMessages: [SnackbarMessage] = []
+		var showLoading = false
 		public init(
 			appDelegate: AppDelegateReducer.State = AppDelegateReducer.State(),
 			destination: View.State? = nil
@@ -37,14 +41,17 @@ public struct AppReducer {
 
 	@Dependency(\.userClient.authClient) var authClient
 	@Dependency(\.snackbarMessagesClient) var snackbarMessagesClient
+	@Dependency(\.appLoadingIndeterminateClient) var appLoadingIndeterminateClient
 	
 	public enum Action: BindableAction {
 		case appDelegate(AppDelegateReducer.Action)
 		case authUserResponse(User)
 		case binding(BindingAction<State>)
 		case showSnackbarMessages([SnackbarMessage])
+		case showAppLoading(Bool)
 		case task
 		case view(View.Action)
+		case performUpLoadTask(UploadTask)
 	}
 
 	public var body: some ReducerOf<Self> {
@@ -63,8 +70,6 @@ public struct AppReducer {
 				HomeReducer()
 			}
 		}
-		
-		
 		Reduce { state, action in
 			switch action {
 			case let .authUserResponse(user):
@@ -88,7 +93,13 @@ public struct AppReducer {
 							await send(.showSnackbarMessages(snackbarMessages), animation: .bouncy)
 						}
 					}()
-					_ = await (currentUser, snackbarMessages)
+					
+					async let appLoading: Void = {
+						for await loading in await appLoadingIndeterminateClient.isLoading() {
+							await send(.showAppLoading(loading), animation: .bouncy)
+						}
+					}()
+					_ = await (currentUser, snackbarMessages, appLoading)
 				}
 			case .appDelegate:
 				return .none
@@ -96,11 +107,16 @@ public struct AppReducer {
 			case let .showSnackbarMessages(snackbarMessages):
 				state.snackbarMessages = snackbarMessages
 				return .none
+			case let .showAppLoading(isLoading):
+				state.showLoading = isLoading
+				return .none
 
 			case .view:
 				return .none
+			default: return .none
 			}
 		}
+		UploadTaskReducer()
 	}
 }
 
@@ -125,6 +141,7 @@ public struct AppView: View {
 		}
 		.task { await store.send(.task).finish() }
 		.snackbar(messages: $store.snackbarMessages)
+		.appLoadintIndeterminate(presented: store.showLoading)
 	}
 }
 

@@ -1,4 +1,5 @@
 import AppUI
+import BottomBarVisiblePreference
 import ComposableArchitecture
 import FeedFeature
 import Foundation
@@ -92,9 +93,12 @@ public struct HomeReducer {
 				return .none
 			case .task:
 				return .run { [userId = state.authenticatedUser.id] send in
-					for await user in await databaseClient.profile(userId) {
-						await send(.authenticatedUserProfileUpdated(user))
-					}
+					async let authProfileUpdate: Void = {
+						for await user in await databaseClient.profile(userId) {
+							await send(.authenticatedUserProfileUpdated(user))
+						}
+					}()
+					_ = await authProfileUpdate
 				}
 			case .reels:
 				return .none
@@ -121,69 +125,113 @@ public struct HomeView: View {
 
 	public var body: some View {
 		NavigationStack {
-			TabView(selection: $currentTab) {
-				FeedView(store: store.scope(state: \.feed, action: \.feed))
-					.tag(HomeTab.feed)
-				TimelineView(store: store.scope(state: \.timeline, action: \.timeline))
-					.tag(HomeTab.timeline)
-				ReelsView(store: store.scope(state: \.reels, action: \.reels))
-					.tag(HomeTab.reels)
-				UserProfileView(store: store.scope(state: \.userProfile, action: \.userProfile))
-					.tag(HomeTab.userProfile)
-			}
-			.task {
-				await store.send(.task).finish()
-			}
-			.overlayPreferenceValue(CustomTabBarVisiblePreference.self, alignment: .bottom) { isVisible in
-				if isVisible != false {
-					HStack {
-						ForEach(HomeTab.allCases) { tab in
-							Button {
-								withAnimation {
-									currentTab = tab
-								}
-							} label: {
-								switch tab {
-								case .feed:
-									IconNavBarItemView.feed()
-								case .timeline:
-									IconNavBarItemView.timeline()
-								case .reels:
-									IconNavBarItemView.reels()
-								case .userProfile:
-									Group {
-										if currentTab == .userProfile {
-											AvatarImageView(title: store.authenticatedUser.avatarName, size: .small, url: store.authenticatedUser.avatarUrl)
-												.padding(4)
-												.overlay {
-													Circle()
-														.stroke(Assets.Colors.bodyColor, lineWidth: 2)
-												}
-										} else {
-											AvatarImageView(title: store.authenticatedUser.avatarName, size: .small, url: store.authenticatedUser.avatarUrl)
-										}
-									}
-									.animation(.snappy, value: currentTab)
-								}
+			ZStack(alignment: .bottom) {
+				TabView(selection: $currentTab) {
+					FeedView(store: store.scope(state: \.feed, action: \.feed))
+						.tag(HomeTab.feed)
+					TimelineView(store: store.scope(state: \.timeline, action: \.timeline))
+						.tag(HomeTab.timeline)
+					ReelsView(store: store.scope(state: \.reels, action: \.reels))
+						.tag(HomeTab.reels)
+					UserProfileView(store: store.scope(state: \.userProfile, action: \.userProfile))
+						.tag(HomeTab.userProfile)
+				}
+				.task {
+					await store.send(.task).finish()
+				}
+				HStack {
+					ForEach(HomeTab.allCases) { tab in
+						Button {
+							withAnimation {
+								currentTab = tab
 							}
-							.noneEffect()
-							.foregroundStyle(currentTab == tab ? Assets.Colors.bodyColor : Color(.systemGray5))
-							.frame(maxWidth: .infinity)
+						} label: {
+							switch tab {
+							case .feed:
+								IconNavBarItemView.feed()
+							case .timeline:
+								IconNavBarItemView.timeline()
+							case .reels:
+								IconNavBarItemView.reels()
+							case .userProfile:
+								Group {
+									if currentTab == .userProfile {
+										AvatarImageView(title: store.authenticatedUser.avatarName, size: .small, url: store.authenticatedUser.avatarUrl)
+											.padding(4)
+											.overlay {
+												Circle()
+													.stroke(Assets.Colors.bodyColor, lineWidth: 2)
+											}
+									} else {
+										AvatarImageView(title: store.authenticatedUser.avatarName, size: .small, url: store.authenticatedUser.avatarUrl)
+									}
+								}
+								.animation(.snappy, value: currentTab)
+							}
 						}
-					}
-					.frame(height: 56)
-					.background(Assets.Colors.appBarBackgroundColor)
-				}
-			}
-			.toolbar(.hidden, for: .navigationBar)
-			.safeAreaInset(edge: .bottom) {
-				if store.showAppLoadingIndeterminate {
-					AppLoadingIndeterminateView()
-						.transition(.move(edge: .bottom).combined(with: .opacity))
+						.noneEffect()
+						.foregroundStyle(currentTab == tab ? Assets.Colors.bodyColor : Color(.systemGray5))
 						.frame(maxWidth: .infinity)
-						.frame(height: 3)
+					}
 				}
+				.frame(height: 56)
+				.background(Assets.Colors.appBarBackgroundColor)
 			}
+//			.overlayPreferenceValue(BottomBarVisiblePreference.self, alignment: .bottom) { value in
+//				VStack {
+//					if value.tabBarVisible {
+//						HStack {
+//							Button {
+//								store.send(.loadingTest)
+//							} label: {
+//								Text("Loading")
+//							}
+//							ForEach(HomeTab.allCases) { tab in
+//								Button {
+//									withAnimation {
+//										currentTab = tab
+//									}
+//								} label: {
+//									switch tab {
+//									case .feed:
+//										IconNavBarItemView.feed()
+//									case .timeline:
+//										IconNavBarItemView.timeline()
+//									case .reels:
+//										IconNavBarItemView.reels()
+//									case .userProfile:
+//										Group {
+//											if currentTab == .userProfile {
+//												AvatarImageView(title: store.authenticatedUser.avatarName, size: .small, url: store.authenticatedUser.avatarUrl)
+//													.padding(4)
+//													.overlay {
+//														Circle()
+//															.stroke(Assets.Colors.bodyColor, lineWidth: 2)
+//													}
+//											} else {
+//												AvatarImageView(title: store.authenticatedUser.avatarName, size: .small, url: store.authenticatedUser.avatarUrl)
+//											}
+//										}
+//										.animation(.snappy, value: currentTab)
+//									}
+//								}
+//								.noneEffect()
+//								.foregroundStyle(currentTab == tab ? Assets.Colors.bodyColor : Color(.systemGray5))
+//								.frame(maxWidth: .infinity)
+//							}
+//						}
+//						.frame(height: 56)
+//						.background(Assets.Colors.appBarBackgroundColor)
+//					}
+//					if value.loadingBarVisible {
+//						AppLoadingIndeterminateView()
+//							.transition(.move(edge: .bottom).combined(with: .opacity))
+//							.frame(maxWidth: .infinity)
+//							.frame(height: 3)
+//					}
+//				}
+//			}
+			.toolbar(.hidden, for: .navigationBar)
 		}
 	}
 }

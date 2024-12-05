@@ -131,12 +131,23 @@ extension UserDatabaseClient: DependencyKey {
 }
 
 extension SupabaseStorageUploaderClient: DependencyKey {
-	public static let liveValue = SupabaseStorageUploaderClient(uploadBinary: unimplemented("Use live implementation please."))
+	public static let liveValue = SupabaseStorageUploaderClient(
+		uploadBinaryWithFilePath: unimplemented("Use live implementation please."),
+		uploadBinaryWithData: unimplemented("Use live implementation please."),
+		getPublicUrl: unimplemented("Use live implementation please.")
+	)
 	public static func liveSupabaseStorageUploaderClient(_ powerSyncReository: PowerSyncRepository) -> SupabaseStorageUploaderClient {
 		SupabaseStorageUploaderClient(
-			uploadBinary: { storageName, filePath, fileData, fileOptions in
+			uploadBinaryWithFilePath: { storageName, filePath, fileOptions in
+				try await powerSyncReository.supabase.storage.from(storageName)
+					.upload(filePath, fileURL: URL(string: filePath)!)
+			},
+			uploadBinaryWithData: { storageName, filePath, fileData, fileOptions in
 				try await powerSyncReository.supabase.storage.from(storageName)
 					.upload(filePath, data: fileData, options: fileOptions)
+			},
+			getPublicUrl: { storageName, path in
+				try await powerSyncReository.supabase.storage.from(storageName).getPublicURL(path: path, download: false).absoluteString
 			}
 		)
 	}

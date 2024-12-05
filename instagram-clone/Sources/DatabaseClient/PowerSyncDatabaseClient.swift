@@ -138,10 +138,10 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 		if !exists {
 			try await powerSyncRepository.db.execute(
 				sql: "INSERT INTO subscriptions(id, subscriber_id, subscribed_to_id) VALUES (uuid(), ?, ?)",
-				parameters: [followerId ?? currentUserId, followedToId]
+				parameters: [(followerId ?? currentUserId).lowercased(), followedToId.lowercased()]
 			)
 		} else {
-			try await unFollow(unFollowedId: followedToId, unFollowerId: followerId)
+			try await unFollow(unFollowedId: followedToId.lowercased(), unFollowerId: followerId?.lowercased())
 		}
 	}
 	
@@ -162,7 +162,7 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 			Task {
 				for await data in await powerSyncRepository.db.watch(
 					sql: "SELECT COUNT(*) AS posts_count FROM posts WHERE user_id = ?",
-					parameters: [userId],
+					parameters: [userId.lowercased()],
 					mapper: { cursor in
 						cursor.getLong(index: 0) ?? 0
 					}
@@ -183,16 +183,12 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 			return nil
 		}
 		async let createPost = powerSyncRepository.db.execute(
-			sql: """
-			INSERT INTO posts(id, user_id, caption, media, created_at) 
-			VALUES(?, ?, ?, ?, ?)
-			RETURNING *
-			""",
+			sql: "INSERT INTO posts (id, user_id, caption, media, created_at) VALUES(?, ?, ?, ?, ?)",
 			parameters: [postId, currentUserId, caption, mediaJsonString, Date.now.ISO8601Format()]
 		)
-		async let userProfile = powerSyncRepository.db.get(
+		async let userProfile = powerSyncRepository.db.getOptional(
 			sql: "SELECT * FROM profiles WHERE id = ?",
-			parameters: [currentUserId],
+			parameters: [currentUserId.lowercased()],
 			mapper: { cursor in
 				guard let id = cursor.getString(index: 0) else {
 					return User.anonymous

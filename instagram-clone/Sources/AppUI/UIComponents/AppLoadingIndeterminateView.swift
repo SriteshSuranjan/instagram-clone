@@ -23,7 +23,34 @@ public struct AppLoadingIndeterminateView: View {
 				}
 			}
 		}
+		.frame(height: 3)
 		
+	}
+}
+
+public struct AppLoadingIndeterminateModifier: ViewModifier {
+	let isLoading: Bool
+	public init(isLoading: Bool) {
+		self.isLoading = isLoading
+		debugPrint("AppLoadingIndeterminateModifier \(isLoading)")
+	}
+	public func body(content: Content) -> some View {
+		content
+			.overlay(alignment: .bottom) {
+				if isLoading {
+					AppLoadingIndeterminateView()
+						.transition(.move(edge: .bottom).combined(with: .opacity))
+						.frame(maxWidth: .infinity)
+						.frame(height: 3)
+				}
+				
+			}
+	}
+}
+
+extension View {
+	public func appLoadintIndeterminate(presented: Bool) -> some View {
+		self.modifier(AppLoadingIndeterminateModifier(isLoading: presented))
 	}
 }
 

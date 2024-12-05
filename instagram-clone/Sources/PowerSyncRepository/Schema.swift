@@ -22,7 +22,7 @@ extension Schema {
 					name: "posts",
 					columns: [
 						Column(name: "user_id", type: .text),
-						Column(name: "create_at", type: .text),
+						Column(name: "created_at", type: .text),
 						Column(name: "caption", type: .text),
 						Column(name: "updated_at", type: .text),
 						Column(name: "media", type: .text),
