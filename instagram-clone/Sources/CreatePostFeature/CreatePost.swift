@@ -15,14 +15,14 @@ public struct CreatePostReducer {
 	@ObservableState
 	public struct State: Equatable {
 		var selectedImageDetails: SelectedImageDetails
-		var media: [MediaItem]
+		var media: [MediaItem] = []
 		var caption: String = ""
 		public init(selectedImageDetails: SelectedImageDetails) {
 			self.selectedImageDetails = selectedImageDetails
 			@Dependency(\.uuid) var uuid
-			self.media = selectedImageDetails.selectedFiles.map { file in
-				file.isImage ? MediaItem.memoryImage(MemoryImageMedia(id: uuid().uuidString.lowercased(), url: file.selectedFile)) : MediaItem.memoryVideo(MemoryVideoMedia(id: uuid().uuidString.lowercased(), url: file.selectedFile))
-			}
+//			self.media = selectedImageDetails.selectedFiles.map { file in
+//				file.isImage ? MediaItem.memoryImage(MemoryImageMedia(id: uuid().uuidString.lowercased(), url: file.selectedFile)) : MediaItem.memoryVideo(MemoryVideoMedia(id: uuid().uuidString.lowercased(), url: file.selectedFile))
+//			}
 		}
 	}
 

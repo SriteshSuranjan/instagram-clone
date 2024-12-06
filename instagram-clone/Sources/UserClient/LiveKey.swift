@@ -124,7 +124,9 @@ extension UserDatabaseClient: DependencyKey {
 			},
 			createPost: { caption, mediaJsonString in
 				@Dependency(\.uuid) var uuid
-				return try await client.createPost(postId: uuid().uuidString.lowercased(), caption: caption, mediaJsonString: mediaJsonString)
+				let post = try await client.createPost(postId: uuid().uuidString.lowercased(), caption: caption, mediaJsonString: mediaJsonString)
+				debugPrint("\(post) \(#line)")
+				return post
 			}
 		)
 	}

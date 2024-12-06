@@ -24,17 +24,19 @@ struct SupaLogger: SupabaseLogger {
 	}
 }
 
-let encoder: JSONEncoder = {
-	let encoder = PostgrestClient.Configuration.jsonEncoder
-	encoder.keyEncodingStrategy = .convertToSnakeCase
-	return encoder
-}()
-
-let decoder: JSONDecoder = {
-	let decoder = PostgrestClient.Configuration.jsonDecoder
-	decoder.keyDecodingStrategy = .convertFromSnakeCase
-	return decoder
-}()
+extension PowerSyncRepository {
+	static public let encoder: JSONEncoder = {
+		let encoder = PostgrestClient.Configuration.jsonEncoder
+		encoder.keyEncodingStrategy = .convertToSnakeCase
+		return encoder
+	}()
+	
+	static public let decoder: JSONDecoder = {
+		let decoder = PostgrestClient.Configuration.jsonDecoder
+		decoder.keyDecodingStrategy = .convertFromSnakeCase
+		return decoder
+	}()
+}
 
 final class SupabaseConnector: PowerSyncBackendConnector {
 	public let db: PowerSyncDatabase
@@ -116,7 +118,7 @@ public actor PowerSyncRepository {
 			supabaseURL: supabaseURL,
 			supabaseKey: env.supabaseAnonKey,
 			options: SupabaseClientOptions(
-				db: .init(encoder: encoder, decoder: decoder),
+				db: .init(encoder: PowerSyncRepository.encoder, decoder: PowerSyncRepository.decoder),
 				auth: SupabaseClientOptions.AuthOptions(flowType: .implicit),
 				global: .init(logger: SupaLogger())
 			)

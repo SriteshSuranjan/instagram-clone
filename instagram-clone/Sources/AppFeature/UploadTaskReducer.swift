@@ -8,6 +8,14 @@ import Supabase
 import AppLoadingIndeterminateClient
 import SnackbarMessagesClient
 import AppUI
+import Shared
+
+private let encoder: JSONEncoder = {
+	let encoder = JSONEncoder()
+	encoder.dateEncodingStrategy = .iso8601
+	encoder.keyEncodingStrategy = .convertToSnakeCase
+	return encoder
+}()
 
 @Reducer
 public struct UploadTaskReducer<State> {
@@ -75,11 +83,11 @@ public struct UploadTaskReducer<State> {
 							)
 							firstFrameUrl = try await uploaderClient.getPublicUrl("posts", firstFrameUploadResponse.path)
 						}
-						let mediaJson = #"[{"media_id":"\#(uuid().uuidString.lowercased())","url":"\#(mediaUrl!)","type":"__memory_video_media__","blur_hash":"\#(blurHash)","first_frame_url":"\#(firstFrameUrl ?? "")"}]"#
+						let mediaJson = #"[{"media_id":"\#(uuid().uuidString.lowercased())","url":"\#(mediaUrl!)","type":"__video_media__","blur_hash":"\#(blurHash)","first_frame_url":"\#(firstFrameUrl ?? "")"}]"#
 						let post = try await databaseClient.createPost(caption, mediaJson)
 						debugPrint(post)
 					} else {
-						var media: [[String: Any]] = []
+						var media: [MediaItem] = []
 						for (index, file) in selectedFiles.enumerated() {
 							let isVideo = file.selectedFile.pathExtension == "mp4"
 							var blurHash: String?
@@ -127,27 +135,19 @@ public struct UploadTaskReducer<State> {
 								)
 								firstFrameUrl = try await uploaderClient.getPublicUrl("posts", firstFrameUploadResponse.path)
 							}
-							let mediaType = isVideo ? "__memory_video_media__" : "__memory_image_media__"
+							let mediaType = isVideo ? "__video_media__" : "__image_media__"
 							if isVideo {
-								media.append([
-									"media_id": uuid().uuidString.lowercased(),
-									"url": mediaUrl!,
-									"type": mediaType,
-									"blur_hash": blurHash ?? "",
-									"first_frame_url": firstFrameUrl ?? ""
-								])
+								let videoMedia = VideoMedia(id: uuid().uuidString.lowercased(), url: mediaUrl!, blurHash: blurHash, type: mediaType, firstFrameUrl: firstFrameUrl)
+								media.append(.video(videoMedia))
 							} else {
-								media.append([
-									"media_id": uuid().uuidString.lowercased(),
-									"url": mediaUrl!,
-									"type": mediaType,
-									"blur_hash": blurHash ?? ""
-								])
+								let imageMedia = ImageMedia(id: uuid().uuidString.lowercased(), url: mediaUrl!, blurHash: blurHash, type: mediaType)
+								media.append(.image(imageMedia))
 							}
 						}
-						let mediaData = try JSONSerialization.data(withJSONObject: media, options: [.withoutEscapingSlashes])
-						let mediaJson = String(decoding: mediaData, as: UTF8.self)
-						let post = try await databaseClient.createPost(caption, mediaJson)
+						let mediaData = try encoder.encode(media)
+						if let mediaJson = String(data: mediaData, encoding: .utf8) {
+							let post = try await databaseClient.createPost(caption, mediaJson)
+						}
 					}
 					await appLoadingIndeterminateClient.updateLoading(showLoading: false)
 					await snackbarMessagesClient.show(message: .success(title: "Post has been published!", backgroundColor: Assets.Colors.snackbarSuccessBackground))

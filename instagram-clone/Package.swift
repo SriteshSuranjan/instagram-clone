@@ -189,6 +189,7 @@ let package = Package(
 				"AppLoadingIndeterminateClient",
 				"UploadTaskClient",
 				"BlurHashClient",
+				"Shared",
 				.product(name: "Supabase", package: "supabase-swift"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 				.product(name: "GoogleSignIn", package: "GoogleSignIn-iOS"),
