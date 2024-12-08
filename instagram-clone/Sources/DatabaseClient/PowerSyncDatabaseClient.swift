@@ -97,35 +97,18 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 		}
 	}
 
-	public func followingStatus(of userId: String, followerId: String?) async -> AsyncStream<Bool> {
-		AsyncStream { continuation in
-			Task {
-				let currentUserId = await currentUserId
-				if followerId == nil && currentUserId == nil {
-					continuation.finish()
-					return
-				}
-				for await data in await powerSyncRepository.db.watch(
-					sql: "SELECT 1 FROM subscriptions WHERE subscriber_id = ? AND subscribed_to_id = ?",
-					parameters: [followerId ?? currentUserId!, userId],
-					mapper: { _ in
-						true
-					}
-				) {
-					continuation.yield(!data.isEmpty)
-				}
-				continuation.finish()
-			}
-		}
-	}
-
 	public func isFollowed(followerId: String, userId: String) async throws -> Bool {
-		let result = try await powerSyncRepository.db.execute(
-			sql: "SELECT 1 FROM subscriptions WHERE subscriber_id = ? AND subscribed_to_id = ?",
-			parameters: [followerId, userId]
+		let result = try await powerSyncRepository.db.get(
+			sql: "SELECT COUNT(*) FROM subscriptions WHERE subscriber_id = ? AND subscribed_to_id = ?",
+			parameters: [followerId.lowercased(), userId],
+			mapper: { cursor in
+				cursor.getLong(index: 0) ?? 0
+			}
 		)
-		debugPrint(result)
-		return false
+		guard let count = result as? Int else {
+			return false
+		}
+		return count > 0
 	}
 
 	public func follow(followedToId: String, followerId: String?) async throws {
@@ -147,12 +130,119 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 	}
 
 	public func unFollow(unFollowedId: String, unFollowerId: String?) async throws {
-		guard let currentUserId = await currentUserId else {
+		guard let currentUserId = await currentUserId?.lowercased() else {
 			return
 		}
 		try await powerSyncRepository.db.execute(
 			sql: "DELETE FROM subscriptions WHERE subscriber_id = ? AND subscribed_to_id = ?",
 			parameters: [unFollowerId ?? currentUserId, unFollowedId]
+		)
+	}
+
+	public func followers(of userId: String) async -> AsyncStream<[Shared.User]> {
+		AsyncStream { continuation in
+			Task {
+				for await data in await powerSyncRepository.db.watch(
+					sql: "SELECT subscriber_id FROM subscriptions WHERE subscribed_to_id = ?",
+					parameters: [userId.lowercased()],
+					mapper: { cursor in
+						cursor.getString(index: 0) ?? ""
+					}
+				) {
+					guard let followerIds = data as? [String] else {
+						return
+					}
+					var followers: [Shared.User] = []
+					for followerId in followerIds {
+						let follower = try await self.powerSyncRepository.db.get(
+							sql: "SELECT * FROM profiles WHERE id = ?",
+							parameters: [followerId.lowercased()],
+							mapper: { cursor in
+								guard let id = cursor.getString(index: 0) else {
+									return Shared.User.anonymous
+								}
+								return Shared.User(
+									id: id,
+									email: cursor.getString(index: 2),
+									username: cursor.getString(index: 3),
+									fullName: cursor.getString(index: 1),
+									avatarUrl: cursor.getString(index: 4),
+									pushToken: cursor.getString(index: 5),
+									isNewUser: false
+								)
+							}
+						)
+						followers.append(follower as! Shared.User)
+					}
+					continuation.yield(followers)
+				}
+				continuation.finish()
+			}
+		}
+	}
+
+	public func followings(of userId: String) async throws -> [Shared.User] {
+		try (
+			await powerSyncRepository.db.readTransaction(
+				callback: SuspendTaskWrapper<[Shared.User]> { _ in
+					let followingIds = try await self.powerSyncRepository.db.getAll(
+						sql: "SELECT subscribed_to_id FROM subscriptions WHERE subscriber_id = ?",
+						parameters: [userId.lowercased()],
+						mapper: { cursor in
+							cursor.getString(index: 0) ?? ""
+						}
+					)
+					var followings: [Shared.User] = []
+					for followingId in followingIds as? [String] ?? [] {
+						let user = try await self.powerSyncRepository.db.get(
+							sql: "SELECT * FROM profiles WHERE id = ?",
+							parameters: [followingId.lowercased()],
+							mapper: { cursor in
+								guard let id = cursor.getString(index: 0) else {
+									return Shared.User.anonymous
+								}
+								return Shared.User(
+									id: id,
+									email: cursor.getString(index: 2),
+									username: cursor.getString(index: 3),
+									fullName: cursor.getString(index: 1),
+									avatarUrl: cursor.getString(index: 4),
+									pushToken: cursor.getString(index: 5),
+									isNewUser: false
+								)
+							}
+						)
+						followings.append(user as! Shared.User)
+					}
+					return followings
+				}) as? [Shared.User]
+		) ?? []
+	}
+	
+	public func followingStatus(of userId: String, followerId: String) async -> AsyncStream<Bool> {
+		AsyncStream { continuation in
+			Task {
+				for await followed in await self.powerSyncRepository.db.watch(
+					sql: "SELECT 1 FROM subscriptions WHERE subscriber_id = ? AND subscribed_to_id = ?",
+					parameters: [followerId.lowercased(), userId.lowercased()],
+					mapper: { cursor in
+						cursor.getString(index: 0) ?? ""
+					}
+				) {
+					continuation.yield(!followed.isEmpty)
+				}
+				continuation.finish()
+			}
+		}
+	}
+	
+	public func removeFollower(of userId: String) async throws {
+		guard let currentUserId = await currentUserId else {
+			return
+		}
+		try await self.powerSyncRepository.db.execute(
+			sql: "DELETE FROM subscriptions WHERE subscriber_id = ? AND subscribed_to_id = ?",
+			parameters: [userId, currentUserId.lowercased()]
 		)
 	}
 

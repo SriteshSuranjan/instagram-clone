@@ -40,7 +40,8 @@ public struct UserProfileButton<Content: View>: View {
 		}
 		.buttonStyle(
 			UserProfileButtonStyle(
-				padding: padding
+				padding: padding,
+				color: color
 			)
 		)
 	}

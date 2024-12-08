@@ -343,7 +343,7 @@ let package = Package(
 				"SnackbarMessagesClient",
 				"UserClient",
 				"MediaPickerFeature",
-				"CreatePostFeature",
+//				"CreatePostFeature",
 				.product(name: "UnifiedBlurHash", package: "UnifiedBlurHash"),
 				.product(name: "Tagged", package: "swift-tagged"),
 				.product(name: "YPImagePicker", package: "YPImagePicker"),
@@ -371,6 +371,7 @@ let package = Package(
 			dependencies: [
 				"Shared",
 				"AppUI",
+				"CreatePostFeature",
 				"BottomBarVisiblePreference",
 				.product(name: "YPImagePicker", package: "YPImagePicker"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),

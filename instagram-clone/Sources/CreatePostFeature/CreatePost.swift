@@ -19,7 +19,6 @@ public struct CreatePostReducer {
 		var caption: String = ""
 		public init(selectedImageDetails: SelectedImageDetails) {
 			self.selectedImageDetails = selectedImageDetails
-			@Dependency(\.uuid) var uuid
 //			self.media = selectedImageDetails.selectedFiles.map { file in
 //				file.isImage ? MediaItem.memoryImage(MemoryImageMedia(id: uuid().uuidString.lowercased(), url: file.selectedFile)) : MediaItem.memoryVideo(MemoryVideoMedia(id: uuid().uuidString.lowercased(), url: file.selectedFile))
 //			}

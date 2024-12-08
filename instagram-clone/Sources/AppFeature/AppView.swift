@@ -136,12 +136,34 @@ public struct AppView: View {
 			case let .auth(authStore):
 				AuthView(store: authStore)
 			case let .home(homeStore):
-				HomeView(store: homeStore)
+				NavigationStack {
+					HomeView(store: homeStore)
+				}
 			}
 		}
 		.task { await store.send(.task).finish() }
 		.snackbar(messages: $store.snackbarMessages)
 		.appLoadintIndeterminate(presented: store.showLoading)
+//		NavigationStack(path: $store.scope(state: \.path, action: \.path)) {
+//			Group {
+//				switch store.scope(state: \.view, action: \.view).case {
+//				case let .launch(launchStore):
+//					LaunchView(store: launchStore)
+//				case let .auth(authStore):
+//					AuthView(store: authStore)
+//				case let .home(homeStore):
+//					HomeView(store: homeStore)
+//				}
+//			}
+//			.task { await store.send(.task).finish() }
+//			.snackbar(messages: $store.snackbarMessages)
+//			.appLoadintIndeterminate(presented: store.showLoading)
+//		} destination: { pathStore in
+//			switch pathStore.case {
+//			case let .userProfile(userProfileStore):
+//				UserProfileView(store: userProfileStore)
+//			}
+//		}
 	}
 }
 

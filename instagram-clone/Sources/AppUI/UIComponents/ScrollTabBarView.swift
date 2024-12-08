@@ -84,7 +84,6 @@ public struct TabItem<Content: View, Tag: Hashable>: View {
 
 public struct ScrollTabBarView<Tag: Hashable>: View {
 	@Binding var selection: Tag
-	@State private var activeIndex: Int = 0
 	@Environment(\.textTheme) var textTheme
 	private let content: [AnyTabItem<Tag>]
 	public init(
@@ -93,6 +92,10 @@ public struct ScrollTabBarView<Tag: Hashable>: View {
 	) {
 		self._selection = selection
 		self.content = content()
+	}
+	
+	private var activeIndex: Int {
+		content.map(\.tag).firstIndex(of: selection)!
 	}
 
 	public var body: some View {
@@ -103,7 +106,6 @@ public struct ScrollTabBarView<Tag: Hashable>: View {
 					Button {
 						withAnimation(.snappy) {
 							selection = item.tag
-							activeIndex = index
 						}
 					} label: {
 						item.content

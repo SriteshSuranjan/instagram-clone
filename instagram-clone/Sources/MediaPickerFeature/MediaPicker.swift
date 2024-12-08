@@ -8,6 +8,8 @@ import SwiftUI
 import UIKit
 import YPImagePicker
 import BottomBarVisiblePreference
+import CreatePostFeature
+import Shared
 
 public struct MediaPickerView: UIViewControllerRepresentable {
 	// 配置选项
@@ -106,9 +108,11 @@ extension YPMediaItem: @retroactive Equatable {
 @Reducer
 public struct MediaPickerReducer {
 	public init() {}
+	
 	@ObservableState
 	public struct State: Equatable {
 		var pickerConfiguration: MediaPickerView.Configuration
+		@Presents var createPost: CreatePostReducer.State?
 		public init(pickerConfiguration: MediaPickerView.Configuration) {
 			self.pickerConfiguration = pickerConfiguration
 		}
@@ -118,31 +122,51 @@ public struct MediaPickerReducer {
 		case binding(BindingAction<State>)
 		case onTapNextButton([YPMediaItem])
 		case onTapCancelButton
+		case createPost(PresentationAction<CreatePostReducer.Action>)
 		case delegate(Delegate)
-
 		public enum Delegate {
-			case didSelectMediaItems([YPMediaItem])
+			case createPostPopToRoot
 		}
 	}
 
 	@Dependency(\.dismiss) var dismiss
+	
 	public var body: some ReducerOf<Self> {
 		BindingReducer()
-		Reduce { _, action in
+		Reduce { state, action in
 			switch action {
 			case .binding:
 				return .none
 			case .delegate:
 				return .none
-			case .onTapNextButton(let items):
-				return .run { send in
-					await send(.delegate(.didSelectMediaItems(items)))
-				}
+			case let .onTapNextButton(items):
+				let selectedImageDetails = SelectedImageDetails(selectedFiles: items.map(SelectedByte.selectedByte(with:)), aspectRatio: 1.0, multiSelectionMode: true)
+				state.createPost = CreatePostReducer.State(selectedImageDetails: selectedImageDetails)
+				return .none
 			case .onTapCancelButton:
 				return .run { _ in
 					await dismiss()
 				}
+			case .createPost(.presented(.delegate(.popToRoot))):
+				state.createPost = nil
+				return .send(.delegate(.createPostPopToRoot))
+			case .createPost:
+				return .none
 			}
+		}
+		.ifLet(\.$createPost, action: \.createPost) {
+			CreatePostReducer()
+		}
+	}
+}
+
+extension SelectedByte {
+	static func selectedByte(with item: YPMediaItem) -> SelectedByte {
+		switch item {
+		case let .photo(p):
+			return .init(selectedFile: p.url ?? URL(string: "nil://placeholder")!, selectedData: p.image.pngData() ?? Data(), isImage: true)
+		case let .video(v):
+			return .init(selectedFile: v.url, selectedData: v.thumbnail.pngData() ?? Data(), isImage: false)
 		}
 	}
 }
@@ -162,7 +186,9 @@ public struct MediaPicker: View {
 			store.send(.onTapNextButton(items))
 		}
 		.toolbar(.hidden, for: .navigationBar)
-//		.preference(key: BottomBarVisiblePreference.self, value: BottomBarVisible(loadingBarVisible: true))
+		.navigationDestination(item: $store.scope(state: \.createPost, action: \.createPost)) { createPostStore in
+			CreatePostView(store: createPostStore)
+		}
 	}
 }
 

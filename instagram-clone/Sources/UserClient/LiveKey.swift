@@ -88,13 +88,16 @@ extension UserDatabaseClient: DependencyKey {
 		isFollowed: unimplemented("Use live implementation please.", placeholder: false),
 		follow: unimplemented("Use live implementation please."),
 		unFollow: unimplemented("Use live implementation please."),
+		followers: unimplemented("Use live implementation please.", placeholder: .never),
+		followings: unimplemented("Use live implementation please."),
+		removeFollower: unimplemented("Use live implementation please."),
 		createPost: unimplemented("Use live implementation please.")
 	)
 	public static func livePowerSyncDatabaseClient(
 		_ client: DatabaseClient
 	) -> UserDatabaseClient {
 		UserDatabaseClient(
-			currentUserId: { await client.currentUserId },
+			currentUserId: { await client.currentUserId!.lowercased() },
 			isOwner: { userId in
 				await userId == client.currentUserId
 			},
@@ -121,6 +124,15 @@ extension UserDatabaseClient: DependencyKey {
 			},
 			unFollow: { unFollowedId, unFollowerId in
 				try await client.unFollow(unFollowedId: unFollowedId, unFollowerId: unFollowerId)
+			},
+			followers: { userId in
+				await client.followers(of: userId)
+			},
+			followings: { userId in
+				try await client.followings(of: userId)
+			},
+			removeFollower: { followerId in
+				try await client.removeFollower(of: followerId)
 			},
 			createPost: { caption, mediaJsonString in
 				@Dependency(\.uuid) var uuid

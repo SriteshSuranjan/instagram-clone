@@ -35,11 +35,13 @@ public struct AppNavigationBar: View {
 				} label: {
 					action.icon.image
 						.resizable()
+						.scaledToFit()
+						.font(textTheme.bodyLarge.font)
 						.frame(
 							width: AppSize.iconSize,
 							height: AppSize.iconSize
 						)
-						.font(textTheme.bodyLarge.font)
+						.contentShape(.rect)
 				}
 				.fadeEffect(config: ButtonAnimationConfig(opacity: 0.3))
 			}

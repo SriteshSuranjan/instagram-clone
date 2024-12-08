@@ -78,7 +78,6 @@ public struct HomeReducer {
 		}
 		Scope(state: \.userProfile, action: \.userProfile) {
 			UserProfileReducer()
-				._printChanges()
 		}
 		Reduce { state, action in
 			switch action {
@@ -177,60 +176,6 @@ public struct HomeView: View {
 				.frame(height: 56)
 				.background(Assets.Colors.appBarBackgroundColor)
 			}
-//			.overlayPreferenceValue(BottomBarVisiblePreference.self, alignment: .bottom) { value in
-//				VStack {
-//					if value.tabBarVisible {
-//						HStack {
-//							Button {
-//								store.send(.loadingTest)
-//							} label: {
-//								Text("Loading")
-//							}
-//							ForEach(HomeTab.allCases) { tab in
-//								Button {
-//									withAnimation {
-//										currentTab = tab
-//									}
-//								} label: {
-//									switch tab {
-//									case .feed:
-//										IconNavBarItemView.feed()
-//									case .timeline:
-//										IconNavBarItemView.timeline()
-//									case .reels:
-//										IconNavBarItemView.reels()
-//									case .userProfile:
-//										Group {
-//											if currentTab == .userProfile {
-//												AvatarImageView(title: store.authenticatedUser.avatarName, size: .small, url: store.authenticatedUser.avatarUrl)
-//													.padding(4)
-//													.overlay {
-//														Circle()
-//															.stroke(Assets.Colors.bodyColor, lineWidth: 2)
-//													}
-//											} else {
-//												AvatarImageView(title: store.authenticatedUser.avatarName, size: .small, url: store.authenticatedUser.avatarUrl)
-//											}
-//										}
-//										.animation(.snappy, value: currentTab)
-//									}
-//								}
-//								.noneEffect()
-//								.foregroundStyle(currentTab == tab ? Assets.Colors.bodyColor : Color(.systemGray5))
-//								.frame(maxWidth: .infinity)
-//							}
-//						}
-//						.frame(height: 56)
-//						.background(Assets.Colors.appBarBackgroundColor)
-//					}
-//					if value.loadingBarVisible {
-//						AppLoadingIndeterminateView()
-//							.transition(.move(edge: .bottom).combined(with: .opacity))
-//							.frame(maxWidth: .infinity)
-//							.frame(height: 3)
-//					}
-//				}
-//			}
 			.toolbar(.hidden, for: .navigationBar)
 		}
 	}

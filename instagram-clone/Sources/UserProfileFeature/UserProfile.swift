@@ -1,6 +1,6 @@
 import AppUI
 import ComposableArchitecture
-import CreatePostFeature
+//import CreatePostFeature
 import Foundation
 import InstagramBlocksUI
 import MediaPickerFeature
@@ -22,35 +22,37 @@ public struct UserProfileReducer {
 	public enum Destination {
 		case profileSettings(UserProfileSettingsReducer)
 		case profileAddMedia(UserProfileAddMediaReducer)
-	}
-
-	@Reducer(state: .equatable)
-	public enum Path {
 		case mediaPicker(MediaPickerReducer)
-		case createPost(CreatePostReducer)
+		case userStatistics(UserStatisticsReducer)
 	}
 
 	public init() {}
 	@ObservableState
-	public struct State: Equatable {
+	public struct State: Equatable, Identifiable {
 		let authenticatedUserId: String
 		let profileUserId: String
 		var profileUser: User?
 		var profileHeader: UserProfileHeaderReducer.State?
 		var activeTab: ProfileTab = .posts
 		@Presents var destination: Destination.State?
-		var path = StackState<Path.State>()
-		public init(authenticatedUserId: String, profileUserId: String) {
+		var showBackButton: Bool
+		public init(authenticatedUserId: String, profileUserId: String, showBackButton: Bool = false) {
 			self.authenticatedUserId = authenticatedUserId
 			self.profileUserId = profileUserId
+			self.showBackButton = showBackButton
+			debugPrint(profileUserId, showBackButton, #line)
 		}
 
 		var isOwner: Bool {
 			authenticatedUserId == profileUserId
 		}
+
+		public var id: String {
+			profileUserId
+		}
 	}
 
-	public enum Action: BindableAction {
+	public indirect enum Action: BindableAction {
 		case destination(PresentationAction<Destination.Action>)
 		case binding(BindingAction<State>)
 		case onTapLogoutButton
@@ -60,7 +62,7 @@ public struct UserProfileReducer {
 		case onTapSettingsButton
 		case onTapAddMediaButton
 		case onTapMoreButton
-		case path(StackAction<Path.State, Path.Action>)
+		case onTapBackButton
 	}
 
 	@Dependency(\.userClient.authClient) var authClient
@@ -68,14 +70,16 @@ public struct UserProfileReducer {
 
 	public var body: some ReducerOf<Self> {
 		BindingReducer()
-		Reduce { state, action in
+		Reduce{ state, action in
 			switch action {
 			case .binding:
 				return .none
-			case let .destination(.presented(.profileAddMedia(.delegate(.onTapAddMediaButton(mediaType))))):
+			case .destination(.presented(.mediaPicker(.delegate(.createPostPopToRoot)))):
 				state.destination = nil
+				return .none
+			case let .destination(.presented(.profileAddMedia(.delegate(.onTapAddMediaButton(mediaType))))):
 				let isReels = mediaType == .reels
-				state.path.append(.mediaPicker(MediaPickerReducer.State(pickerConfiguration: MediaPickerView.Configuration(maxItems: 10, reels: isReels))))
+				state.destination = .mediaPicker(MediaPickerReducer.State(pickerConfiguration: MediaPickerView.Configuration(maxItems: 10, reels: isReels)))
 				return .none
 			case .destination:
 				return .none
@@ -98,6 +102,20 @@ public struct UserProfileReducer {
 					state.profileHeader = UserProfileHeaderReducer.State(profileUser: user, isOwner: state.isOwner)
 				}
 				return .none
+			case let .profileHeader(.delegate(.onTapStatistics(tabIndex))):
+				guard let profileUser = state.profileUser else {
+					return .none
+				}
+				guard tabIndex > 0 else {
+					// TODO: route to posts
+					return .none
+				}
+				guard let selectedTab = UserStatisticsTab(rawValue: tabIndex) else {
+					return .none
+				}
+				let userStatisticsState = UserStatisticsReducer.State(authUserId: state.authenticatedUserId, user: profileUser, selectedTab: selectedTab)
+				state.destination = .userStatistics(userStatisticsState)
+				return .none
 			case .profileHeader:
 				return .none
 			case .onTapSettingsButton:
@@ -108,19 +126,11 @@ public struct UserProfileReducer {
 				return .none
 			case .onTapMoreButton:
 				return .none
-			case let .path(.element(id, subAction)):
-				switch subAction {
-				case let .mediaPicker(.delegate(.didSelectMediaItems(items))):
-					let selectedImageDetails = SelectedImageDetails(selectedFiles: items.map(SelectedByte.selectedByte(with:)), aspectRatio: 1.0, multiSelectionMode: true)
-					state.path.append(.createPost(.init(selectedImageDetails: selectedImageDetails)))
-					return .none
-				case .createPost(.delegate(.popToRoot)):
-					state.path.removeAll()
-					return .none
-				default: return .none
+			case .onTapBackButton:
+				return .run { _ in
+					@Dependency(\.dismiss) var dismiss
+					await dismiss()
 				}
-			case .path:
-				return .none
 			}
 		}
 		.ifLet(\.profileHeader, action: \.profileHeader) {
@@ -128,18 +138,6 @@ public struct UserProfileReducer {
 		}
 		.ifLet(\.$destination, action: \.destination) {
 			Destination.body
-		}
-		.forEach(\.path, action: \.path)
-	}
-}
-
-extension SelectedByte {
-	static func selectedByte(with item: YPMediaItem) -> SelectedByte {
-		switch item {
-		case let .photo(p):
-			return .init(selectedFile: p.url ?? URL(string: "nil://placeholder")!, selectedData: p.image.pngData() ?? Data(), isImage: true)
-		case let .video(v):
-			return .init(selectedFile: v.url, selectedData: v.thumbnail.pngData() ?? Data(), isImage: false)
 		}
 	}
 }
@@ -152,71 +150,71 @@ public struct UserProfileView: View {
 	}
 
 	public var body: some View {
-		NavigationStack(path: $store.scope(state: \.path, action: \.path)) {
-			VStack {
-				ScrollView {
-					LazyVStack(pinnedViews: [.sectionHeaders]) {
-						AppNavigationBar(
-							title: store.profileUser?.displayUsername ?? "",
-							backButtonAction: nil,
-							actions: store.isOwner ? [
-								AppNavigationBarTrailingAction(icon: .asset(Assets.Icons.setting.imageResource)) {
-									store.send(.onTapSettingsButton)
-								},
-								AppNavigationBarTrailingAction(icon: .asset(Assets.Icons.addButton.imageResource)) {
-									store.send(.onTapAddMediaButton)
-								},
-							] : [AppNavigationBarTrailingAction(icon: .system("ellipsis")) {
-								store.send(.onTapMoreButton)
-							}]
-						)
-						.padding(.horizontal, AppSpacing.md)
-						if let headerStore = store.scope(state: \.profileHeader, action: \.profileHeader) {
-							UserProfileHeaderView(store: headerStore)
-								.padding(AppSpacing.md)
-						}
-						Section {
-							Color.clear.frame(height: 50)
-							Text("Posts")
-						} header: {
-							VStack(spacing: 0) {
-								ScrollTabBarView(selection: $store.activeTab) {
-									AppUI.TabItem(ProfileTab.posts) {
-										Image(systemName: "squareshape.split.3x3")
-									}
-									AppUI.TabItem(ProfileTab.mentionedPosts) {
-										Image(systemName: "person")
-									}
+		VStack {
+			ScrollView {
+				AppNavigationBar(
+					title: store.profileUser?.displayUsername ?? "",
+					backButtonAction: store.showBackButton ? {
+						store.send(.onTapBackButton)
+					} : nil,
+					actions: store.isOwner ? [
+						AppNavigationBarTrailingAction(icon: .asset(Assets.Icons.setting.imageResource)) {
+							store.send(.onTapSettingsButton)
+						},
+						AppNavigationBarTrailingAction(icon: .asset(Assets.Icons.addButton.imageResource)) {
+							store.send(.onTapAddMediaButton)
+						},
+					] : [AppNavigationBarTrailingAction(icon: .system("ellipsis")) {
+						store.send(.onTapMoreButton)
+					}]
+				)
+				.padding(.horizontal, AppSpacing.md)
+				if let headerStore = store.scope(state: \.profileHeader, action: \.profileHeader) {
+					UserProfileHeaderView(store: headerStore)
+						.padding(AppSpacing.md)
+				}
+				LazyVStack(pinnedViews: [.sectionHeaders]) {
+					Section {
+						Color.clear.frame(height: 50)
+						Text("Posts")
+					} header: {
+						VStack(spacing: 0) {
+							ScrollTabBarView(selection: $store.activeTab) {
+								AppUI.TabItem(ProfileTab.posts) {
+									Image(systemName: "squareshape.split.3x3")
+								}
+								AppUI.TabItem(ProfileTab.mentionedPosts) {
+									Image(systemName: "person")
 								}
 							}
 						}
 					}
 				}
-				.scrollIndicators(.hidden)
 			}
-			.coverStatusBar()
-			.sheet(item: $store.scope(state: \.destination?.profileSettings, action: \.destination.profileSettings)) { profileSettingsStore in
-				UserProfileSettingsView(store: profileSettingsStore)
-					.presentationDetents([.height(240)])
-					.presentationDragIndicator(.visible)
-					.padding(.horizontal, AppSpacing.sm)
-			}
-			.sheet(item: $store.scope(state: \.destination?.profileAddMedia, action: \.destination.profileAddMedia)) { profileAddMediaStore in
-				UserProfileAddMediaView(store: profileAddMediaStore)
-					.presentationDetents([.height(280)])
-					.presentationDragIndicator(.visible)
-					.padding(.horizontal, AppSpacing.sm)
-			}
-			.task {
-				await store.send(.task).finish()
-			}
-		} destination: { pathStore in
-			switch pathStore.case {
-			case let .createPost(createPostStore):
-				CreatePostView(store: createPostStore)
-			case let .mediaPicker(mediaPickerStore):
-				MediaPicker(store: mediaPickerStore)
-			}
+			.scrollIndicators(.hidden)
+		}
+		.coverStatusBar()
+		.sheet(item: $store.scope(state: \.destination?.profileSettings, action: \.destination.profileSettings)) { profileSettingsStore in
+			UserProfileSettingsView(store: profileSettingsStore)
+				.presentationDetents([.height(240)])
+				.presentationDragIndicator(.visible)
+				.padding(.horizontal, AppSpacing.sm)
+		}
+		.sheet(item: $store.scope(state: \.destination?.profileAddMedia, action: \.destination.profileAddMedia)) { profileAddMediaStore in
+			UserProfileAddMediaView(store: profileAddMediaStore)
+				.presentationDetents([.height(280)])
+				.presentationDragIndicator(.visible)
+				.padding(.horizontal, AppSpacing.sm)
+		}
+		.navigationDestination(item: $store.scope(state: \.destination?.userStatistics, action: \.destination.userStatistics)) { userStatisticsStore in
+			UserStatisticsView(store: userStatisticsStore)
+		}
+		.navigationDestination(item: $store.scope(state: \.destination?.mediaPicker, action: \.destination.mediaPicker)) { mediaPickerStore in
+			MediaPicker(store: mediaPickerStore)
+		}
+		.toolbar(.hidden, for: .navigationBar)
+		.task {
+			await store.send(.task).finish()
 		}
 	}
 }
