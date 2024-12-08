@@ -1,21 +1,22 @@
 import AppUI
 import AVFoundation
 import AVKit
+import BottomBarVisiblePreference
 import ComposableArchitecture
+import CreatePostFeature
 import Foundation
 import Photos
+import Shared
 import SwiftUI
 import UIKit
 import YPImagePicker
-import BottomBarVisiblePreference
-import CreatePostFeature
-import Shared
 
 public struct MediaPickerView: UIViewControllerRepresentable {
 	// 配置选项
 	public struct Configuration: Equatable {
 		var maxItems: Int
 		var reels: Bool
+		var showVideo: Bool
 		var showsCrop: Bool
 		var cropRatio: Double
 		var startOnScreen: YPPickerScreen
@@ -24,6 +25,7 @@ public struct MediaPickerView: UIViewControllerRepresentable {
 		var shouldSaveToAlbum: Bool
 		public init(maxItems: Int = 1,
 		            reels: Bool = true,
+								showVideo: Bool = true,
 		            showsCrop: Bool = false,
 		            cropRatio: Double = 1.0,
 		            startOnScreen: YPPickerScreen = .library,
@@ -33,6 +35,7 @@ public struct MediaPickerView: UIViewControllerRepresentable {
 		{
 			self.maxItems = maxItems
 			self.reels = reels
+			self.showVideo = showVideo
 			self.showsCrop = showsCrop
 			self.cropRatio = cropRatio
 			self.startOnScreen = startOnScreen
@@ -64,8 +67,8 @@ public struct MediaPickerView: UIViewControllerRepresentable {
 		config.showsVideoTrimmer = configuration.showVideoTrim
 
 		// 设置支持的媒体类型
-		config.library.mediaType = configuration.reels ? .video : .photoAndVideo
-		config.screens = configuration.reels ? [.library, .video] : [.library, .photo, .video]
+		config.library.mediaType = configuration.reels ? .video : (configuration.showVideo ? .photoAndVideo : .photo)
+		config.screens = configuration.reels ? [.library, .video] : (configuration.showVideo ? [.library, .photo, .video] : [.library, .photo])
 
 		// 裁剪设置
 		if configuration.showsCrop {
@@ -105,16 +108,26 @@ extension YPMediaItem: @retroactive Equatable {
 	}
 }
 
+public enum MediaPickerNextAction: Equatable {
+	case uploadAvatar
+	case createPost
+}
+
 @Reducer
 public struct MediaPickerReducer {
 	public init() {}
-	
+
 	@ObservableState
 	public struct State: Equatable {
 		var pickerConfiguration: MediaPickerView.Configuration
+		var nextAction: MediaPickerNextAction
 		@Presents var createPost: CreatePostReducer.State?
-		public init(pickerConfiguration: MediaPickerView.Configuration) {
+		public init(
+			pickerConfiguration: MediaPickerView.Configuration,
+			nextAction: MediaPickerNextAction = .createPost
+		) {
 			self.pickerConfiguration = pickerConfiguration
+			self.nextAction = nextAction
 		}
 	}
 
@@ -126,11 +139,12 @@ public struct MediaPickerReducer {
 		case delegate(Delegate)
 		public enum Delegate {
 			case createPostPopToRoot
+			case avatarNextAction(imageData: Data)
 		}
 	}
 
 	@Dependency(\.dismiss) var dismiss
-	
+
 	public var body: some ReducerOf<Self> {
 		BindingReducer()
 		Reduce { state, action in
@@ -139,10 +153,24 @@ public struct MediaPickerReducer {
 				return .none
 			case .delegate:
 				return .none
-			case let .onTapNextButton(items):
-				let selectedImageDetails = SelectedImageDetails(selectedFiles: items.map(SelectedByte.selectedByte(with:)), aspectRatio: 1.0, multiSelectionMode: true)
-				state.createPost = CreatePostReducer.State(selectedImageDetails: selectedImageDetails)
-				return .none
+			case .onTapNextButton(let items):
+				switch state.nextAction {
+				case .uploadAvatar:
+					guard case let .photo(photo) = items.first,
+					let imageData = photo.image.pngData() else {
+						return .none
+					}
+					return .run { send in
+						await send(.delegate(.avatarNextAction(imageData: imageData)))
+						@Dependency(\.dismiss) var dismiss
+						await dismiss()
+					}
+				case .createPost:
+					let selectedImageDetails = SelectedImageDetails(selectedFiles: items.map(SelectedByte.selectedByte(with:)), aspectRatio: 1.0, multiSelectionMode: true)
+					state.createPost = CreatePostReducer.State(selectedImageDetails: selectedImageDetails)
+					return .none
+				}
+				
 			case .onTapCancelButton:
 				return .run { _ in
 					await dismiss()
@@ -163,9 +191,9 @@ public struct MediaPickerReducer {
 extension SelectedByte {
 	static func selectedByte(with item: YPMediaItem) -> SelectedByte {
 		switch item {
-		case let .photo(p):
+		case .photo(let p):
 			return .init(selectedFile: p.url ?? URL(string: "nil://placeholder")!, selectedData: p.image.pngData() ?? Data(), isImage: true)
-		case let .video(v):
+		case .video(let v):
 			return .init(selectedFile: v.url, selectedData: v.thumbnail.pngData() ?? Data(), isImage: false)
 		}
 	}

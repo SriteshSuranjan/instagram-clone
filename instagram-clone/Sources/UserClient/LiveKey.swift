@@ -148,7 +148,9 @@ extension SupabaseStorageUploaderClient: DependencyKey {
 	public static let liveValue = SupabaseStorageUploaderClient(
 		uploadBinaryWithFilePath: unimplemented("Use live implementation please."),
 		uploadBinaryWithData: unimplemented("Use live implementation please."),
-		getPublicUrl: unimplemented("Use live implementation please.")
+		uploadToSignedURL: unimplemented("Use live implementation please."),
+		getPublicUrl: unimplemented("Use live implementation please."),
+		createSignedUrl: unimplemented("Use live implementation please.")
 	)
 	public static func liveSupabaseStorageUploaderClient(_ powerSyncReository: PowerSyncRepository) -> SupabaseStorageUploaderClient {
 		SupabaseStorageUploaderClient(
@@ -160,8 +162,15 @@ extension SupabaseStorageUploaderClient: DependencyKey {
 				try await powerSyncReository.supabase.storage.from(storageName)
 					.upload(filePath, data: fileData, options: fileOptions)
 			},
+			uploadToSignedURL: { storageName, path, token, data in
+				try await powerSyncReository.supabase.storage.from(storageName).uploadToSignedURL(path, token: token, data: data)
+			},
 			getPublicUrl: { storageName, path in
 				try await powerSyncReository.supabase.storage.from(storageName).getPublicURL(path: path, download: false).absoluteString
+			},
+			createSignedUrl: { storageName, path in
+//				try await powerSyncReository.supabase.storage.from(storageName).createSignedUploadURL(path: path)
+				try await powerSyncReository.supabase.storage.from(storageName).createSignedURL(path: path, expiresIn: 60).absoluteString
 			}
 		)
 	}

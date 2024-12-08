@@ -68,7 +68,6 @@ public struct AvatarImagePicker: View {
 	}
 
 	@ViewBuilder
-	@MainActor
 	private func avatarContent() -> some View {
 		Group {
 			if let selectedAvatarImage {

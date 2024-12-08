@@ -4,10 +4,11 @@ import DependenciesMacros
 
 public enum UploadTask: Identifiable {
 	case post(PostUploadTask)
-	
+	case avatar(AvatarUploadTask)
 	public var id: String {
 		switch self {
 		case .post(let postUploadTask): return postUploadTask.id
+		case .avatar(let avatarUploadTask): return avatarUploadTask.id
 		}
 	}
 }
@@ -23,6 +24,15 @@ public struct PostUploadTask: Identifiable {
 	}
 	public var id: String {
 		postId
+	}
+}
+
+public struct AvatarUploadTask: Identifiable {
+	public var id: String
+	public var avatarImageData: Data?
+	public init(id: String, avatarImageData: Data? = nil) {
+		self.id = id
+		self.avatarImageData = avatarImageData
 	}
 }
 

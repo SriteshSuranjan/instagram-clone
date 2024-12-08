@@ -37,9 +37,9 @@ public struct AvatarImageView: View {
 			KFImage.url(avatarUrl)
 				.resizable()
 				.fade(duration: 0.25)
+				.frame(width: size.radius, height: size.radius)
 				.scaledToFit()
 				.clipShape(Circle())
-				.frame(width: size.radius, height: size.radius)
 		} else {
 			AvatarPlaceholderView(
 				title: title,

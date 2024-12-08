@@ -155,6 +155,7 @@ public struct UploadTaskReducer<State> {
 					await appLoadingIndeterminateClient.updateLoading(showLoading: false)
 					await snackbarMessagesClient.show(message: .error(title: "Failed to create post", backgroundColor: Assets.Colors.snackbarErrorBackground))
 				}
+			default: return .none
 			}
 		default: return .none
 		}

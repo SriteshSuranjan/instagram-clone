@@ -210,6 +210,7 @@ let package = Package(
 				"UserClient",
 				"InstagramBlocksUI",
 				"SnackbarMessagesClient",
+				"MediaPickerFeature",
 				.product(name: "Tagged", package: "swift-tagged"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]

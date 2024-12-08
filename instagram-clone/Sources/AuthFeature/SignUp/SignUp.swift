@@ -5,6 +5,9 @@ import AppUI
 import InstagramBlocksUI
 import Shared
 import SnackbarMessagesClient
+import MediaPickerFeature
+import Supabase
+import UploadTaskClient
 
 @Reducer
 public struct SignUpReducer {
@@ -13,6 +16,8 @@ public struct SignUpReducer {
 	public struct State: Equatable {
 		var signUpForm = SignUpFormReducer.State()
 		var status: SignUpSubmissionStatus = .idle
+		@Presents var avatarPicker: MediaPickerReducer.State?
+		var avatarImageData: Data?
 		var signUpButtonDisabled: Bool {
 			status.isLoading
 		}
@@ -51,6 +56,8 @@ public struct SignUpReducer {
 		case signUpForm(SignUpFormReducer.Action)
 		case signUpResponse(Result<Void, AuthenticationError>)
 		case task
+		case avatarPicker(PresentationAction<MediaPickerReducer.Action>)
+		case onTapSelectAvatarButton
 		
 		public enum Delegate {
 			case onTapSignInIntoAccountButton
@@ -58,6 +65,7 @@ public struct SignUpReducer {
 	}
 	
 	@Dependency(\.userClient.authClient) var authClient
+	@Dependency(\.userClient.storageUploaderClient) var storageUploaderClient
 	@Dependency(\.snackbarMessagesClient) var snackbarMessagesClient
 	
 	public var body: some ReducerOf<Self> {
@@ -70,14 +78,32 @@ public struct SignUpReducer {
 			switch action {
 			case let .actionSignUp(email, fullName, userName, password):
 				state.status = .inProgress
-				return .run { send in
-					try await authClient.signUpWithPassword(password: password, fullName: fullName, username: userName, avatarUrl: nil, email: email, phone: nil, pushToken: nil)
-					await send(.signUpResponse(.success(())))
-				} catch: {error, send in
-					guard let signUpError = error as? AuthenticationError else {
-						return
+				return .run { [avatarImageData = state.avatarImageData] send in
+					var avatarUrl: String?
+					if let avatarImageData {
+						let fileExtension = "png"
+						@Dependency(\.date.now) var now
+						let fileName = "\(now.ISO8601Format()).\(fileExtension)"
+						try await storageUploaderClient.uploadBinaryWithData(
+							"avatars",
+							fileName,
+							avatarImageData,
+							FileOptions(
+								cacheControl: "360000",
+								contentType: "image/\(fileExtension)"
+							)
+						)
+						avatarUrl = try await storageUploaderClient.createSignedUrl("avatars", fileName)
 					}
-					await send(.signUpResponse(.failure(signUpError)))
+					try await authClient.signUpWithPassword(password: password, fullName: fullName, username: userName, avatarUrl: avatarUrl, email: email, phone: nil, pushToken: nil)
+//					await send(.signUpResponse(.success(())))
+				} catch: {error, send in
+					if let signUpError = error as? AuthenticationError {
+						await send(.signUpResponse(.failure(signUpError)))
+					} else {
+						let signUpError = AuthenticationError.underlying(error: error, message: nil)
+						await send(.signUpResponse(.failure(signUpError)))
+					}
 				}
 			case .delegate:
 				return .none
@@ -104,14 +130,15 @@ public struct SignUpReducer {
 				switch result {
 				case .success:
 					signUpSubmissionStatus = .idle
-					return .run { _ in
-						await snackbarMessagesClient.show(
-							SnackbarMessage.success(
-								title: "Sign up successfully",
-								backgroundColor: Assets.Colors.snackbarSuccessBackground
-							)
-						)
-					}
+					return .none
+//					return .run { _ in
+//						await snackbarMessagesClient.show(
+//							SnackbarMessage.success(
+//								title: "Sign up successfully",
+//								backgroundColor: Assets.Colors.snackbarSuccessBackground
+//							)
+//						)
+//					}
 				case let .failure(error):
 					if let errorCode = error.errorCode,
 						 errorCode == 400  {
@@ -130,17 +157,27 @@ public struct SignUpReducer {
 						)
 					}
 				}
-				
-				
+			case let .avatarPicker(.presented(.delegate(.avatarNextAction(imageData)))):
+				state.avatarImageData = imageData
+				return .none
+			case .avatarPicker:
+				return .none
 			case .task:
 				return .none
+			case .onTapSelectAvatarButton:
+				state.avatarPicker = MediaPickerReducer.State(pickerConfiguration: MediaPickerView.Configuration(reels: false, showVideo: false), nextAction: .uploadAvatar)
+				return .none
 			}
+		}
+		.ifLet(\.$avatarPicker, action: \.avatarPicker) {
+			MediaPickerReducer()
 		}
 	}
 }
 
 public struct SignUpView: View {
 	@Bindable var store: StoreOf<SignUpReducer>
+	@Environment(\.colorScheme) var colorScheme
 	public init(store: StoreOf<SignUpReducer>) {
 		self.store = store
 	}
@@ -149,9 +186,39 @@ public struct SignUpView: View {
 			ScrollView(showsIndicators: false) {
 				VStack {
 					logoView()
-					AvatarImagePicker { data, url in
-						
-					}
+					Circle()
+						.overlay {
+							if let avatarImageData = store.avatarImageData {
+								Image(uiImage: UIImage(data: avatarImageData)!)
+									.resizable()
+									.frame(width: 128, height: 128)
+									.scaledToFit()
+									.clipShape(.circle)
+							} else {
+								Assets.Images.profilePhoto
+									.view(width: 128, height: 128, renderMode: .original, contentMode: .fit, tint: Assets.Colors.bodyColor)
+							}
+						}
+						.overlay(alignment: .bottomTrailing) {
+							Button {
+								store.send(.onTapSelectAvatarButton)
+							} label: {
+								Circle()
+									.fill(Assets.Colors.blue)
+									.frame(width: 36, height: 36)
+									.overlay {
+										Image(systemName: "plus")
+											.imageScale(.small)
+									}
+									.overlay {
+										Circle()
+											.stroke(Assets.Colors.customReversedAdaptiveColor(colorScheme), lineWidth: 2)
+									}
+									.contentShape(.circle)
+							}
+							.fadeEffect()
+						}
+						.frame(width: 128, height: 128)
 					SignUpForm(store: store.scope(state: \.signUpForm, action: \.signUpForm))
 						.padding(.bottom, AppSpacing.xlg)
 					AuthButton(
@@ -170,6 +237,9 @@ public struct SignUpView: View {
 			}
 			.frame(maxWidth: .infinity)
 			.ignoresSafeArea(.keyboard)
+		}
+		.sheet(item: $store.scope(state: \.avatarPicker, action: \.avatarPicker)) { avatarPickStore in
+			MediaPicker(store: avatarPickStore)
 		}
 		.scrollDismissesKeyboard(.automatic)
 		.padding(.horizontal, AppSpacing.xlg)

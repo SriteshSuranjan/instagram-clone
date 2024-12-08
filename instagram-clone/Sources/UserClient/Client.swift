@@ -46,5 +46,7 @@ public struct UserDatabaseClient: Sendable {
 public struct SupabaseStorageUploaderClient: Sendable {
 	public var uploadBinaryWithFilePath: @Sendable (_ storageName: String, _ filePath: String, _ fileOptions: FileOptions) async throws -> FileUploadResponse
 	public var uploadBinaryWithData: @Sendable (_ storageName: String, _ filePath: String, _ fileData: Data, _ fileOptions: FileOptions) async throws -> FileUploadResponse
+	public var uploadToSignedURL: @Sendable (_ storageName: String, _ path: String, _ token: String, _ data: Data) async throws -> SignedURLUploadResponse
 	public var getPublicUrl: @Sendable (_ storageName: String, _ path: String) async throws -> String?
+	public var createSignedUrl: @Sendable (_ storageName: String, _ path: String) async throws -> String
 }
