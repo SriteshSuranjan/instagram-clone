@@ -76,7 +76,11 @@ public struct AppReducer {
 				if user.isAnonymous {
 					state.view = .auth(AuthReducer.State())
 				} else {
-					state.view = .home(HomeReducer.State(authenticatedUser: user))
+					if case .home = state.view {
+						
+					} else {
+						state.view = .home(HomeReducer.State(authenticatedUser: user))
+					}
 				}
 				return .none
 			case .binding:

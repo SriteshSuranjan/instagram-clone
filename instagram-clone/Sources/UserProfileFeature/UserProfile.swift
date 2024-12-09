@@ -24,6 +24,7 @@ public struct UserProfileReducer {
 		case profileAddMedia(UserProfileAddMediaReducer)
 		case mediaPicker(MediaPickerReducer)
 		case userStatistics(UserStatisticsReducer)
+		case profileEdit(UserProfileEditReducer)
 	}
 
 	public init() {}
@@ -32,7 +33,7 @@ public struct UserProfileReducer {
 		let authenticatedUserId: String
 		let profileUserId: String
 		var profileUser: User?
-		var profileHeader: UserProfileHeaderReducer.State?
+		var profileHeader: UserProfileHeaderReducer.State
 		var activeTab: ProfileTab = .posts
 		@Presents var destination: Destination.State?
 		var showBackButton: Bool
@@ -40,7 +41,7 @@ public struct UserProfileReducer {
 			self.authenticatedUserId = authenticatedUserId
 			self.profileUserId = profileUserId
 			self.showBackButton = showBackButton
-			debugPrint(profileUserId, showBackButton, #line)
+			self.profileHeader = UserProfileHeaderReducer.State(profileUserId: profileUserId, isOwner: authenticatedUserId == profileUserId)
 		}
 
 		var isOwner: Bool {
@@ -70,9 +71,14 @@ public struct UserProfileReducer {
 
 	public var body: some ReducerOf<Self> {
 		BindingReducer()
+		Scope(state: \.profileHeader, action: \.profileHeader) {
+			UserProfileHeaderReducer()
+		}
 		Reduce{ state, action in
 			switch action {
 			case .binding:
+				return .none
+			case .destination(.dismiss):
 				return .none
 			case .destination(.presented(.mediaPicker(.delegate(.createPostPopToRoot)))):
 				state.destination = nil
@@ -98,9 +104,11 @@ public struct UserProfileReducer {
 				}
 			case let .profileUser(user):
 				state.profileUser = user
-				if state.profileHeader == nil {
-					state.profileHeader = UserProfileHeaderReducer.State(profileUser: user, isOwner: state.isOwner)
-				}
+//				if state.profileHeader == nil {
+//					state.profileHeader = UserProfileHeaderReducer.State(profileUser: user, isOwner: state.isOwner)
+//				} else {
+//					state.profileHeader?.update(profileUser: user)
+//				}
 				return .none
 			case let .profileHeader(.delegate(.onTapStatistics(tabIndex))):
 				guard let profileUser = state.profileUser else {
@@ -115,6 +123,12 @@ public struct UserProfileReducer {
 				}
 				let userStatisticsState = UserStatisticsReducer.State(authUserId: state.authenticatedUserId, user: profileUser, selectedTab: selectedTab)
 				state.destination = .userStatistics(userStatisticsState)
+				return .none
+			case .profileHeader(.delegate(.onTapEditProfileButton)):
+				guard let user = state.profileUser else {
+					return .none
+				}
+				state.destination = .profileEdit(UserProfileEditReducer.State(user: user))
 				return .none
 			case .profileHeader:
 				return .none
@@ -133,12 +147,10 @@ public struct UserProfileReducer {
 				}
 			}
 		}
-		.ifLet(\.profileHeader, action: \.profileHeader) {
-			UserProfileHeaderReducer()
-		}
 		.ifLet(\.$destination, action: \.destination) {
 			Destination.body
 		}
+		._printChanges()
 	}
 }
 
@@ -152,44 +164,9 @@ public struct UserProfileView: View {
 	public var body: some View {
 		VStack {
 			ScrollView {
-				AppNavigationBar(
-					title: store.profileUser?.displayUsername ?? "",
-					backButtonAction: store.showBackButton ? {
-						store.send(.onTapBackButton)
-					} : nil,
-					actions: store.isOwner ? [
-						AppNavigationBarTrailingAction(icon: .asset(Assets.Icons.setting.imageResource)) {
-							store.send(.onTapSettingsButton)
-						},
-						AppNavigationBarTrailingAction(icon: .asset(Assets.Icons.addButton.imageResource)) {
-							store.send(.onTapAddMediaButton)
-						},
-					] : [AppNavigationBarTrailingAction(icon: .system("ellipsis")) {
-						store.send(.onTapMoreButton)
-					}]
-				)
-				.padding(.horizontal, AppSpacing.md)
-				if let headerStore = store.scope(state: \.profileHeader, action: \.profileHeader) {
-					UserProfileHeaderView(store: headerStore)
-						.padding(AppSpacing.md)
-				}
-				LazyVStack(pinnedViews: [.sectionHeaders]) {
-					Section {
-						Color.clear.frame(height: 50)
-						Text("Posts")
-					} header: {
-						VStack(spacing: 0) {
-							ScrollTabBarView(selection: $store.activeTab) {
-								AppUI.TabItem(ProfileTab.posts) {
-									Image(systemName: "squareshape.split.3x3")
-								}
-								AppUI.TabItem(ProfileTab.mentionedPosts) {
-									Image(systemName: "person")
-								}
-							}
-						}
-					}
-				}
+				appBar()
+				userProfileHeader()
+				posts()
 			}
 			.scrollIndicators(.hidden)
 		}
@@ -215,6 +192,59 @@ public struct UserProfileView: View {
 		.toolbar(.hidden, for: .navigationBar)
 		.task {
 			await store.send(.task).finish()
+		}
+	}
+	
+	@ViewBuilder
+	private func appBar() -> some View {
+		AppNavigationBar(
+			title: store.profileUser?.displayUsername ?? "",
+			backButtonAction: store.showBackButton ? {
+				store.send(.onTapBackButton)
+			} : nil,
+			actions: store.isOwner ? [
+				AppNavigationBarTrailingAction(icon: .asset(Assets.Icons.setting.imageResource)) {
+					store.send(.onTapSettingsButton)
+				},
+				AppNavigationBarTrailingAction(icon: .asset(Assets.Icons.addButton.imageResource)) {
+					store.send(.onTapAddMediaButton)
+				},
+			] : [AppNavigationBarTrailingAction(icon: .system("ellipsis")) {
+				store.send(.onTapMoreButton)
+			}]
+		)
+		.padding(.horizontal, AppSpacing.md)
+	}
+	
+	@ViewBuilder
+	private func userProfileHeader() -> some View {
+		UserProfileHeaderView(store: store.scope(state: \.profileHeader, action: \.profileHeader))
+			.padding(AppSpacing.md)
+			.navigationDestination(
+				item: $store.scope(state: \.destination?.profileEdit, action: \.destination.profileEdit)
+			) { profileEditStore in
+				UserProfileEditView(store: profileEditStore)
+			}
+	}
+	
+	@ViewBuilder
+	private func posts() -> some View {
+		LazyVStack(pinnedViews: [.sectionHeaders]) {
+			Section {
+				Color.clear.frame(height: 50)
+				Text("Posts")
+			} header: {
+				VStack(spacing: 0) {
+					ScrollTabBarView(selection: $store.activeTab) {
+						AppUI.TabItem(ProfileTab.posts) {
+							Image(systemName: "squareshape.split.3x3")
+						}
+						AppUI.TabItem(ProfileTab.mentionedPosts) {
+							Image(systemName: "person")
+						}
+					}
+				}
+			}
 		}
 	}
 }

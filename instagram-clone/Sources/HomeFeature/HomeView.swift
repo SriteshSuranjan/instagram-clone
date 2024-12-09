@@ -9,6 +9,7 @@ import SwiftUI
 import TimelineFeature
 import UserClient
 import UserProfileFeature
+import InstagramBlocksUI
 
 public enum HomeTab: Identifiable, Hashable, CaseIterable {
 	case feed
@@ -39,7 +40,7 @@ public struct HomeReducer {
 	public init() {}
 	@ObservableState
 	public struct State: Equatable {
-		var authenticatedUser: User
+		public var authenticatedUser: User
 		var currentTab: HomeTab = .userProfile
 		var showAppLoadingIndeterminate = false
 		var feed = FeedReducer.State()
@@ -47,8 +48,9 @@ public struct HomeReducer {
 		var reels = ReelsReducer.State()
 		var userProfile: UserProfileReducer.State
 		public init(authenticatedUser: User) {
-			self.authenticatedUser = authenticatedUser
 			self.userProfile = UserProfileReducer.State(authenticatedUserId: authenticatedUser.id, profileUserId: authenticatedUser.id)
+			self.authenticatedUser = authenticatedUser
+			
 		}
 	}
 
@@ -154,16 +156,7 @@ public struct HomeView: View {
 								IconNavBarItemView.reels()
 							case .userProfile:
 								Group {
-									if currentTab == .userProfile {
-										AvatarImageView(title: store.authenticatedUser.avatarName, size: .small, url: store.authenticatedUser.avatarUrl)
-											.padding(4)
-											.overlay {
-												Circle()
-													.stroke(Assets.Colors.bodyColor, lineWidth: 2)
-											}
-									} else {
-										AvatarImageView(title: store.authenticatedUser.avatarName, size: .small, url: store.authenticatedUser.avatarUrl)
-									}
+									UserProfileAvatar(userId: store.authenticatedUser.id, avatarUrl: store.authenticatedUser.avatarUrl, radius: 18, isLarge: false)
 								}
 								.animation(.snappy, value: currentTab)
 							}

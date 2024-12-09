@@ -79,6 +79,7 @@ extension UserAuthClient: DependencyKey {
 extension UserDatabaseClient: DependencyKey {
 	public static let liveValue = UserDatabaseClient(
 		currentUserId: unimplemented("Use live implementation please.", placeholder: ""),
+		updateUser: unimplemented("Use live implementation please."),
 		isOwner: unimplemented("Use live implementation please.", placeholder: false),
 		profile: unimplemented("Use live implementation please.", placeholder: .never),
 		postsCount: unimplemented("Use live implementation please.", placeholder: .never),
@@ -98,6 +99,9 @@ extension UserDatabaseClient: DependencyKey {
 	) -> UserDatabaseClient {
 		UserDatabaseClient(
 			currentUserId: { await client.currentUserId!.lowercased() },
+			updateUser: { fullName, username, avatarUrl, pushToken in
+				try await client.updateUser(email: nil, avatarUrl: avatarUrl, username: username, fullName: fullName, pushToken: pushToken)
+			},
 			isOwner: { userId in
 				await userId == client.currentUserId
 			},

@@ -27,6 +27,7 @@ public struct UserAuthClient: Sendable {
 @DependencyClient
 public struct UserDatabaseClient: Sendable {
 	public var currentUserId: @Sendable () async -> String = { "" }
+	public var updateUser: @Sendable (_ fullName: String?, _ username: String?, _ avatarUrl: String?, _ pushToken: String?) async throws -> Void
 	public var isOwner: @Sendable (_ userId: String) async -> Bool = { _ in false }
 	public var profile: @Sendable (_ userId: String) async -> AsyncStream<Shared.User> = { _ in .never }
 	public var postsCount: @Sendable (_ userId: String) async -> AsyncStream<Int> = { _ in .never }

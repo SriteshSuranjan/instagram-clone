@@ -155,7 +155,29 @@ public struct UploadTaskReducer<State> {
 					await appLoadingIndeterminateClient.updateLoading(showLoading: false)
 					await snackbarMessagesClient.show(message: .error(title: "Failed to create post", backgroundColor: Assets.Colors.snackbarErrorBackground))
 				}
-			default: return .none
+			case let .avatar(avatarUploadTask):
+				return .run { send in
+					await appLoadingIndeterminateClient.updateLoading(showLoading: true)
+					if let avatarImageData = avatarUploadTask.avatarImageData {
+						let fileExtension = "png"
+						@Dependency(\.date.now) var now
+						let fileName = "\(now.ISO8601Format()).\(fileExtension)"
+						_ = try await uploaderClient.uploadBinaryWithData(
+							"avatars",
+							fileName,
+							avatarImageData,
+							FileOptions(
+								cacheControl: "360000",
+								contentType: "image/\(fileExtension)"
+							)
+						)
+						let avatarUrl = try await uploaderClient.createSignedUrl("avatars", fileName)
+						try await databaseClient.updateUser(nil, nil, avatarUrl, nil)
+						await appLoadingIndeterminateClient.updateLoading(showLoading: false)
+					}
+				} catch: { error, send in
+					await appLoadingIndeterminateClient.updateLoading(showLoading: false)
+				}
 			}
 		default: return .none
 		}

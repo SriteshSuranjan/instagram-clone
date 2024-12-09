@@ -5,6 +5,7 @@ import DatabaseClient
 import Shared
 import UserClient
 import AppUI
+import InstagramBlocksUI
 
 @Reducer
 public struct UserProfileListTileReducer {
@@ -100,10 +101,10 @@ public struct UserProfileListTileView: View {
 	}
 	public var body: some View {
 		HStack {
-			AvatarImageView(
-				title: store.user.avatarName,
-				size: .medium,
-				url: store.user.avatarUrl
+			UserProfileAvatar(
+				userId: store.user.id,
+				avatarUrl: store.user.avatarUrl,
+				radius: 23
 			)
 			HStack(spacing: AppSpacing.md) {
 				VStack(alignment: .leading) {

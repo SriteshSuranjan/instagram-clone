@@ -245,6 +245,29 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 			parameters: [userId, currentUserId.lowercased()]
 		)
 	}
+	
+	public func updateUser(
+		email: String? = nil,
+		avatarUrl: String? = nil,
+		username: String? = nil,
+		fullName: String? = nil,
+		pushToken: String? = nil
+	) async throws {
+		var data: [String: AnyJSON] = [:]
+		if let username {
+			data["username"] = .string(username)
+		}
+		if let fullName {
+			data["full_name"] = .string(fullName)
+		}
+		if let avatarUrl {
+			data["avatar_url"] = .string(avatarUrl)
+		}
+		if let pushToken {
+			data["push_token"] = .string(pushToken)
+		}
+		try await self.powerSyncRepository.updateUser(data: data)
+	}
 
 	// MARK: - PostsBaseRepository
 

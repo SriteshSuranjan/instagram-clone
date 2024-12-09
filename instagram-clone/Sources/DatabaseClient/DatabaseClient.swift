@@ -13,6 +13,7 @@ public protocol UserBaseRepository: Sendable {
 	func followings(of userId: String) async throws -> [Shared.User]
 	func followingStatus(of userId: String, followerId: String) async -> AsyncStream<Bool>
 	func removeFollower(of userId: String) async throws -> Void
+	func updateUser(email: String?, avatarUrl: String?, username: String?, fullName: String?, pushToken: String?) async throws -> Void
 }
 
 public protocol PostsBaseRepository: Sendable {

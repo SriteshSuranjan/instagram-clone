@@ -10,16 +10,20 @@ import UserClient
 public struct UserProfileHeaderReducer {
 	public init() {}
 	@ObservableState
-	public struct State: Equatable {
-		var profileUser: User
+	public struct State: Equatable, Identifiable {
+		var profileUserId: String
 		var isOwner: Bool
 		var postsCount: Int = 0
 		var followersCount: Int = 0
 		var followingsCount: Int = 0
 		var isFollowing: Bool?
-		public init(profileUser: User, isOwner: Bool) {
-			self.profileUser = profileUser
+		var profileUser: User?
+		public init(profileUserId: String, isOwner: Bool) {
+			self.profileUserId = profileUserId
 			self.isOwner = isOwner
+		}
+		public var id: String {
+			profileUserId
 		}
 	}
 
@@ -30,13 +34,15 @@ public struct UserProfileHeaderReducer {
 		case followersCountSubscription(Int)
 		case followingsCountSubscription(Int)
 		case followingStatusSubscription(Bool)
+		case profileUserInfoSubscription(User)
 		case onTapFollowButton
 		case delegate(Delegate)
 		public enum Delegate {
 			case onTapStatistics(Int)
+			case onTapEditProfileButton
 		}
 	}
-	
+
 	public enum Cancel: Hashable {
 		case subscriptions
 	}
@@ -50,7 +56,7 @@ public struct UserProfileHeaderReducer {
 			case .binding:
 				return .none
 			case .task:
-				return .run { @MainActor [isOwner = state.isOwner, userId = state.profileUser.id] send in
+				return .run { @MainActor [isOwner = state.isOwner, userId = state.profileUserId] send in
 					await withTaskCancellation(id: Cancel.subscriptions, cancelInFlight: true) {
 						await subscriptions(send: send, userId: userId, isOwner: isOwner)
 					}
@@ -70,14 +76,22 @@ public struct UserProfileHeaderReducer {
 			case .delegate:
 				return .none
 			case .onTapFollowButton:
-				return .run { [userId = state.profileUser.id] _ in
+				return .run { [userId = state.profileUserId] _ in
 					try await databaseClient.follow(followedToId: userId, followerId: nil)
 				}
+			case let .profileUserInfoSubscription(user):
+				state.profileUser = user
+				return .none
 			}
 		}
 	}
-	
+
 	private func subscriptions(send: Send<Action>, userId: String, isOwner: Bool) async {
+		async let userProfile: Void = {
+			for await userProfile in await databaseClient.profile(userId) {
+				await send(.profileUserInfoSubscription(userProfile))
+			}
+		}()
 		async let followingStatus: Void = {
 			let currentUserId = await databaseClient.currentUserId().lowercased()
 			for await isFollowing in await databaseClient.followingStatus(userId: userId, followerId: currentUserId) {
@@ -99,7 +113,7 @@ public struct UserProfileHeaderReducer {
 				await send(.followingsCountSubscription(followings), animation: .bouncy)
 			}
 		}()
-		_ = await (followingStatus, postsCount, followersCount, followingsCount)
+		_ = await (userProfile, followingStatus, postsCount, followersCount, followingsCount)
 	}
 }
 
@@ -113,10 +127,9 @@ public struct UserProfileHeaderView: View {
 	public var body: some View {
 		VStack(spacing: AppSpacing.md) {
 			HStack {
-				AvatarImageView(
-					title: store.profileUser.avatarName,
-					size: .large,
-					url: nil
+				UserProfileAvatar(
+					userId: store.profileUserId,
+					avatarUrl: store.profileUser?.avatarUrl
 				)
 				Group {
 					UserProfileStatistics(name: "Posts", value: $store.postsCount) {
@@ -133,15 +146,17 @@ public struct UserProfileHeaderView: View {
 			}
 			.frame(maxWidth: .infinity)
 
-			Text(store.profileUser.displayFullName)
+			Text(store.profileUser?.displayFullName ?? "")
 				.font(textTheme.titleLarge.font)
 				.frame(maxWidth: .infinity, alignment: .leading)
 			HStack(spacing: AppSpacing.sm) {
 				if store.isOwner {
 					FlexibleRowLayout {
-						EditProfileButton {}
-							.flex(3)
-							.frame(maxHeight: .infinity)
+						EditProfileButton {
+							store.send(.delegate(.onTapEditProfileButton))
+						}
+						.flex(3)
+						.frame(maxHeight: .infinity)
 						ShareProfileButton {}
 							.flex(3)
 							.frame(maxHeight: .infinity)
@@ -150,8 +165,10 @@ public struct UserProfileHeaderView: View {
 							.frame(maxHeight: .infinity)
 					}
 				} else {
-					UserProfileFollowUserButton(isFollowed: store.isFollowing ?? false, user: store.profileUser) {
-						store.send(.onTapFollowButton)
+					if let profileUser = store.profileUser {
+						UserProfileFollowUserButton(isFollowed: store.isFollowing ?? false, user: profileUser) {
+							store.send(.onTapFollowButton)
+						}
 					}
 				}
 			}
