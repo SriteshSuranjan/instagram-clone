@@ -27,6 +27,10 @@ public struct MediaCarouselReducer {
 		case startPlayVideo(mediaId: String)
 		case stopPlayVideo(mediaId: String)
 		case mediaPositionUpdated(mediaId: String?)
+		case delegate(Delegate)
+		public enum Delegate {
+			case didScrollToIndex(Int)
+		}
 	}
 
 	@Dependency(\.blurHashClient.decode) var blurHash
@@ -77,6 +81,9 @@ public struct MediaCarouselReducer {
 				guard let mediaId else {
 					return .none
 				}
+				guard let mediaIndex = state.media.index(id: mediaId) else {
+					return .none
+				}
 				guard state.currentMediaPosition != mediaId else {
 					return .none
 				}
@@ -92,6 +99,8 @@ public struct MediaCarouselReducer {
 						state.playingVideoMediaId = mediaId
 					}
 				}
+				return .send(.delegate(.didScrollToIndex(mediaIndex)))
+			case .delegate:
 				return .none
 			}
 		}
