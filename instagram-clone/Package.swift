@@ -139,7 +139,7 @@ let package = Package(
 		.package(url: "https://github.com/onevcat/Kingfisher.git", from: "8.0.0"),
 		.package(url: "https://github.com/Yummypets/YPImagePicker.git", from: "5.0.0"),
 		.package(url: "https://github.com/iankoex/UnifiedBlurHash.git", from: "1.0.0"),
-		.package(url: "https://github.com/dscyrescotti/ShuffleIt.git", from: "2.1.3")
+		.package(url: "https://github.com/wxxsw/VideoPlayer.git", from: "1.2.4")
 	],
 	targets: [
 		.target(name: "ApiRepository"),
@@ -281,8 +281,8 @@ let package = Package(
 				"AppUI",
 				"InstaBlocks",
 				"BlurHashClient",
-				.product(name: "ShuffleIt", package: "ShuffleIt"),
 				.product(name: "Kingfisher", package: "Kingfisher"),
+				.product(name: "VideoPlayer", package: "VideoPlayer"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
 		),

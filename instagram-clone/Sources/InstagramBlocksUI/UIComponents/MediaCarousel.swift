@@ -3,18 +3,20 @@ import BlurHashClient
 import ComposableArchitecture
 import Kingfisher
 import Shared
-import ShuffleIt
 import SwiftUI
+import VideoPlayer
 
 @Reducer
 public struct MediaCarouselReducer {
 	public init() {}
 	@ObservableState
 	public struct State: Equatable {
-		var media: [MediaItem]
+		var media: IdentifiedArrayOf<MediaItem>
 		var blurHashImages: [String: UIImage] = [:]
+		var playingVideoMediaId: String? // media id
+		var currentMediaPosition: String? // media id
 		public init(media: [MediaItem]) {
-			self.media = media
+			self.media = IdentifiedArray(uniqueElements: media)
 		}
 	}
 
@@ -22,13 +24,18 @@ public struct MediaCarouselReducer {
 		case binding(BindingAction<State>)
 		case task
 		case mediaHashImagesResponse([String: UIImage])
+		case startPlayVideo(mediaId: String)
+		case stopPlayVideo(mediaId: String)
+		case mediaPositionUpdated(mediaId: String?)
 	}
 
 	@Dependency(\.blurHashClient.decode) var blurHash
 
 	public var body: some ReducerOf<Self> {
 		BindingReducer()
-		Reduce { state, action in
+		Reduce {
+			state,
+				action in
 			switch action {
 			case .binding:
 				return .none
@@ -56,6 +63,35 @@ public struct MediaCarouselReducer {
 				}
 			case let .mediaHashImagesResponse(blurHashImages):
 				state.blurHashImages = blurHashImages
+				return .none
+			case let .startPlayVideo(mediaId):
+				state.playingVideoMediaId = mediaId
+				return .none
+			case let .stopPlayVideo(mediaId):
+				guard state.playingVideoMediaId == mediaId else {
+					return .none
+				}
+				state.playingVideoMediaId = nil
+				return .none
+			case let .mediaPositionUpdated(mediaId):
+				guard let mediaId else {
+					return .none
+				}
+				guard state.currentMediaPosition != mediaId else {
+					return .none
+				}
+				state.currentMediaPosition = mediaId
+				if let playingVideoMediaId = state.playingVideoMediaId,
+				   playingVideoMediaId != state.currentMediaPosition
+				{
+					state.playingVideoMediaId = nil
+				} else {
+					if let currentPositionMedia = state.media[id: mediaId],
+					   currentPositionMedia.isVideo
+					{
+						state.playingVideoMediaId = mediaId
+					}
+				}
 				return .none
 			}
 		}
@@ -89,11 +125,31 @@ public struct MediaCarouselView: View {
 						.resizable()
 						.fade(duration: 0.2)
 						.scaledToFill()
+						.overlay {
+							if media.isVideo {
+								// TODO: seek to previous play time when scroll
+								VideoPlayer(
+									url: URL(string: media.url) ?? URL(string: "nil://placeholder")!,
+									play: Binding(
+										get: { store.playingVideoMediaId == media.id },
+										set: { _ in
+											store.send(.startPlayVideo(mediaId: media.id))
+										}
+									)
+								)
+								.autoReplay(false)
+								.overlay {
+									// TODO: control play and pause
+								}
+							}
+						}
+						.id(media.id)
 						.containerRelativeFrame(.horizontal)
 				}
 			}
 			.scrollTargetLayout()
 		}
+		.scrollPosition(id: $store.currentMediaPosition.sending(\.mediaPositionUpdated))
 		.scrollIndicators(.hidden)
 		.scrollTargetBehavior(.viewAligned)
 		.scrollTargetLayout()

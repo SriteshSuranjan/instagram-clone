@@ -1,5 +1,5 @@
 {
-  "originHash" : "7c65723bab2098276f209ebe38f72d63fd96fbab05fc6751ef0de7e8b01945b1",
+  "originHash" : "1e46a7fd026a40f47752aa9fc0c3c53b1bba083730862cfea63552e1feca78e6",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -98,6 +98,15 @@
       "state" : {
         "revision" : "e9fad491d0673bdda7063a0341fb6b47a30c5359",
         "version" : "1.62.2"
+      }
+    },
+    {
+      "identity" : "gsplayer",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/wxxsw/GSPlayer.git",
+      "state" : {
+        "revision" : "bdd5da716d665a398ec09706df39252cf55ef492",
+        "version" : "0.2.28"
       }
     },
     {
@@ -206,15 +215,6 @@
       "state" : {
         "revision" : "a9abc6b0afe0fc4a5a71e1d7d2872143dff2d2f1",
         "version" : "7.8.0"
-      }
-    },
-    {
-      "identity" : "shuffleit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/dscyrescotti/ShuffleIt.git",
-      "state" : {
-        "revision" : "e0e70737c1f32f72aec305036484b737ef9d0467",
-        "version" : "2.1.3"
       }
     },
     {
@@ -413,6 +413,15 @@
       "state" : {
         "revision" : "39d18f3526c62e950c97090aac75d5dac1de9b21",
         "version" : "1.0.3"
+      }
+    },
+    {
+      "identity" : "videoplayer",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/wxxsw/VideoPlayer.git",
+      "state" : {
+        "revision" : "0a271928849292713daf471398a2a9185f28709c",
+        "version" : "1.2.4"
       }
     },
     {
