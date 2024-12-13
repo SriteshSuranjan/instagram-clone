@@ -13,10 +13,12 @@ public struct MediaCarouselReducer {
 	public struct State: Equatable {
 		var media: IdentifiedArrayOf<MediaItem>
 		var blurHashImages: [String: UIImage] = [:]
+		@Shared var currentMediaIndex: Int
 		var playingVideoMediaId: String? // media id
 		var currentMediaPosition: String? // media id
 		@Shared var videoMuted: Bool
-		public init(media: [MediaItem], videoMuted: Shared<Bool>) {
+		public init(media: [MediaItem], currentMediaIndex: Shared<Int>, videoMuted: Shared<Bool>) {
+			self._currentMediaIndex = currentMediaIndex
 			self._videoMuted = videoMuted
 			self.media = IdentifiedArray(uniqueElements: media)
 		}
@@ -29,10 +31,7 @@ public struct MediaCarouselReducer {
 		case startPlayVideo(mediaId: String)
 		case stopPlayVideo(mediaId: String)
 		case mediaPositionUpdated(mediaId: String?)
-		case delegate(Delegate)
-		public enum Delegate {
-			case didScrollToIndex(Int)
-		}
+		
 	}
 
 	@Dependency(\.blurHashClient.decode) var blurHash
@@ -86,6 +85,7 @@ public struct MediaCarouselReducer {
 				guard let mediaIndex = state.media.index(id: mediaId) else {
 					return .none
 				}
+				state.currentMediaIndex = mediaIndex
 				guard state.currentMediaPosition != mediaId else {
 					return .none
 				}
@@ -101,8 +101,6 @@ public struct MediaCarouselReducer {
 						state.playingVideoMediaId = mediaId
 					}
 				}
-				return .send(.delegate(.didScrollToIndex(mediaIndex)))
-			case .delegate:
 				return .none
 			}
 		}
@@ -186,6 +184,7 @@ public struct MediaCarouselView: View {
 						)
 					)
 				],
+				currentMediaIndex: Shared(0),
 				videoMuted: Shared(true)
 			),
 			reducer: { MediaCarouselReducer()

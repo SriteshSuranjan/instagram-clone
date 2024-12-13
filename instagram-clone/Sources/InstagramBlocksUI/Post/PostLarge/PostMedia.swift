@@ -26,15 +26,16 @@ public struct PostMediaReducer {
 		var isLiked: Bool
 		var withLikeOverlay: Bool
 		var autoHideCurrentIndex: Bool
-		var currentMediaIndex = 0
 		var showCurrentIndex: Bool
 		var isShowingCurrentIndex: Bool
+		@Shared var currentMediaIndex: Int
 		@Shared var videoMuted: Bool
 		var carousel: MediaCarouselReducer.State
 		public init(
 			media: [MediaItem],
 			postIndex: Int? = nil,
 			isLiked: Bool,
+			currentMediaIndex: Shared<Int>,
 			showCurrentIndex: Bool = true,
 			withLikeOverlay: Bool = false,
 			autoHideCurrentIndex: Bool = true,
@@ -43,12 +44,13 @@ public struct PostMediaReducer {
 			self.media = media
 			self.postIndex = postIndex
 			self.isLiked = isLiked
+			self._currentMediaIndex = currentMediaIndex
 			self.withLikeOverlay = withLikeOverlay
 			self.autoHideCurrentIndex = autoHideCurrentIndex
 			self.showCurrentIndex = showCurrentIndex
 			self.isShowingCurrentIndex = showCurrentIndex
 			self._videoMuted = Shared(videoMuted)
-			self.carousel = MediaCarouselReducer.State(media: media, videoMuted: self._videoMuted)
+			self.carousel = MediaCarouselReducer.State(media: media, currentMediaIndex: self._currentMediaIndex, videoMuted: self._videoMuted)
 		}
 		var currentMedia: MediaItem {
 			media[currentMediaIndex]
@@ -61,6 +63,7 @@ public struct PostMediaReducer {
 		case carousel(MediaCarouselReducer.Action)
 		case showCurrentMediaIndexTag
 		case hideCurrentMediaIndexTag
+		case currentMediaIndexDidUpdated
 		case onTapSoundButton
 		case delegate(Delegate)
 		public enum Delegate {
@@ -91,16 +94,18 @@ public struct PostMediaReducer {
 				let showCurrentIndex = state.showCurrentIndex
 				let currentMediaIndexEffect: Effect<Action> =
 				(autoHideCurrentIndex && showCurrentIndex) ? Effect.hidePageIndicatorTimer() : .none
-				effect = effect.concatenate(with: currentMediaIndexEffect)
+				let currentMediaIndexPublisherEffect: Effect<Action> = .publisher {
+					state.$currentMediaIndex.publisher
+						.removeDuplicates()
+						.receive(on: DispatchQueue.main)
+						.map { _ in Action.currentMediaIndexDidUpdated }
+				}
+				effect = effect
+					.concatenate(with: currentMediaIndexEffect)
+					.concatenate(with: currentMediaIndexPublisherEffect)
 				return effect
 			case .binding:
 				return .none
-			case let .carousel(.delegate(.didScrollToIndex(index))):
-				state.currentMediaIndex = index
-				return .run { send in
-					await send(.delegate(.didScrollToMediaIndex(index)))
-					await send(.showCurrentMediaIndexTag)
-				}
 			case .carousel:
 				return .none
 			case .delegate:
@@ -124,6 +129,11 @@ public struct PostMediaReducer {
 				return .none
 			case .onTapSoundButton:
 				state.videoMuted.toggle()
+				return .none
+			case .currentMediaIndexDidUpdated:
+				if state.autoHideCurrentIndex {
+					return .send(.showCurrentMediaIndexTag)
+				}
 				return .none
 			}
 		}

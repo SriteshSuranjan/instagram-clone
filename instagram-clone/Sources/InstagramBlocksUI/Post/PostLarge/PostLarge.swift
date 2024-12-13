@@ -41,6 +41,7 @@ public struct PostLargeReducer {
 		var postIndex: Int?
 		var withInViewNotifier: Bool
 		var likersInFollowings: [User]?
+		@Shared var currentMediaIndex: Int
 		var header: PostHeaderReducer.State
 		var media: PostMediaReducer.State
 		public init(
@@ -65,6 +66,7 @@ public struct PostLargeReducer {
 			self.postIndex = postIndex
 			self.withInViewNotifier = withInViewNotifier
 			self.likersInFollowings = likersInFollowings
+			self._currentMediaIndex = Shared(0)
 			self.header = PostHeaderReducer.State(
 				block: block,
 				isOwner: isOwner,
@@ -75,7 +77,8 @@ public struct PostLargeReducer {
 			self.media = PostMediaReducer.State(
 				media: block.media ?? [],
 				postIndex: 0,
-				isLiked: true
+				isLiked: true,
+				currentMediaIndex: self._currentMediaIndex
 			)
 		}
 	}
