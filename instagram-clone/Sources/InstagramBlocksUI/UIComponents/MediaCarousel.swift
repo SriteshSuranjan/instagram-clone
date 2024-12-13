@@ -15,7 +15,9 @@ public struct MediaCarouselReducer {
 		var blurHashImages: [String: UIImage] = [:]
 		var playingVideoMediaId: String? // media id
 		var currentMediaPosition: String? // media id
-		public init(media: [MediaItem]) {
+		@Shared var videoMuted: Bool
+		public init(media: [MediaItem], videoMuted: Shared<Bool>) {
+			self._videoMuted = videoMuted
 			self.media = IdentifiedArray(uniqueElements: media)
 		}
 	}
@@ -146,6 +148,7 @@ public struct MediaCarouselView: View {
 										}
 									)
 								)
+								.mute(store.videoMuted)
 								.autoReplay(false)
 								.overlay {
 									// TODO: control play and pause
@@ -182,7 +185,8 @@ public struct MediaCarouselView: View {
 							firstFrameUrl: "https://uuhkqhxfbjovbighyxab.supabase.co/storage/v1/object/public/posts/00c8e0ea-d59e-45ee-b0d6-5034ff2d61e2/video_first_frame_0)"
 						)
 					)
-				]
+				],
+				videoMuted: Shared(true)
 			),
 			reducer: { MediaCarouselReducer()
 			}

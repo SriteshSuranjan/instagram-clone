@@ -29,6 +29,7 @@ public struct PostMediaReducer {
 		var currentMediaIndex = 0
 		var showCurrentIndex: Bool
 		var isShowingCurrentIndex: Bool
+		@Shared var videoMuted: Bool
 		var carousel: MediaCarouselReducer.State
 		public init(
 			media: [MediaItem],
@@ -36,7 +37,8 @@ public struct PostMediaReducer {
 			isLiked: Bool,
 			showCurrentIndex: Bool = true,
 			withLikeOverlay: Bool = false,
-			autoHideCurrentIndex: Bool = true
+			autoHideCurrentIndex: Bool = true,
+			videoMuted: Bool = true
 		) {
 			self.media = media
 			self.postIndex = postIndex
@@ -45,7 +47,11 @@ public struct PostMediaReducer {
 			self.autoHideCurrentIndex = autoHideCurrentIndex
 			self.showCurrentIndex = showCurrentIndex
 			self.isShowingCurrentIndex = showCurrentIndex
-			self.carousel = MediaCarouselReducer.State(media: media)
+			self._videoMuted = Shared(videoMuted)
+			self.carousel = MediaCarouselReducer.State(media: media, videoMuted: self._videoMuted)
+		}
+		var currentMedia: MediaItem {
+			media[currentMediaIndex]
 		}
 	}
 
@@ -55,6 +61,7 @@ public struct PostMediaReducer {
 		case carousel(MediaCarouselReducer.Action)
 		case showCurrentMediaIndexTag
 		case hideCurrentMediaIndexTag
+		case onTapSoundButton
 		case delegate(Delegate)
 		public enum Delegate {
 			case didScrollToMediaIndex(Int)
@@ -115,6 +122,9 @@ public struct PostMediaReducer {
 			case .hideCurrentMediaIndexTag:
 				state.isShowingCurrentIndex = false
 				return .none
+			case .onTapSoundButton:
+				state.videoMuted.toggle()
+				return .none
 			}
 		}
 	}
@@ -159,6 +169,28 @@ public struct PostMediaView: View {
 						.clipShape(.capsule)
 						.transition(.opacity)
 						.padding()
+				}
+			}
+			.overlay(alignment: .bottomTrailing) {
+				if store.currentMedia.isVideo {
+					Button {
+						store.send(.onTapSoundButton)
+					} label: {
+						Image(systemName: store.videoMuted ? "speaker.slash.fill" : "speaker.fill")
+							.padding(8)
+							.background(
+								Assets.Colors.customReversedAdaptiveColor(
+									colorScheme,
+									light: Assets.Colors.lightDark,
+									dark: Assets.Colors.dark
+								)
+							)
+							.clipShape(.circle)
+							.frame(width: 35, height: 35)
+							.contentShape(.circle)
+					}
+					.fadeEffect()
+					.padding()
 				}
 			}
 			.task {
