@@ -7,15 +7,14 @@ public struct VideoMedia: Media {
 	
 	public var blurHash: String?
 	
-	public var type: String
+	public var type: String = VideoMedia.identifier
 	
 	public var firstFrameUrl: String?
 	
-	public init(id: String, url: String, blurHash: String?, type: String, firstFrameUrl: String?) {
+	public init(id: String, url: String, blurHash: String?, firstFrameUrl: String?) {
 		self.id = id
 		self.url = url
 		self.blurHash = blurHash
-		self.type = type
 		self.firstFrameUrl = firstFrameUrl
 	}
 	

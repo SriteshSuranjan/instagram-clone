@@ -5,15 +5,14 @@ public struct ImageMedia: Media, Codable {
 	
 	public var url: String
 	
-	public var type: String
+	public var type: String = ImageMedia.identifier
 	
 	public var blurHash: String?
 	
-	public init(id: String, url: String, blurHash: String?, type: String) {
+	public init(id: String, url: String, blurHash: String?) {
 		self.id = id
 		self.url = url
 		self.blurHash = blurHash
-		self.type = type
 	}
 	
 	private enum CodingKeys: String, CodingKey {

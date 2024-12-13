@@ -173,7 +173,6 @@ public struct UserProfileHeaderView: View {
 				}
 			}
 		}
-
 		.task {
 			await store.send(.task).finish()
 		}

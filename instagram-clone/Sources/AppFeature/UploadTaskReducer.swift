@@ -135,12 +135,11 @@ public struct UploadTaskReducer<State> {
 								)
 								firstFrameUrl = try await uploaderClient.getPublicUrl("posts", firstFrameUploadResponse.path)
 							}
-							let mediaType = isVideo ? "__video_media__" : "__image_media__"
 							if isVideo {
-								let videoMedia = VideoMedia(id: uuid().uuidString.lowercased(), url: mediaUrl!, blurHash: blurHash, type: mediaType, firstFrameUrl: firstFrameUrl)
+								let videoMedia = VideoMedia(id: uuid().uuidString.lowercased(), url: mediaUrl!, blurHash: blurHash, firstFrameUrl: firstFrameUrl)
 								media.append(.video(videoMedia))
 							} else {
-								let imageMedia = ImageMedia(id: uuid().uuidString.lowercased(), url: mediaUrl!, blurHash: blurHash, type: mediaType)
+								let imageMedia = ImageMedia(id: uuid().uuidString.lowercased(), url: mediaUrl!, blurHash: blurHash)
 								media.append(.image(imageMedia))
 							}
 						}

@@ -118,6 +118,10 @@ let package = Package(
 			name: "UploadTaskClient",
 			targets: ["UploadTaskClient"]
 		),
+		.library(
+			name: "InstaBlocks",
+			targets: ["InstaBlocks"]
+		),
 	],
 	dependencies: [
 		.package(url: "https://github.com/powersync-ja/powersync-kotlin", exact: "1.0.0-BETA5.0"),
@@ -134,7 +138,8 @@ let package = Package(
 		.package(url: "https://github.com/pointfreeco/swift-gen.git", from: "0.4.0"),
 		.package(url: "https://github.com/onevcat/Kingfisher.git", from: "8.0.0"),
 		.package(url: "https://github.com/Yummypets/YPImagePicker.git", from: "5.0.0"),
-		.package(url: "https://github.com/iankoex/UnifiedBlurHash.git", from: "1.0.0")
+		.package(url: "https://github.com/iankoex/UnifiedBlurHash.git", from: "1.0.0"),
+		.package(url: "https://github.com/dscyrescotti/ShuffleIt.git", from: "2.1.3")
 	],
 	targets: [
 		.target(name: "ApiRepository"),
@@ -274,6 +279,10 @@ let package = Package(
 			dependencies: [
 				"Shared",
 				"AppUI",
+				"InstaBlocks",
+				"BlurHashClient",
+				.product(name: "ShuffleIt", package: "ShuffleIt"),
+				.product(name: "Kingfisher", package: "Kingfisher"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
 		),
@@ -309,6 +318,7 @@ let package = Package(
 				"AppUI",
 				"InstagramBlocksUI",
 				"SnackbarMessagesClient",
+				"InstaBlocks",
 				.product(name: "Tagged", package: "swift-tagged"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
@@ -411,6 +421,18 @@ let package = Package(
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
 		),
+		.target(
+			name: "InstaBlocks",
+			dependencies: [
+				"Shared",
+			]
+		),
+		.testTarget(
+			name: "InstaBlocksTest",
+			dependencies: [
+				"InstaBlocks"
+			]
+		)
 	],
 	swiftLanguageModes: [.v5]
 )

@@ -156,7 +156,11 @@ public struct HomeView: View {
 								IconNavBarItemView.reels()
 							case .userProfile:
 								Group {
-									UserProfileAvatar(userId: store.authenticatedUser.id, avatarUrl: store.authenticatedUser.avatarUrl, radius: 18, isLarge: false)
+									UserProfileAvatar(userId: store.authenticatedUser.id, avatarUrl: store.authenticatedUser.avatarUrl, radius: 18, isLarge: false, onTap: { _ in
+										withAnimation {
+											currentTab = tab
+										}
+									})
 								}
 								.animation(.snappy, value: currentTab)
 							}

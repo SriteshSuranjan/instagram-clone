@@ -1,5 +1,5 @@
 {
-  "originHash" : "b885d6f88769c3303bced4a8e512d339ba379af909590a0bbe085fc512dc596f",
+  "originHash" : "7c65723bab2098276f209ebe38f72d63fd96fbab05fc6751ef0de7e8b01945b1",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -206,6 +206,15 @@
       "state" : {
         "revision" : "a9abc6b0afe0fc4a5a71e1d7d2872143dff2d2f1",
         "version" : "7.8.0"
+      }
+    },
+    {
+      "identity" : "shuffleit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/dscyrescotti/ShuffleIt.git",
+      "state" : {
+        "revision" : "e0e70737c1f32f72aec305036484b737ef9d0467",
+        "version" : "2.1.3"
       }
     },
     {

@@ -19,8 +19,8 @@ public struct UserProfileAvatar: View {
 	let enableInactiveBorder: Bool
 	let showStories: Bool
 	let withAdaptiveBorder: Bool
-	let onTap: ((String) -> Void)?
-	let onLongPress: ((String) -> Void)?
+	let onTap: ((String?) -> Void)?
+	let onLongPress: ((String?) -> Void)?
 	let onAddButtonTap: (() -> Void)?
 	let onImagePick: (() -> Void)?
 	public init(
@@ -33,14 +33,14 @@ public struct UserProfileAvatar: View {
 		isLarge: Bool = true,
 		onTapPickImage: Bool = false,
 		withSimmerPlacehoolder: Bool = false,
-		animationConfig: ButtonAnimationConfig = .init(scale: 0.6, opacity: 1.0, duration: 0.2, hapticFeedback: .none),
+		animationConfig: ButtonAnimationConfig = .init(scale: ScaleStrength.xxs, opacity: 1.0, duration: 0.2, hapticFeedback: .none),
 		withAddButton: Bool = false,
 		enableBorder: Bool = true,
 		enableInactiveBorder: Bool = false,
 		showStories: Bool = false,
 		withAdaptiveBorder: Bool = false,
-		onTap: ((String) -> Void)? = nil,
-		onLongPress: ((String) -> Void)? = nil,
+		onTap: ((String?) -> Void)? = nil,
+		onLongPress: ((String?) -> Void)? = nil,
 		onAddButtonTap: (() -> Void)? = nil,
 		onImagePick: (() -> Void)? = nil
 	) {
@@ -80,7 +80,7 @@ public struct UserProfileAvatar: View {
 
 	public var body: some View {
 		Button {
-			if let userId, let onTap {
+			if let onTap {
 				onTap(userId)
 			}
 		} label: {
@@ -121,7 +121,7 @@ public struct UserProfileAvatar: View {
 		}
 		.scaleEffect(config: animationConfig)
 		.onLongPressGesture {
-			if let userId, let onLongPress {
+			if let onLongPress {
 				onLongPress(userId)
 			}
 		}

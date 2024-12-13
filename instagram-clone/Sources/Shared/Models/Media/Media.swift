@@ -8,7 +8,7 @@ public protocol Media: Equatable, Codable {
 	static var identifier: String { get }
 }
 
-public enum MediaItem: Equatable, Codable {
+public enum MediaItem: Equatable, Codable, Identifiable {
 //	case memoryImage(MemoryImageMedia)
 //	case memoryVideo(MemoryVideoMedia)
 	case image(ImageMedia)
@@ -80,6 +80,20 @@ public enum MediaItem: Equatable, Codable {
 			return nil
 		}
 		return videoMedia.firstFrameUrl
+	}
+	
+	public var isVideo: Bool {
+		switch self {
+		case .image: return false
+		case .video: return true
+		}
+	}
+	
+	public var previewUrl: String? {
+		switch self {
+		case .image(let imageMedia): return imageMedia.url
+		case .video(let videoMedia): return videoMedia.firstFrameUrl
+		}
 	}
 }
 

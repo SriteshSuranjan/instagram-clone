@@ -48,6 +48,6 @@ public struct AuthProviderSignInButton: View {
 			.frame(maxWidth: .infinity)
 			.background(RoundedRectangle(cornerRadius: 4).fill(Assets.Colors.focusColor))
 		}
-		.scaleEffect(config: ButtonAnimationConfig(scale: 0.95))
+		.scaleEffect(config: ButtonAnimationConfig(scale: .xxs))
 	}
 }

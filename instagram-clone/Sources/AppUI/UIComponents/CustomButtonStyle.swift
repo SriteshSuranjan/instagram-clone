@@ -1,34 +1,57 @@
 import SwiftUI
 
+public enum ScaleStrength: CGFloat {
+	case xxxxs = 0.0325
+	case xxxs = 0.0625
+	case xxs = 0.125
+
+	/// xs scale strength (0.25)
+	case xs = 0.25
+
+	/// md scale strength (0.5)
+	case md = 0.5
+
+	/// lg scale strength (0.75)
+	case lg = 0.75
+
+	/// xlg scale strength (1)
+	case xlg = 1
+}
+
 // 基础的按钮动画效果配置
 public struct ButtonAnimationConfig: Sendable {
 	let scale: CGFloat
 	let opacity: CGFloat
 	let duration: Double
 	let hapticFeedback: UIImpactFeedbackGenerator.FeedbackStyle?
-	public init(scale: CGFloat = 1.0, opacity: CGFloat = 1.0, duration: Double = 0.2, hapticFeedback: UIImpactFeedbackGenerator.FeedbackStyle? = nil) {
-		self.scale = scale
+	public init(
+		scale: ScaleStrength = .xxs,
+		opacity: CGFloat = 1.0,
+		duration: Double = 0.2,
+		hapticFeedback: UIImpactFeedbackGenerator.FeedbackStyle? = nil
+	) {
+		self.scale = 1 - scale.rawValue
 		self.opacity = opacity
 		self.duration = duration
 		self.hapticFeedback = hapticFeedback
 	}
 
 	public static let scale = ButtonAnimationConfig(
-		scale: 0.98,
+		scale: .xxs,
 		opacity: 1,
 		duration: 0.2,
 		hapticFeedback: nil
 	)
 
 	public static let fade = ButtonAnimationConfig(
-		scale: 1,
+		scale: .xxxxs,
 		opacity: 0.5,
 		duration: 0.2,
 		hapticFeedback: nil
 	)
 
 	public static let none = ButtonAnimationConfig(
-		scale: 1.0,
+		scale: .xxxxs,
 		opacity: 1.0,
 		duration: 0.0,
 		hapticFeedback: nil
