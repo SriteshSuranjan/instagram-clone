@@ -89,8 +89,24 @@ public enum InstaBlockWrapper: Codable, Equatable, Identifiable {
 	
 	public var isSponsored: Bool {
 		switch self {
-		case .postSponsored(let postSponsoredBlock): return true
+		case .postSponsored: return true
 		default: return false
+		}
+	}
+	
+	public var mediaUrls: [String] {
+		switch self {
+		case .postLarge(let postLargeBlock): return postLargeBlock.mediaUrls
+		case .postSponsored(let postSponsoredBlock): return postSponsoredBlock.mediaUrls
+		case .unknown(let unknownBlock): return unknownBlock.mediaUrls
+		}
+	}
+	
+	public var isReel: Bool {
+		switch self {
+		case .postLarge(let postLargeBlock): return postLargeBlock.isReel
+		case .postSponsored(let postSponsoredBlock): return postSponsoredBlock.isReel
+		case .unknown(let unknownBlock): return unknownBlock.isReel
 		}
 	}
 }

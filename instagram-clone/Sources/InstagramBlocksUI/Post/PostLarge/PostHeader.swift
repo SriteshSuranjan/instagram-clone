@@ -123,8 +123,8 @@ public struct PostHeaderView<Avatar: View>: View {
 				}
 			}
 		}
-		.padding(.vertical, AppSpacing.sm)
 		.padding(.horizontal, AppSpacing.sm)
+		.padding(.vertical, AppSpacing.sm)
 	}
 }
 

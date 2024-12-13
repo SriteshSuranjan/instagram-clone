@@ -44,6 +44,7 @@ public struct PostLargeReducer {
 		@Shared var currentMediaIndex: Int
 		var header: PostHeaderReducer.State
 		var media: PostMediaReducer.State
+		var footer: PostFooterReducer.State
 		public init(
 			block: InstaBlockWrapper,
 			isOwner: Bool,
@@ -80,6 +81,26 @@ public struct PostLargeReducer {
 				isLiked: true,
 				currentMediaIndex: self._currentMediaIndex
 			)
+			self.footer = PostFooterReducer.State(
+				block: block,
+				isLiked: isLiked,
+				likesCount: likesCount,
+				commentsCount: commentCount,
+				mediaUrls: block.mediaUrls,
+//				likersInFollowings: [
+//					User(
+//					id: "11",
+//					email: nil,
+//					username: nil,
+//					fullName: nil,
+//					avatarUrl: "https://uuhkqhxfbjovbighyxab.supabase.co/storage/v1/object/sign/avatars/2024-12-09T13:17:05Z.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJhdmF0YXJzLzIwMjQtMTItMDlUMTM6MTc6MDVaLnBuZyIsImlhdCI6MTczMzc1MDIzMCwiZXhwIjoxNzMzNzUwMjkwfQ.dQPRTi88KIssjIyJgennCbkQOwjJePionj-Fza8Z4K8",
+//					pushToken: nil,
+//					isNewUser: false
+//				),
+//					User(id: "22", avatarUrl: "https://uuhkqhxfbjovbighyxab.supabase.co/storage/v1/object/sign/avatars/2024-12-09T15:44:00.078471.jpg?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJhdmF0YXJzLzIwMjQtMTItMDlUMTU6NDQ6MDAuMDc4NDcxLmpwZyIsImlhdCI6MTczMzczMDI0MywiZXhwIjoyMDQ5MDkwMjQzfQ.hukTLDivWUBKKEpukDmJ1H1qcaa87pgZnmLqRmnrvI0")],
+				likersInFollowings: [],
+				currentMediaIndex: self._currentMediaIndex
+			)
 		}
 	}
 
@@ -87,6 +108,7 @@ public struct PostLargeReducer {
 		case binding(BindingAction<State>)
 		case header(PostHeaderReducer.Action)
 		case media(PostMediaReducer.Action)
+		case footer(PostFooterReducer.Action)
 	}
 
 	public var body: some ReducerOf<Self> {
@@ -97,6 +119,9 @@ public struct PostLargeReducer {
 		Scope(state: \.media, action: \.media) {
 			PostMediaReducer()
 		}
+		Scope(state: \.footer, action: \.footer) {
+			PostFooterReducer()
+		}
 		Reduce { _, action in
 			switch action {
 			case .binding:
@@ -104,6 +129,8 @@ public struct PostLargeReducer {
 			case .header:
 				return .none
 			case .media:
+				return .none
+			case .footer:
 				return .none
 			}
 		}
@@ -140,13 +167,20 @@ public struct PostLargeView<Avatar: View, LikesCount: View>: View {
 	}
 
 	public var body: some View {
-		VStack(spacing: 0) {
-			postHeader()
-			postMedia()
-				.overlay {
-					Rectangle()
-						.stroke(Color.black, lineWidth: 1)
-				}
+		if store.block.isReel {
+			VStack(spacing: 0) {
+				postMedia()
+					.overlay(alignment: .topLeading) {
+						postHeader()
+					}
+				postFooter()
+			}
+		} else {
+			VStack(spacing: 0) {
+				postHeader()
+				postMedia()
+				postFooter()
+			}
 		}
 	}
 
@@ -164,6 +198,11 @@ public struct PostLargeView<Avatar: View, LikesCount: View>: View {
 			color: nil,
 			postAuthorAvatarBuilder: postAuthorAvatarBuilder
 		)
+	}
+	
+	@ViewBuilder
+	private func postFooter() -> some View {
+		PostFooterView(store: store.scope(state: \.footer, action: \.footer))
 	}
 }
 
@@ -208,12 +247,11 @@ public struct PostLargeView<Avatar: View, LikesCount: View>: View {
 		PostLargeView<EmptyView, EmptyView>(
 			store: Store(
 				initialState: PostLargeReducer.State(
-					block: .postLarge(
-						PostLargeBlock(
-							id: "aaf851ab-e823-4187-8a07-f9bfdc98e0a4",
+					block: .postSponsored(
+						PostSponsoredBlock(
 							author: PostAuthor(),
+							id: "aaf851ab-e823-4187-8a07-f9bfdc98e0a4",
 							createdAt: Date.now,
-							caption: "This is caption",
 							media: [
 								.image(ImageMedia(id: "123445", url: "https://uuhkqhxfbjovbighyxab.supabase.co/storage/v1/object/public/posts/079b8318-51bc-4b50-80ac-fbf42361124d/image_0", blurHash: "LVC?N0af9+bJ0ga{-ijX=@e-N2az")),
 								.video(
@@ -224,7 +262,9 @@ public struct PostLargeView<Avatar: View, LikesCount: View>: View {
 										firstFrameUrl: "https://uuhkqhxfbjovbighyxab.supabase.co/storage/v1/object/public/posts/00c8e0ea-d59e-45ee-b0d6-5034ff2d61e2/video_first_frame_0)"
 									)
 								)
-							]
+							],
+							caption: "This is caption",
+							isSponsored: true
 						)
 					),
 					isOwner: true,

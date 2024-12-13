@@ -86,15 +86,16 @@ public struct FeedView: View {
 				postAuthorAvatarBuilder: nil,
 				likesCountBuilder: { _, _, _ in EmptyView() }
 			)
+			.listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+			.listRowSeparator(.hidden)
 			PostLargeView<EmptyView, EmptyView>(
 				store: Store(
 					initialState: PostLargeReducer.State(
-						block: .postLarge(
-							PostLargeBlock(
-								id: "aaf851ab-e823-4187-8a07-f9bfdc98e0a4",
+						block: .postSponsored(
+							PostSponsoredBlock(
 								author: PostAuthor(),
+								id: "aaf851ab-e823-4187-8a07-f9bfdc98e0a4",
 								createdAt: Date.now,
-								caption: "This is caption",
 								media: [
 									.image(ImageMedia(id: "123445", url: "https://uuhkqhxfbjovbighyxab.supabase.co/storage/v1/object/public/posts/079b8318-51bc-4b50-80ac-fbf42361124d/image_0", blurHash: "LVC?N0af9+bJ0ga{-ijX=@e-N2az")),
 									.video(
@@ -105,7 +106,9 @@ public struct FeedView: View {
 											firstFrameUrl: "https://uuhkqhxfbjovbighyxab.supabase.co/storage/v1/object/public/posts/00c8e0ea-d59e-45ee-b0d6-5034ff2d61e2/video_first_frame_0)"
 										)
 									)
-								]
+								],
+								caption: "This is caption",
+								isSponsored: true
 							)
 						),
 						isOwner: true,
@@ -123,6 +126,8 @@ public struct FeedView: View {
 				likesCountBuilder: { _, _, _ in EmptyView() }
 			)
 			.listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+			.listRowSeparator(.hidden)
+			.padding(.vertical, AppSpacing.lg)
 		}
 		.listStyle(.plain)
 	}

@@ -41,7 +41,7 @@ public struct HomeReducer {
 	@ObservableState
 	public struct State: Equatable {
 		public var authenticatedUser: User
-		var currentTab: HomeTab = .userProfile
+		var currentTab: HomeTab = .feed
 		var showAppLoadingIndeterminate = false
 		var feed = FeedReducer.State()
 		var timeline = TimelineReducer.State()
@@ -170,7 +170,7 @@ public struct HomeView: View {
 						.frame(maxWidth: .infinity)
 					}
 				}
-				.frame(height: 56)
+				.frame(height: 48)
 				.background(Assets.Colors.appBarBackgroundColor)
 			}
 			.toolbar(.hidden, for: .navigationBar)
