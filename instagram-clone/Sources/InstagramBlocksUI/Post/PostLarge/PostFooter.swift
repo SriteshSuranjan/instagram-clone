@@ -158,11 +158,9 @@ public struct PostFooterView: View {
 			.padding(.horizontal, AppSpacing.md)
 			
 			if store.likesCount > 0 {
-				ZStack {
-					likers()
-						.padding(.horizontal, AppSpacing.lg)
-						.transition(.move(edge: .top))
-				}
+				likers()
+					.padding(.horizontal, AppSpacing.lg)
+					.transition(.move(edge: .top))
 			}
 			PostCaption(
 				username: store.block.author.username,
@@ -176,11 +174,11 @@ public struct PostFooterView: View {
 		}
 	}
 	
-	private var likesAvatarRadius: CGFloat {
+	private var likersInFollowingWidth: CGFloat {
 		switch store.likersInFollowings.count {
-		case 1: return 14
-		case 2: return 22
-		default: return 30
+		case 1: return 28
+		case 2: return 44
+		default: return 60
 		}
 	}
 	
@@ -248,38 +246,46 @@ public struct PostFooterView: View {
 						KFImage.url(URL(string: user.avatarUrl ?? ""))
 							.placeholder {
 								Assets.Images.profilePhoto
-									.view(width: likesAvatarRadius, height: likesAvatarRadius)
+									.view(width: 24, height: 24)
+									.padding(AppSpacing.xxs)
+									.overlay {
+										Circle()
+											.stroke(Assets.Colors.appBarSurfaceTintColor, lineWidth: 2)
+									}
 									.clipShape(.circle)
+									.frame(width: 28, height: 28)
 							}
 							.resizable()
 							.fade(duration: 0.2)
 							.scaledToFill()
 							.clipShape(.circle)
-							.frame(width: likesAvatarRadius, height: likesAvatarRadius)
-							.offset(x: CGFloat(index) * (-likesAvatarRadius / 2))
-							.zIndex(Double(index))
+							.frame(width: 28, height: 28)
+							.offset(x: CGFloat(index) * (-14))
+							.zIndex(Double(store.likersInFollowings.count - 1) - Double(index))
 					}
 				}
+				.frame(width: likersInFollowingWidth, height: 28)
 			}
 			Group {
-				Text("\(store.likesCount) ")
-					.bold()
-					+ Text("Likes")
-						
 				if let firstLiker = store.firstLikerInFollowings {
-					Text("\(firstLiker.displayFullName)")
+					Text("Liked by \(firstLiker.displayFullName)")
 						.bold()
-				}
-				if store.suffixLikersCount > 0 {
-					Text("and")
-						+
-						Text(" \(store.suffixLikersCount) others")
+					if store.suffixLikersCount > 0 {
+						Text("and")
+							+
+							Text(" \(store.suffixLikersCount) others")
+							.bold()
+					}
+				} else {
+					Text("\(store.likesCount) ")
 						.bold()
+					+ Text("Likes")
 				}
 			}
 			.font(textTheme.titleMedium.font)
 			.foregroundStyle(Assets.Colors.bodyColor)
 			.contentTransition(.numericText())
+			Spacer()
 		}
 		.padding(.vertical, AppSpacing.sm)
 	}

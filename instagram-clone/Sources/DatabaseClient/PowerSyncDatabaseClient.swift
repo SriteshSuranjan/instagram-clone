@@ -82,7 +82,7 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 			Task {
 				for await data in await powerSyncRepository.db.watch(
 					sql: "SELECT COUNT(*) AS subscription_count FROM subscriptions WHERE subscriber_id = ?",
-					parameters: [userId],
+					parameters: [userId.lowercased()],
 					mapper: { cursor in
 						cursor.getLong(index: 0) ?? 0
 					}
