@@ -19,6 +19,13 @@ public protocol UserBaseRepository: Sendable {
 public protocol PostsBaseRepository: Sendable {
 	func postsAmount(of userId: String) async -> AsyncStream<Int>
 	func createPost(postId: String, caption: String, mediaJsonString: String) async throws -> Post?
+	func getPage(offset: Int, limit: Int, onlyReels: Bool) async throws -> [Post]
+	func getPostLikersInFollowings(postId: String, offset: Int, limit: Int) async throws -> [Shared.User]
+	func likesOfPost(postId: String, post: Bool) async -> AsyncStream<Int>
+	func postCommentsCount(postId: String) async -> AsyncStream<Int>
+	func isLiked(postId: String, userId: String?, post: Bool) async -> AsyncStream<Bool>
+	func postAuthorFollowingStatus(postAuthorId: String, userId: String?) async -> AsyncStream<Bool>
+	func likePost(postId: String, post: Bool) async throws -> Void
 }
 
 public protocol DatabaseClient: UserBaseRepository, PostsBaseRepository {}

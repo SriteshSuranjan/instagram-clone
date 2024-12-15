@@ -5,12 +5,14 @@ import InstaBlocks
 import Kingfisher
 import Shared
 import SwiftUI
+import UserClient
 
 @Reducer
 public struct PostFooterReducer {
 	public init() {}
 	@ObservableState
 	public struct State: Equatable {
+		var profileUserId: String
 		var block: InstaBlockWrapper
 		var isLiked: Bool
 		var likesCount: Int
@@ -20,6 +22,7 @@ public struct PostFooterReducer {
 		@Shared var currentMediaIndex: Int
 		public init(
 			block: InstaBlockWrapper,
+			profileUserId: String,
 			isLiked: Bool,
 			likesCount: Int,
 			commentsCount: Int,
@@ -28,6 +31,7 @@ public struct PostFooterReducer {
 			currentMediaIndex: Shared<Int>
 		) {
 			self.block = block
+			self.profileUserId = profileUserId
 			self.isLiked = isLiked
 			self.likesCount = likesCount
 			self.commentsCount = commentsCount
@@ -48,18 +52,76 @@ public struct PostFooterReducer {
 	public enum Action: BindableAction {
 		case binding(BindingAction<State>)
 		case onTapLikeButton
+		case likesCountUpdated(Int)
+		case commentsCountUpdated(Int)
+		case isLikedUpdated(Bool)
+		case likersInFollowingsUpdated([User])
+		case task
 	}
+
+	private enum Cancel: Hashable {
+		case subscriptions
+	}
+	
+	@Dependency(\.userClient.databaseClient) var databaseClient
 
 	public var body: some ReducerOf<Self> {
 		BindingReducer()
-		Reduce { _, action in
+		Reduce { state, action in
 			switch action {
+			case .task:
+				return .run { [block = state.block.block, profileUserId = state.profileUserId] send in
+					await withThrowingTaskGroup(of: Void.self) { group in
+						group.addTask {
+							let likersInFollowings = try await databaseClient.getPostLikersInFollowings(block.id, 0, 10)
+							await send(.likersInFollowingsUpdated(likersInFollowings))
+						}
+						group.addTask {
+							await subscriptions(send: send, post: block, profileUserId: profileUserId)
+						}
+					}
+				}
+				.cancellable(id: Cancel.subscriptions, cancelInFlight: true)
 			case .binding:
 				return .none
 			case .onTapLikeButton:
+				return .run { [postId = state.block.id] _ in
+					try await databaseClient.likePost(postId, true)
+				}
+			case let .likesCountUpdated(likesCount):
+				state.likesCount = likesCount
+				return .none
+			case let .commentsCountUpdated(commentsCount):
+				state.commentsCount = commentsCount
+				return .none
+			case let .isLikedUpdated(isLiked):
+				state.isLiked = isLiked
+				return .none
+			case let .likersInFollowingsUpdated(likersInFollowings):
+				state.likersInFollowings = likersInFollowings
 				return .none
 			}
 		}
+	}
+
+	private func subscriptions(send: Send<Action>, post: any PostBlock, profileUserId: String) async {
+		async let likesCount: Void = {
+			for await likesCount in await databaseClient.likesOfPost(post.id, true) {
+				await send(.likesCountUpdated(likesCount))
+			}
+		}()
+		async let commentsCount: Void = {
+			for await commentsCount in await databaseClient.postCommentsCount(post.id) {
+				await send(.commentsCountUpdated(commentsCount))
+			}
+		}()
+		async let isLiked: Void = {
+			for await isLiked in await databaseClient.isLiked(post.id, nil, true) {
+				await send(.isLikedUpdated(isLiked))
+			}
+		}()
+		
+		_ = await (likesCount, commentsCount, isLiked)
 	}
 }
 
@@ -92,10 +154,25 @@ public struct PostFooterView: View {
 					DotIndicator(totalCount: store.mediaUrls.count, currentIndex: $store.currentMediaIndex)
 				}
 			}
-			.padding(.vertical, store.block.isSponsored ? 0 : AppSpacing.sm)
-			.padding(.horizontal, AppSpacing.sm)
+			.padding(.top, store.block.isSponsored ? 0 : AppSpacing.sm)
+			.padding(.horizontal, AppSpacing.md)
 			
-			likers()
+			if store.likesCount > 0 {
+				ZStack {
+					likers()
+						.padding(.horizontal, AppSpacing.lg)
+						.transition(.move(edge: .top))
+				}
+			}
+			PostCaption(
+				username: store.block.author.username,
+				caption: store.block.caption
+			)
+			.padding(.horizontal, AppSpacing.lg)
+			Divider()
+		}
+		.task {
+			await store.send(.task).finish()
 		}
 	}
 	
@@ -109,7 +186,9 @@ public struct PostFooterView: View {
 	
 	@ViewBuilder
 	private func likeButton() -> some View {
-		Button {} label: {
+		Button {
+			store.send(.onTapLikeButton)
+		} label: {
 			Image(systemName: store.isLiked ? "heart.fill" : "heart")
 				.imageScale(.large)
 				.foregroundStyle(store.isLiked ? Assets.Colors.red : Assets.Colors.bodyColor)
@@ -162,97 +241,46 @@ public struct PostFooterView: View {
 	
 	@ViewBuilder
 	private func likers() -> some View {
-		if store.likesCount > 0 {
-			HStack(spacing: AppSpacing.sm) {
-				if store.likersInFollowings.count > 0 {
-					HStack(spacing: 0) {
-						ForEach(Array(store.likersInFollowings.enumerated()), id: \.element.id) { index, user in
-							KFImage.url(URL(string: user.avatarUrl ?? ""))
-								.placeholder {
-									Color.gray
-										.frame(width: likesAvatarRadius, height: likesAvatarRadius)
-										.clipShape(.circle)
-								}
-								.resizable()
-								.fade(duration: 0.2)
-								.scaledToFill()
-								.clipShape(.circle)
-								.frame(width: likesAvatarRadius, height: likesAvatarRadius)
-								.offset(x: CGFloat(index) * (-likesAvatarRadius / 2))
-								.zIndex(Double(index))
-						}
+		HStack(spacing: AppSpacing.sm) {
+			if store.likersInFollowings.count > 0 {
+				HStack(spacing: 0) {
+					ForEach(Array(store.likersInFollowings.enumerated()), id: \.element.id) { index, user in
+						KFImage.url(URL(string: user.avatarUrl ?? ""))
+							.placeholder {
+								Assets.Images.profilePhoto
+									.view(width: likesAvatarRadius, height: likesAvatarRadius)
+									.clipShape(.circle)
+							}
+							.resizable()
+							.fade(duration: 0.2)
+							.scaledToFill()
+							.clipShape(.circle)
+							.frame(width: likesAvatarRadius, height: likesAvatarRadius)
+							.offset(x: CGFloat(index) * (-likesAvatarRadius / 2))
+							.zIndex(Double(index))
 					}
 				}
-				Group {
-					Text("\(store.likesCount) ")
+			}
+			Group {
+				Text("\(store.likesCount) ")
+					.bold()
 					+ Text("Likes")
+						
+				if let firstLiker = store.firstLikerInFollowings {
+					Text("\(firstLiker.displayFullName)")
 						.bold()
-					
-					if let firstLiker = store.firstLikerInFollowings {
-						Text("\(firstLiker.displayFullName)")
-							.bold()
-					}
-					if store.suffixLikersCount > 0 {
-						Text("and")
+				}
+				if store.suffixLikersCount > 0 {
+					Text("and")
 						+
 						Text(" \(store.suffixLikersCount) others")
-							.bold()
-					}
-					
+						.bold()
 				}
-				.font(textTheme.titleMedium.font)
-				.foregroundStyle(Assets.Colors.bodyColor)
 			}
-			.padding(.horizontal, AppSpacing.sm)
-			.padding(.vertical, AppSpacing.sm)
-			.transition(.move(edge: .top))
+			.font(textTheme.titleMedium.font)
+			.foregroundStyle(Assets.Colors.bodyColor)
+			.contentTransition(.numericText())
 		}
+		.padding(.vertical, AppSpacing.sm)
 	}
-}
-
-#Preview {
-	PostFooterView(
-		store: Store(
-			initialState: PostFooterReducer.State(
-				block: .postLarge(
-					PostLargeBlock(
-						id: "aaf841ab-e823-4187-8a07-f9bfdc98e0a4",
-						author: PostAuthor(),
-						createdAt: Date.now,
-						caption: "This is caption",
-						media: [
-							.image(ImageMedia(id: "123445", url: "https://uuhkqhxfbjovbighyxab.supabase.co/storage/v1/object/public/posts/079b8318-51bc-4b50-80ac-fbf42361124d/image_0", blurHash: "LVC?N0af9+bJ0ga{-ijX=@e-N2az")),
-							.video(
-								VideoMedia(
-									id: "d7784ce7-49ca-461a-ab52-14017f9be458",
-									url: "https://uuhkqhxfbjovbighyxab.supabase.co/storage/v1/object/public/posts/00c8e0ea-d59e-45ee-b0d6-5034ff2d61e2/video_0",
-									blurHash: "LQKT[CR*?v-p~Vx^V@jb?aInRPWX",
-									firstFrameUrl: "https://uuhkqhxfbjovbighyxab.supabase.co/storage/v1/object/public/posts/00c8e0ea-d59e-45ee-b0d6-5034ff2d61e2/video_first_frame_0)"
-								)
-							)
-						]
-					)
-				),
-				isLiked: true,
-				likesCount: 10,
-				commentsCount: 10,
-				mediaUrls: ["https://uuhkqhxfbjovbighyxab.supabase.co/storage/v1/object/public/posts/079b8318-51bc-4b50-80ac-fbf42361124d/image_0"],
-				likersInFollowings: [
-					User(
-						id: "11",
-						email: nil,
-						username: nil,
-						fullName: nil,
-						avatarUrl: "https://uuhkqhxfbjovbighyxab.supabase.co/storage/v1/object/sign/avatars/2024-12-09T13:17:05Z.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJhdmF0YXJzLzIwMjQtMTItMDlUMTM6MTc6MDVaLnBuZyIsImlhdCI6MTczMzc1MDIzMCwiZXhwIjoxNzMzNzUwMjkwfQ.dQPRTi88KIssjIyJgennCbkQOwjJePionj-Fza8Z4K8",
-						pushToken: nil,
-						isNewUser: false
-					),
-					User(id: "22", avatarUrl: "https://uuhkqhxfbjovbighyxab.supabase.co/storage/v1/object/sign/avatars/2024-12-09T15:44:00.078471.jpg?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJhdmF0YXJzLzIwMjQtMTItMDlUMTU6NDQ6MDAuMDc4NDcxLmpwZyIsImlhdCI6MTczMzczMDI0MywiZXhwIjoyMDQ5MDkwMjQzfQ.hukTLDivWUBKKEpukDmJ1H1qcaa87pgZnmLqRmnrvI0")
-				],
-				currentMediaIndex: Shared(0)
-			),
-			reducer: { PostFooterReducer()
-			}
-		)
-	)
 }

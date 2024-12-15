@@ -109,4 +109,12 @@ public enum InstaBlockWrapper: Codable, Equatable, Identifiable {
 		case .unknown(let unknownBlock): return unknownBlock.isReel
 		}
 	}
+	
+	public var block: any PostBlock {
+		switch self {
+		case .postLarge(let postLargeBlock): return postLargeBlock
+		case .postSponsored(let postSponsoredBlock): return postSponsoredBlock
+		case .unknown(let unknownBlock): return unknownBlock
+		}
+	}
 }

@@ -281,6 +281,7 @@ let package = Package(
 				"AppUI",
 				"InstaBlocks",
 				"BlurHashClient",
+				"UserClient",
 				.product(name: "Kingfisher", package: "Kingfisher"),
 				.product(name: "VideoPlayer", package: "VideoPlayer"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
@@ -319,6 +320,7 @@ let package = Package(
 				"InstagramBlocksUI",
 				"SnackbarMessagesClient",
 				"InstaBlocks",
+				"UserClient",
 				.product(name: "Tagged", package: "swift-tagged"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]

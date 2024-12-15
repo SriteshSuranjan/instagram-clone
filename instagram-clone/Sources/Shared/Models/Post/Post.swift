@@ -13,7 +13,7 @@ public struct Post: Equatable, Identifiable, Codable {
 		caption: String,
 		createdAt: Date,
 		updatedAt: Date? = nil,
-		media: [MediaItem]
+		media: [MediaItem] = []
 	) {
 		self.id = id
 		self.author = author

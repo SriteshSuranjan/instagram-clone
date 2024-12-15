@@ -36,7 +36,7 @@ public struct PostMediaReducer {
 			postIndex: Int? = nil,
 			isLiked: Bool,
 			currentMediaIndex: Shared<Int>,
-			showCurrentIndex: Bool = true,
+			showCurrentIndex: Bool = false,
 			withLikeOverlay: Bool = false,
 			autoHideCurrentIndex: Bool = true,
 			videoMuted: Bool = true

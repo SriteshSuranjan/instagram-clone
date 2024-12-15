@@ -16,6 +16,7 @@ public struct MediaCarouselReducer {
 		@Shared var currentMediaIndex: Int
 		var playingVideoMediaId: String? // media id
 		var currentMediaPosition: String? // media id
+		var playVideo = false
 		@Shared var videoMuted: Bool
 		public init(media: [MediaItem], currentMediaIndex: Shared<Int>, videoMuted: Shared<Bool>) {
 			self._currentMediaIndex = currentMediaIndex
@@ -31,7 +32,6 @@ public struct MediaCarouselReducer {
 		case startPlayVideo(mediaId: String)
 		case stopPlayVideo(mediaId: String)
 		case mediaPositionUpdated(mediaId: String?)
-		
 	}
 
 	@Dependency(\.blurHashClient.decode) var blurHash
@@ -104,6 +104,7 @@ public struct MediaCarouselReducer {
 				return .none
 			}
 		}
+		._printChanges()
 	}
 }
 
@@ -133,21 +134,28 @@ public struct MediaCarouselView: View {
 						}
 						.resizable()
 						.fade(duration: 0.2)
-						.scaledToFill()
+						.scaledToFit()
 						.overlay {
-							if media.isVideo {
+							if media.isVideo && media.id == store.playingVideoMediaId {
 								// TODO: seek to previous play time when scroll
 								VideoPlayer(
 									url: URL(string: media.url) ?? URL(string: "nil://placeholder")!,
-									play: Binding(
-										get: { store.playingVideoMediaId == media.id },
-										set: { _ in
-											store.send(.startPlayVideo(mediaId: media.id))
+									// Start of Selection
+									play: Binding<Bool>(
+										get: {
+											store.playingVideoMediaId == media.id
+										},
+										set: { isPlaying in
+											if isPlaying {
+												store.send(.startPlayVideo(mediaId: media.id))
+											} else if store.playingVideoMediaId == media.id {
+												store.send(.stopPlayVideo(mediaId: media.id))
+											}
 										}
 									)
 								)
 								.mute(store.videoMuted)
-								.autoReplay(false)
+								.autoReplay(true)
 								.overlay {
 									// TODO: control play and pause
 								}
@@ -155,6 +163,16 @@ public struct MediaCarouselView: View {
 						}
 						.id(media.id)
 						.containerRelativeFrame(.horizontal)
+						.onAppear {
+							if media.isVideo {
+								store.send(.startPlayVideo(mediaId: media.id))
+							}
+						}
+						.onDisappear {
+							if store.playingVideoMediaId == media.id {
+								store.send(.stopPlayVideo(mediaId: media.id))
+							}
+						}
 				}
 			}
 			.scrollTargetLayout()

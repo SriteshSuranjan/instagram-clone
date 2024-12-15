@@ -5,6 +5,7 @@ import Shared
 import Supabase
 
 public actor PowerSyncDatabaseClient: DatabaseClient {
+	
 	public let powerSyncRepository: PowerSyncRepository
 	public init(powerSyncRepository: PowerSyncRepository) {
 		self.powerSyncRepository = powerSyncRepository
@@ -364,6 +365,175 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 			)
 			return post
 		}) as? Post
+	}
+	
+	public func getPage(
+		offset: Int,
+		limit: Int,
+		onlyReels: Bool = false
+	) async throws -> [Post] {
+		let value = try await self.powerSyncRepository.db.getAll(
+			sql:
+"""
+	 SELECT 
+		posts.*,
+		p.id as user_id,
+		p.avatar_url as avatar_url,
+		p.username as username,
+		p.full_name as full_name
+	 FROM
+		posts
+		inner join profiles p on posts.user_id = p.id
+		ORDER BY created_at DESC LIMIT ?1 OFFSET ?2
+""",
+			parameters: [
+				limit, offset
+			],
+			mapper: { cursor in
+				let postId = cursor.getString(index: 0) ?? ""
+				let authorId = cursor.getString(index: 1) ?? ""
+				let createdAt = cursor.getString(index: 2) ?? ""
+				let caption = cursor.getString(index: 3) ?? ""
+				let mediaJsonString = cursor.getString(index: 5) ?? ""
+//				let userId = cursor.getString(index: 6) ?? ""
+				let avatarUrl = cursor.getString(index: 7)
+				let userName = cursor.getString(index: 8)
+				let fullName = cursor.getString(index: 9)
+				return Post(id: postId, author: User(id: authorId, username: userName, fullName: fullName, avatarUrl: avatarUrl), caption: caption, createdAt: try! Date(createdAt, strategy: .dateTime), media: (try? PowerSyncRepository.decoder.decode([MediaItem].self, from: mediaJsonString.data(using: .utf8)!)) ?? [])
+			}
+		)
+		guard let posts = value as? [Post] else {
+			return []
+		}
+		return posts
+	}
+	
+	public func getPostLikersInFollowings(postId: String, offset: Int = 0, limit: Int = 3) async throws -> [Shared.User] {
+		guard let currentUserId = await currentUserId else {
+			return []
+		}
+		return try await self.powerSyncRepository.db.getAll(
+			sql: """
+SELECT id, avatar_url, username, full_name
+FROM profiles
+WHERE id IN (
+		SELECT l.user_id
+		FROM likes l
+		WHERE l.post_id = ?1
+		AND EXISTS (
+				SELECT *
+				FROM subscriptions f
+				WHERE f.subscribed_to_id = l.user_Id
+				AND f.subscriber_id = ?2
+		) AND id <> ?2
+)
+LIMIT ?3 OFFSET ?4
+""",
+			parameters: [postId, currentUserId.lowercased(), limit, offset],
+			mapper: { cursor in
+				let userId = cursor.getString(index: 0) ?? ""
+				let avatarUrl = cursor.getString(index: 1)
+				let username = cursor.getString(index: 2)
+				let fullName = cursor.getString(index: 3)
+				return User(id: userId, username: username, fullName: fullName, avatarUrl: avatarUrl)
+			}
+		) as? [Shared.User] ?? []
+	}
+
+	public func likesOfPost(postId: String, post: Bool = true) async -> AsyncStream<Int> {
+		let statement = post ? "post_id" : "comment_id"
+		return AsyncStream { continuation in
+			Task {
+				for await data in await powerSyncRepository.db.watch(
+					sql: """
+					SELECT COUNT(*)
+					FROM likes
+					WHERE \(statement) = ? AND \(statement) IS NOT NULL
+					""",
+					parameters: [postId],
+					mapper: { cursor in
+						cursor.getLong(index: 0) ?? 0
+					}
+				) {
+					continuation.yield((data as? [Int] ?? []).first ?? 0)
+				}
+				continuation.finish()
+			}
+		}
+	}
+
+	public func postCommentsCount(postId: String) async -> AsyncStream<Int> {
+		AsyncStream { continuation in
+			Task {
+				for await data in await powerSyncRepository.db.watch(
+					sql: "SELECT COUNT(*) FROM comments WHERE post_id = ?",
+					parameters: [postId],
+					mapper: { cursor in
+						cursor.getLong(index: 0) ?? 0
+					}
+				) {
+					continuation.yield((data as? [Int])?.first ?? 0)
+				}
+				continuation.finish()
+			}
+		}
+	}
+
+	public func isLiked(postId: String, userId: String?, post: Bool = true) async -> AsyncStream<Bool> {
+		guard let currentUserId = await currentUserId else {
+			return .finished
+		}
+		let statement = post ? "post_id" : "comment_id"
+		return AsyncStream { continuation in
+			Task {
+				for await data in await powerSyncRepository.db.watch(
+					sql: "SELECT EXISTS(SELECT 1 FROM likes WHERE user_id = ? AND \(statement) = ? AND \(statement) IS NOT NULL)",
+					parameters: [currentUserId.lowercased(), postId],
+					mapper: { cursor in
+						cursor.getLong(index: 0) ?? 0
+					}
+				) {
+					if let result = data as? [Int] {
+						continuation.yield((result.first ?? 0) > 0)
+					} else {
+						continuation.yield(false)
+					}
+				}
+				continuation.finish()
+			}
+		}
+	}
+
+	public func postAuthorFollowingStatus(postAuthorId: String, userId: String? = nil) async -> AsyncStream<Bool> {
+		guard let currentUserId = await currentUserId else {
+			return .finished
+		}
+		return await followingStatus(of: postAuthorId, followerId: userId ?? currentUserId)
+	}
+	
+	public func likePost(postId: String, post: Bool = true) async throws {
+		guard let currentUserId = await currentUserId else {
+			return
+		}
+		let statement = post ? "post_id" : "comment_id"
+		let exists = (try await self.powerSyncRepository.db.get(
+			sql: "SELECT EXISTS(SELECT 1 FROM likes WHERE user_id = ? AND \(statement) = ? AND \(statement) IS NOT NULL)",
+			parameters: [currentUserId.lowercased(), postId],
+			mapper: { cursor in
+				cursor.getLong(index: 0) ?? 0
+			}
+		) as? Int ?? 0) > 0
+		if !exists {
+			try await self.powerSyncRepository.db.execute(
+				sql: "INSERT INTO likes (user_id, \(statement), id) VALUES (?, ?, uuid())",
+				parameters: [currentUserId.lowercased(), postId]
+			)
+		} else {
+			try await self.powerSyncRepository.db.execute(
+				sql: "DELETE FROM likes WHERE user_id = ? AND \(statement) = ? AND \(statement) IS NOT NULL",
+				parameters: [currentUserId.lowercased(), postId]
+			)
+		}
 	}
 }
 

@@ -92,7 +92,14 @@ extension UserDatabaseClient: DependencyKey {
 		followers: unimplemented("Use live implementation please.", placeholder: .never),
 		followings: unimplemented("Use live implementation please."),
 		removeFollower: unimplemented("Use live implementation please."),
-		createPost: unimplemented("Use live implementation please.")
+		createPost: unimplemented("Use live implementation please."),
+		getPost: unimplemented("Use live implementation please."),
+		getPostLikersInFollowings: unimplemented("Use live implementation please."),
+		likesOfPost: unimplemented("Use live implementation please.", placeholder: .never),
+		postCommentsCount: unimplemented("Use live implementation please.", placeholder: .never),
+		isLiked: unimplemented("Use live implementation please.", placeholder: .never),
+		postAuthorFollowingStatus: unimplemented("Use live implementation please.", placeholder: .never),
+		likePost: unimplemented("Use live implementation please.")
 	)
 	public static func livePowerSyncDatabaseClient(
 		_ client: DatabaseClient
@@ -141,8 +148,28 @@ extension UserDatabaseClient: DependencyKey {
 			createPost: { caption, mediaJsonString in
 				@Dependency(\.uuid) var uuid
 				let post = try await client.createPost(postId: uuid().uuidString.lowercased(), caption: caption, mediaJsonString: mediaJsonString)
-				debugPrint("\(post) \(#line)")
 				return post
+			},
+			getPost: { offset, limit, onlyReels in
+				try await client.getPage(offset: offset, limit: limit, onlyReels: onlyReels)
+			},
+			getPostLikersInFollowings: { postId, offset, limit in
+				try await client.getPostLikersInFollowings(postId: postId, offset: offset, limit: limit)
+			},
+			likesOfPost: { postId, post in
+				await client.likesOfPost(postId: postId, post: post)
+			},
+			postCommentsCount: { postId in
+				await client.postCommentsCount(postId: postId)
+			},
+			isLiked: { postId, userId, post in
+				await client.isLiked(postId: postId, userId: userId, post: post)
+			},
+			postAuthorFollowingStatus: { postAuthorId, userId in
+				await client.postAuthorFollowingStatus(postAuthorId: postAuthorId, userId: userId)
+			},
+			likePost: { postId, post in
+				try await client.likePost(postId: postId, post: post)
 			}
 		)
 	}

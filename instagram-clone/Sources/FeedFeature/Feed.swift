@@ -1,32 +1,145 @@
-import Foundation
-import SwiftUI
-import ComposableArchitecture
 import AppUI
+import ComposableArchitecture
+import Foundation
 import InstaBlocks
-import Shared
 import InstagramBlocksUI
+import Shared
+import SwiftUI
+import UserClient
+
+public enum FeedStatus {
+	case initial
+	case loading
+	case populated
+	case failure
+}
+
+private let pageLimit = 10
 
 @Reducer
 public struct FeedReducer {
 	public init() {}
 	@ObservableState
 	public struct State: Equatable {
-		var feeds: [InstaBlockWrapper]
-		public init(feeds: [InstaBlockWrapper] = []) {
-			self.feeds = feeds
+		var profileUserId: String
+		var feed: Feed
+		var status: FeedStatus = .initial
+		var post: IdentifiedArrayOf<PostLargeReducer.State> = []
+		public init(profileUserId: String, feed: Feed = .empty) {
+			self.profileUserId = profileUserId
+			self.feed = feed
 		}
 	}
+
 	public enum Action: BindableAction {
 		case binding(BindingAction<State>)
+		case task
+		case feedPageRequest
+		case feedPageResponse(Result<[PostLargeBlock], Error>)
+		case post(IdentifiedActionOf<PostLargeReducer>)
 	}
+
+	@Dependency(\.userClient.databaseClient) var databaseClient
+
+	private enum Cancel: Hashable {
+		case feedPageRequest
+	}
+
 	public var body: some ReducerOf<Self> {
 		BindingReducer()
-		Reduce { state, action in
+		Reduce {
+			state,
+				action in
 			switch action {
 			case .binding:
 				return .none
+
+			case .task:
+				return .run { send in
+					await send(.feedPageRequest)
+				}
+
+			case .feedPageRequest:
+				state.status = .loading
+				return .run { [currentPage = state.feed.feedPage.page] send in
+					let posts = try await databaseClient.getPost(currentPage * pageLimit, pageLimit, false)
+					await send(.feedPageResponse(.success(posts.map { $0.toPostLargeBlock() })))
+					//					let postLikers = try await withThrowingTaskGroup(of: (String, [User]).self) { group in
+					//						for post in posts {
+					//							group.addTask {
+					//								let users = try await databaseClient.getPostLikersInFollowings(post.id, 0, 3)
+					//								return (post.id, users)
+					//							}
+					//						}
+					//						var likers: [(String, [User])] = []
+					//						for try await liker in group {
+					//							likers.append(liker)
+					//						}
+					//						return likers
+					//					}
+
+				} catch: { error, send in
+					await send(.feedPageResponse(.failure(error)))
+				}
+				.cancellable(id: Cancel.feedPageRequest, cancelInFlight: true)
+			case let .feedPageResponse(result):
+
+				switch result {
+				case let .success(postBlocks):
+					state.status = .populated
+					state.feed.feedPage.page = state.feed.feedPage.page + 1
+					state.feed.feedPage.hasMore = postBlocks.count >= pageLimit
+					state.feed.feedPage.blocks.append(contentsOf: postBlocks.map { InstaBlockWrapper.postLarge($0) })
+					state.feed.feedPage.totalBlocks = state.feed.feedPage.totalBlocks
+					let profileUserId = state.profileUserId
+					let posts = postBlocks.map {
+						PostLargeReducer.State(
+							block: InstaBlockWrapper.postLarge($0),
+							isOwner: $0.author.id == profileUserId,
+							isFollowed: false,
+							isLiked: false,
+							likesCount: 0,
+							commentCount: 0,
+							enableFollowButton: true,
+							withInViewNotifier: false,
+							profileUserId: profileUserId
+						)
+					}
+					state.post.append(contentsOf: posts)
+					return .none
+				case let .failure(error):
+					state.status = .failure
+					return .none
+				}
+
+			case .post:
+				return .none
 			}
 		}
+		.forEach(\.post, action: \.post) {
+			PostLargeReducer()
+		}
+	}
+}
+
+extension Post {
+	func toPostLargeBlock() -> PostLargeBlock {
+		PostLargeBlock(
+			id: id,
+			author: PostAuthor(
+				confirmed: author.id,
+				avatarUrl: author.avatarUrl,
+				username: author.username
+			),
+			createdAt: createdAt,
+			caption: caption,
+			media: media,
+			action: .navigateToPostAuthor(
+				NavigateToPostAuthorProfileAction(
+					authorId: author.id
+				)
+			)
+		)
 	}
 }
 
@@ -36,117 +149,26 @@ public struct FeedView: View {
 	public init(store: StoreOf<FeedReducer>) {
 		self.store = store
 	}
+
 	public var body: some View {
 		List {
-//			ForEach(store.feeds) { feed in
-//				AsyncImage(url: URL(string: feed.media?.first?.url ?? "")) { image in
-//					image
-//						.resizable()
-//						.aspectRatio(contentMode: .fit)
-//						.frame(maxWidth: .infinity)
-//						.clipped()
-//				} placeholder: {
-//					ProgressView()
-//				}
-//
-//			}
-			PostLargeView<EmptyView, EmptyView>(
-				store: Store(
-					initialState: PostLargeReducer.State(
-						block: .postLarge(
-							PostLargeBlock(
-								id: "aaf841ab-e823-4187-8a07-f9bfdc98e0a4",
-								author: PostAuthor(),
-								createdAt: Date.now,
-								caption: "This is caption",
-								media: [
-									.image(ImageMedia(id: "123445", url: "https://uuhkqhxfbjovbighyxab.supabase.co/storage/v1/object/public/posts/079b8318-51bc-4b50-80ac-fbf42361124d/image_0", blurHash: "LVC?N0af9+bJ0ga{-ijX=@e-N2az")),
-									.video(
-										VideoMedia(
-											id: "d7784ce7-49ca-461a-ab52-14017f9be458",
-											url: "https://uuhkqhxfbjovbighyxab.supabase.co/storage/v1/object/public/posts/00c8e0ea-d59e-45ee-b0d6-5034ff2d61e2/video_0",
-											blurHash: "LQKT[CR*?v-p~Vx^V@jb?aInRPWX",
-											firstFrameUrl: "https://uuhkqhxfbjovbighyxab.supabase.co/storage/v1/object/public/posts/00c8e0ea-d59e-45ee-b0d6-5034ff2d61e2/video_first_frame_0)"
-										)
-									)
-								]
-							)
-						),
-						isOwner: true,
-						isFollowed: false,
-						isLiked: true,
-						likesCount: 10,
-						commentCount: 10,
-						enableFollowButton: true,
-						withInViewNotifier: false
-					),
-					reducer: { PostLargeReducer() }
-				),
-				postOptionsSettings: .viewer,
-				postAuthorAvatarBuilder: nil,
-				likesCountBuilder: { _, _, _ in EmptyView() }
-			)
-			.listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-			.listRowSeparator(.hidden)
-			PostLargeView<EmptyView, EmptyView>(
-				store: Store(
-					initialState: PostLargeReducer.State(
-						block: .postSponsored(
-							PostSponsoredBlock(
-								author: PostAuthor(),
-								id: "aaf851ab-e823-4187-8a07-f9bfdc98e0a4",
-								createdAt: Date.now,
-								media: [
-									.image(ImageMedia(id: "123445", url: "https://uuhkqhxfbjovbighyxab.supabase.co/storage/v1/object/public/posts/079b8318-51bc-4b50-80ac-fbf42361124d/image_0", blurHash: "LVC?N0af9+bJ0ga{-ijX=@e-N2az")),
-									.video(
-										VideoMedia(
-											id: "d7784ce7-49ca-461a-ab52-14017f9be458",
-											url: "https://uuhkqhxfbjovbighyxab.supabase.co/storage/v1/object/public/posts/00c8e0ea-d59e-45ee-b0d6-5034ff2d61e2/video_0",
-											blurHash: "LQKT[CR*?v-p~Vx^V@jb?aInRPWX",
-											firstFrameUrl: "https://uuhkqhxfbjovbighyxab.supabase.co/storage/v1/object/public/posts/00c8e0ea-d59e-45ee-b0d6-5034ff2d61e2/video_first_frame_0)"
-										)
-									)
-								],
-								caption: "This is caption",
-								isSponsored: true
-							)
-						),
-						isOwner: true,
-						isFollowed: false,
-						isLiked: true,
-						likesCount: 10,
-						commentCount: 10,
-						enableFollowButton: true,
-						withInViewNotifier: false
-					),
-					reducer: { PostLargeReducer() }
-				),
-				postOptionsSettings: .viewer,
-				postAuthorAvatarBuilder: nil,
-				likesCountBuilder: { _, _, _ in EmptyView() }
-			)
-			.listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-			.listRowSeparator(.hidden)
-			.padding(.vertical, AppSpacing.lg)
+			ForEachStore(store.scope(state: \.post, action: \.post)) { postStore in
+				PostLargeView(
+					store: postStore,
+					postOptionsSettings: postStore.block.author.id == store.profileUserId ? PostOptionsSettings.owner(
+						onPostDelete: { _ in
+						},
+						onPostEdit: { _ in
+						}
+					) : PostOptionsSettings.viewer
+				)
+				.listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: AppSpacing.lg, trailing: 0))
+				.listRowSeparator(.hidden)
+			}
 		}
 		.listStyle(.plain)
+		.task {
+			await store.send(.task).finish()
+		}
 	}
-}
-
-#Preview {
-	let post = PostLargeBlock(
-		id: UUID().uuidString,
-			author: PostAuthor(randomConfirmed: nil),
-			createdAt: Date.now.addingTimeInterval(-CGFloat((0...365).randomElement()! * 24 * 3600)),
-			caption: "Lorem ipsum dolor sit ",
-		media: [.image(ImageMedia(id: "https://images.unsplash.com/photo-1733251744520-add362ab1ee7?q=80&w=3687&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", url: "https://images.unsplash.com/photo-1733251744520-add362ab1ee7?q=80&w=3687&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", blurHash: nil))]
-		)
-	
-	let posts: [InstaBlockWrapper] = Array.init(repeating: .postLarge(post), count: 10)
-	FeedView(
-		store: Store(
-			initialState: FeedReducer.State(feeds: posts),
-			reducer: { FeedReducer() }
-		)
-	)
 }

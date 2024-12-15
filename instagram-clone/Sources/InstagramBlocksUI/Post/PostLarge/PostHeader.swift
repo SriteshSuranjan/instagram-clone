@@ -4,12 +4,14 @@ import Foundation
 import InstaBlocks
 import Shared
 import SwiftUI
+import UserClient
 
 @Reducer
 public struct PostHeaderReducer {
 	public init() {}
 	@ObservableState
 	public struct State: Equatable {
+		var profileUserId: String
 		var block: InstaBlockWrapper
 		var isOwner: Bool
 		var isFollowed: Bool
@@ -17,17 +19,20 @@ public struct PostHeaderReducer {
 		var isSponsored: Bool
 		public init(
 			block: InstaBlockWrapper,
+			profileUserId: String,
 			isOwner: Bool,
 			isFollowed: Bool,
 			enableFollowButton: Bool,
 			isSponsored: Bool
 		) {
 			self.block = block
+			self.profileUserId = profileUserId
 			self.isOwner = isOwner
 			self.isFollowed = isFollowed
 			self.enableFollowButton = enableFollowButton
 			self.isSponsored = isSponsored
 		}
+
 		var showFollowButton: Bool {
 			if isSponsored {
 				return false
@@ -39,55 +44,76 @@ public struct PostHeaderReducer {
 		}
 	}
 
+	@Dependency(\.userClient.databaseClient) var databaseClient
+
 	public enum Action: BindableAction {
 		case binding(BindingAction<State>)
+		case task
+		case postAuthorFollowingStatusDidUpdated(Bool)
+		case followAuthor
+	}
+
+	private enum Cancel: Hashable {
+		case followingStatusSubscription
+		case followRequest
 	}
 
 	public var body: some ReducerOf<Self> {
 		BindingReducer()
-		Reduce { _, action in
+		Reduce { state, action in
 			switch action {
 			case .binding:
 				return .none
+
+			case .task:
+				return .run { [postAuthorId = state.block.author.id, profileUserId = state.profileUserId] send in
+					if postAuthorId != profileUserId {
+						for await isFollowed in await databaseClient.postAuthorFollowingStatus(postAuthorId, profileUserId) {
+							await send(.postAuthorFollowingStatusDidUpdated(isFollowed))
+						}
+					}
+				}.cancellable(id: Cancel.followingStatusSubscription, cancelInFlight: true)
+			case .postAuthorFollowingStatusDidUpdated(let isFollowed):
+				state.isFollowed = isFollowed
+				debugPrint("isFollowed: \(isFollowed)")
+				return .none
+			case .followAuthor:
+				return .run { [postAuthorId = state.block.author.id, profileUserId = state.profileUserId] _ in
+					try await databaseClient.follow(postAuthorId, profileUserId)
+				}
+				.cancellable(id: Cancel.followRequest, cancelInFlight: true)
 			}
 		}
 	}
 }
 
-public struct PostHeaderView<Avatar: View>: View {
+public struct PostHeaderView: View {
 	@Bindable var store: StoreOf<PostHeaderReducer>
 	let onTapAvatar: ((String?) -> Void)?
 	let follow: () -> Void
-	let postAuthorAvatarBuilder: ((PostAuthor, ((String?) -> Void)?) -> Avatar)?
 	let color: Color?
 	@Environment(\.textTheme) var textTheme
 	public init(
 		store: StoreOf<PostHeaderReducer>,
 		onTapAvatar: ((String?) -> Void)?,
 		follow: @escaping () -> Void,
-		color: Color?,
-		postAuthorAvatarBuilder: ((PostAuthor, ((String?) -> Void)?) -> Avatar)?
+		color: Color?
 	) {
 		self.store = store
 		self.onTapAvatar = onTapAvatar
 		self.follow = follow
 		self.color = color
-		self.postAuthorAvatarBuilder = postAuthorAvatarBuilder
 	}
 
 	public var body: some View {
 		HStack(spacing: AppSpacing.md) {
-			if let postAuthorAvatarBuilder {
-				postAuthorAvatarBuilder(store.block.author, onTapAvatar)
-			} else {
-				UserProfileAvatar(
-					userId: store.block.author.id,
-					avatarUrl: store.block.author.avatarUrl,
-					isLarge: false,
-					animationConfig: ButtonAnimationConfig(),
-					onTap: onTapAvatar
-				)
-			}
+			UserProfileAvatar(
+				userId: store.block.author.id,
+				avatarUrl: store.block.author.avatarUrl,
+				isLarge: false,
+				animationConfig: ButtonAnimationConfig(),
+				onTap: onTapAvatar
+			)
 			VStack(alignment: .leading, spacing: AppSpacing.xxs) {
 				HStack(spacing: AppSpacing.sm) {
 					Text(store.block.author.username)
@@ -112,7 +138,7 @@ public struct PostHeaderView<Avatar: View>: View {
 						isFollowed: store.isFollowed,
 						isOutlined: color != nil
 					) {
-						
+						store.send(.followAuthor)
 					}
 					Button {} label: {
 						Image(systemName: "ellipsis")
@@ -125,62 +151,8 @@ public struct PostHeaderView<Avatar: View>: View {
 		}
 		.padding(.horizontal, AppSpacing.sm)
 		.padding(.vertical, AppSpacing.sm)
-	}
-}
-
-
-#Preview {
-	Group {
-		PostHeaderView<EmptyView>(
-			store: Store(
-				initialState: PostHeaderReducer.State(
-					block: .postSponsored(
-						PostSponsoredBlock(
-							author: PostAuthor(),
-							id: "371278938712",
-							createdAt: Date(),
-							media: [.image(ImageMedia(id: "1772378", url: "https://images.unsplash.com/photo-1719937050679-c3a2c9c67b0f?q=80&w=3544&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", blurHash: nil))],
-							caption: "This is preview post",
-							isSponsored: true
-						)
-					),
-					isOwner: false,
-					isFollowed: false,
-					enableFollowButton: false,
-					isSponsored: true
-				),
-				reducer: { PostHeaderReducer() }
-			),
-			onTapAvatar: nil,
-			follow: {},
-			color: Assets.Colors.blue,
-			postAuthorAvatarBuilder: nil
-		)
-		
-		PostHeaderView<EmptyView>(
-			store: Store(
-				initialState: PostHeaderReducer.State(
-					block: .postLarge(
-						PostLargeBlock(
-							id: "371278938712",
-							author: PostAuthor(),
-							createdAt: Date(),
-							caption: "This is preview post",
-							media: [.image(ImageMedia(id: "1772378", url: "https://images.unsplash.com/photo-1719937050679-c3a2c9c67b0f?q=80&w=3544&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", blurHash: nil))],
-							isSponsored: false
-						)
-					),
-					isOwner: false,
-					isFollowed: false,
-					enableFollowButton: true,
-					isSponsored: false
-				),
-				reducer: { PostHeaderReducer() }
-			),
-			onTapAvatar: nil,
-			follow: {},
-			color: nil,
-			postAuthorAvatarBuilder: nil
-		)
+		.task {
+			await store.send(.task).finish()
+		}
 	}
 }

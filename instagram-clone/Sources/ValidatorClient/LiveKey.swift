@@ -14,12 +14,10 @@ extension ValidatorClient: DependencyKey {
 extension EmailValidator: DependencyKey {
 	public static let liveValue = EmailValidator(
 		validate: { email in
-			debugPrint("Email validate")
 			guard !email.isEmpty else {
 				throw EmailValidationError.empty
 			}
 			guard let value = _validate(emailRegExp, value: email) else {
-				debugPrint("Invalid Email Throwed")
 				throw EmailValidationError.invalid
 			}
 			return email
@@ -30,7 +28,6 @@ extension EmailValidator: DependencyKey {
 extension PasswordValidator: DependencyKey {
 	public static let liveValue = PasswordValidator(
 		validate: { password in
-			debugPrint("Email validate")
 			guard password.count >= passwordRegExp.count else {
 				throw PasswordValidationError.lengthNotValid
 			}
@@ -42,7 +39,6 @@ extension PasswordValidator: DependencyKey {
 extension NameValidator: DependencyKey {
 	public static let liveValue = NameValidator(
 		validate: { name in
-			debugPrint("UserName validate")
 			guard !name.isEmpty else {
 				throw NameValidationError.empty
 			}
@@ -57,7 +53,6 @@ extension NameValidator: DependencyKey {
 extension StringLengthValidator: DependencyKey {
 	public static let liveValue = StringLengthValidator(
 		validate: { value, lowerBound in
-			debugPrint("FullName validate")
 			guard value.count >= lowerBound else {
 				throw StringLengthValidationError(lowerBound: lowerBound)
 			}

@@ -41,6 +41,13 @@ public struct UserDatabaseClient: Sendable {
 	public var followings: @Sendable (_ userId: String) async throws -> [Shared.User]
 	public var removeFollower: @Sendable (_ followerId: String) async throws -> Void
 	public var createPost: @Sendable (_ caption: String, _ mediaJsonString: String) async throws -> Post?
+	public var getPost: @Sendable (_ offset: Int, _ limit: Int, _ onlyReels: Bool) async throws -> [Post]
+	public var getPostLikersInFollowings: @Sendable (_ postId: String, _ offset: Int, _ limit: Int) async throws -> [Shared.User]
+	public var likesOfPost: @Sendable (_ postId: String, _ post: Bool) async -> AsyncStream<Int> = { _, _ in .never }
+	public var postCommentsCount: @Sendable (_ postId: String) async -> AsyncStream<Int> = { _ in .never }
+	public var isLiked: @Sendable (_ postId: String, _ userId: String?, _ post: Bool) async -> AsyncStream<Bool> = { _, _, _ in .never }
+	public var postAuthorFollowingStatus: @Sendable (_ postAuthorId: String, _ userId: String?) async -> AsyncStream<Bool> = { _, _ in .never }
+	public var likePost: @Sendable (_ postId: String, _ post: Bool) async throws -> Void
 }
 
 @DependencyClient

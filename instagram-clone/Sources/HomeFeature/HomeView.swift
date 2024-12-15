@@ -43,14 +43,14 @@ public struct HomeReducer {
 		public var authenticatedUser: User
 		var currentTab: HomeTab = .feed
 		var showAppLoadingIndeterminate = false
-		var feed = FeedReducer.State()
+		var feed: FeedReducer.State
 		var timeline = TimelineReducer.State()
 		var reels = ReelsReducer.State()
 		var userProfile: UserProfileReducer.State
 		public init(authenticatedUser: User) {
 			self.userProfile = UserProfileReducer.State(authenticatedUserId: authenticatedUser.id, profileUserId: authenticatedUser.id)
 			self.authenticatedUser = authenticatedUser
-			
+			self.feed = FeedReducer.State(profileUserId: authenticatedUser.id)
 		}
 	}
 
@@ -119,7 +119,7 @@ public struct HomeReducer {
 public struct HomeView: View {
 	@Bindable var store: StoreOf<HomeReducer>
 	@Environment(\.textTheme) var textTheme
-	@State private var currentTab: HomeTab = .userProfile
+	@State private var currentTab: HomeTab = .feed
 	public init(store: StoreOf<HomeReducer>) {
 		self.store = store
 	}
