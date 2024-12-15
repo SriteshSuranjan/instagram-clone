@@ -42,11 +42,12 @@ public struct FeedReducer {
 	public enum Action: BindableAction {
 		case binding(BindingAction<State>)
 		case task
-		case feedPageRequest
-		case feedPageResponse(Result<[PostLargeBlock], Error>)
+		case feedPageRequest(page: Int)
+		case feedPageResponse(Result<[PostLargeBlock], Error>, fetchPage: Int, isRefresh: Bool)
 		case post(IdentifiedActionOf<PostLargeReducer>)
 		case destination(PresentationAction<Destination.Action>)
 		case onTapAvatar(userId: String)
+		case refreshFeedPage
 	}
 
 	@Dependency(\.userClient.databaseClient) var databaseClient
@@ -65,15 +66,18 @@ public struct FeedReducer {
 				return .none
 
 			case .task:
-				return .run { send in
-					await send(.feedPageRequest)
+				return .run { [currentPage = state.feed.feedPage.page] send in
+					await send(.feedPageRequest(page: currentPage))
 				}
 
-			case .feedPageRequest:
+			case let .feedPageRequest(page):
+				guard state.status != .loading else {
+					return .none
+				}
 				state.status = .loading
-				return .run { [currentPage = state.feed.feedPage.page] send in
-					let posts = try await databaseClient.getPost(currentPage * pageLimit, pageLimit, false)
-					await send(.feedPageResponse(.success(posts.map { $0.toPostLargeBlock() })))
+				return .run { send in
+					let posts = try await databaseClient.getPost(page * pageLimit, pageLimit, false)
+					await send(.feedPageResponse(.success(posts.map { $0.toPostLargeBlock() }), fetchPage: page, isRefresh: page == 0))
 					//					let postLikers = try await withThrowingTaskGroup(of: (String, [User]).self) { group in
 					//						for post in posts {
 					//							group.addTask {
@@ -89,17 +93,21 @@ public struct FeedReducer {
 					//					}
 
 				} catch: { error, send in
-					await send(.feedPageResponse(.failure(error)))
+					await send(.feedPageResponse(.failure(error), fetchPage: page, isRefresh: page == 0))
 				}
 				.cancellable(id: Cancel.feedPageRequest, cancelInFlight: true)
-			case let .feedPageResponse(result):
+			case let .feedPageResponse(result, fetchPage, isRefresh):
 
 				switch result {
 				case let .success(postBlocks):
 					state.status = .populated
-					state.feed.feedPage.page = state.feed.feedPage.page + 1
+					state.feed.feedPage.page = fetchPage + 1
 					state.feed.feedPage.hasMore = postBlocks.count >= pageLimit
-					state.feed.feedPage.blocks.append(contentsOf: postBlocks.map { InstaBlockWrapper.postLarge($0) })
+					if isRefresh {
+						state.feed.feedPage.blocks = postBlocks.map { InstaBlockWrapper.postLarge($0) }
+					} else {
+						state.feed.feedPage.blocks.append(contentsOf: postBlocks.map { InstaBlockWrapper.postLarge($0) })
+					}
 					state.feed.feedPage.totalBlocks = state.feed.feedPage.totalBlocks
 					let profileUserId = state.profileUserId
 					let posts = postBlocks.map {
@@ -115,7 +123,11 @@ public struct FeedReducer {
 							profileUserId: profileUserId
 						)
 					}
-					state.post.append(contentsOf: posts)
+					if isRefresh {
+						state.post = IdentifiedArray(uniqueElements: posts)
+					} else {
+						state.post.append(contentsOf: posts)
+					}
 					return .none
 				case let .failure(error):
 					state.status = .failure
@@ -129,6 +141,12 @@ public struct FeedReducer {
 				let profileState = UserProfileReducer.State(authenticatedUserId: state.profileUserId, profileUserId: userId, showBackButton: true)
 				state.destination = .userProfile(profileState)
 				return .none
+				
+			case .refreshFeedPage:
+				guard state.status != .loading else {
+					return .none
+				}
+				return .send(.feedPageRequest(page: 0))
 			}
 		}
 		.forEach(\.post, action: \.post) {
@@ -186,6 +204,9 @@ public struct FeedView: View {
 				.listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: AppSpacing.lg, trailing: 0))
 				.listRowSeparator(.hidden)
 			}
+		}
+		.refreshable {
+			store.send(.refreshFeedPage)
 		}
 		.listStyle(.plain)
 		.navigationDestination(
