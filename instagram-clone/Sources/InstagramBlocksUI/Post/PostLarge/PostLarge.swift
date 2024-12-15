@@ -117,6 +117,7 @@ public struct PostLargeReducer {
 public struct PostLargeView: View {
 	@Bindable var store: StoreOf<PostLargeReducer>
 	let postOptionsSettings: PostOptionsSettings
+	let onTapAvatar: ((String) -> Void)?
 //	let likePost: () -> Void
 //	let blockActionCallback: (any PostBlock) -> Void
 //	let onCommentsTap: (Bool) -> Void
@@ -125,7 +126,8 @@ public struct PostLargeView: View {
 //	@ViewBuilder let likesCountBuilder: (_ name: String?, _ userId: String?, _ count: Int) -> LikesCount
 	public init(
 		store: StoreOf<PostLargeReducer>,
-		postOptionsSettings: PostOptionsSettings
+		postOptionsSettings: PostOptionsSettings,
+		onTapAvatar: ((String) -> Void)? = nil
 //		likePost: @escaping () -> Void,
 //		blockActionCallback: @escaping (any PostBlock) -> Void,
 //		onCommentsTap: @escaping (Bool) -> Void,
@@ -133,6 +135,7 @@ public struct PostLargeView: View {
 	) {
 		self.store = store
 		self.postOptionsSettings = postOptionsSettings
+		self.onTapAvatar = onTapAvatar
 //		self.likePost = likePost
 //		self.blockActionCallback = blockActionCallback
 //		self.onCommentsTap = onCommentsTap
@@ -166,7 +169,7 @@ public struct PostLargeView: View {
 	private func postHeader() -> some View {
 		PostHeaderView(
 			store: store.scope(state: \.header, action: \.header),
-			onTapAvatar: nil,
+			onTapAvatar: onTapAvatar,
 			follow: {},
 			color: nil
 		)

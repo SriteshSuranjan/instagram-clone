@@ -155,18 +155,22 @@ public struct PostFooterView: View {
 				}
 			}
 			.padding(.top, store.block.isSponsored ? 0 : AppSpacing.sm)
-			.padding(.horizontal, AppSpacing.md)
+			.padding(.horizontal, AppSpacing.sm)
 			
 			if store.likesCount > 0 {
 				likers()
-					.padding(.horizontal, AppSpacing.lg)
+					.padding(.horizontal, AppSpacing.md)
 					.transition(.move(edge: .top))
 			}
 			PostCaption(
 				username: store.block.author.username,
 				caption: store.block.caption
 			)
-			.padding(.horizontal, AppSpacing.lg)
+			.padding(.horizontal, AppSpacing.md)
+			Text("\(timeAgo(from: store.block.createdAt))")
+				.font(textTheme.bodyMedium.font)
+				.foregroundStyle(Assets.Colors.gray)
+				.padding(.horizontal, AppSpacing.md)
 			Divider()
 		}
 		.task {

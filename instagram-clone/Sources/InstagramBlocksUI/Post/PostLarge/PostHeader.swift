@@ -89,13 +89,13 @@ public struct PostHeaderReducer {
 
 public struct PostHeaderView: View {
 	@Bindable var store: StoreOf<PostHeaderReducer>
-	let onTapAvatar: ((String?) -> Void)?
+	let onTapAvatar: ((String) -> Void)?
 	let follow: () -> Void
 	let color: Color?
 	@Environment(\.textTheme) var textTheme
 	public init(
 		store: StoreOf<PostHeaderReducer>,
-		onTapAvatar: ((String?) -> Void)?,
+		onTapAvatar: ((String) -> Void)?,
 		follow: @escaping () -> Void,
 		color: Color?
 	) {
@@ -112,7 +112,9 @@ public struct PostHeaderView: View {
 				avatarUrl: store.block.author.avatarUrl,
 				isLarge: false,
 				animationConfig: ButtonAnimationConfig(),
-				onTap: onTapAvatar
+				onTap: { _ in
+					onTapAvatar?(store.block.author.id)
+				}
 			)
 			VStack(alignment: .leading, spacing: AppSpacing.xxs) {
 				HStack(spacing: AppSpacing.sm) {

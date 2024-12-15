@@ -6,6 +6,7 @@ import InstagramBlocksUI
 import Shared
 import SwiftUI
 import UserClient
+import UserProfileFeature
 
 public enum FeedStatus {
 	case initial
@@ -19,12 +20,19 @@ private let pageLimit = 10
 @Reducer
 public struct FeedReducer {
 	public init() {}
+	
+	@Reducer(state: .equatable)
+	public enum Destination {
+		case userProfile(UserProfileReducer)
+	}
+	
 	@ObservableState
 	public struct State: Equatable {
 		var profileUserId: String
 		var feed: Feed
 		var status: FeedStatus = .initial
 		var post: IdentifiedArrayOf<PostLargeReducer.State> = []
+		@Presents var destination: Destination.State?
 		public init(profileUserId: String, feed: Feed = .empty) {
 			self.profileUserId = profileUserId
 			self.feed = feed
@@ -37,6 +45,8 @@ public struct FeedReducer {
 		case feedPageRequest
 		case feedPageResponse(Result<[PostLargeBlock], Error>)
 		case post(IdentifiedActionOf<PostLargeReducer>)
+		case destination(PresentationAction<Destination.Action>)
+		case onTapAvatar(userId: String)
 	}
 
 	@Dependency(\.userClient.databaseClient) var databaseClient
@@ -111,13 +121,21 @@ public struct FeedReducer {
 					state.status = .failure
 					return .none
 				}
-
 			case .post:
+				return .none
+			case .destination:
+				return .none
+			case let .onTapAvatar(userId):
+				let profileState = UserProfileReducer.State(authenticatedUserId: state.profileUserId, profileUserId: userId, showBackButton: true)
+				state.destination = .userProfile(profileState)
 				return .none
 			}
 		}
 		.forEach(\.post, action: \.post) {
 			PostLargeReducer()
+		}
+		.ifLet(\.$destination, action: \.destination) {
+			Destination.body
 		}
 	}
 }
@@ -160,13 +178,24 @@ public struct FeedView: View {
 						},
 						onPostEdit: { _ in
 						}
-					) : PostOptionsSettings.viewer
+					) : PostOptionsSettings.viewer,
+					onTapAvatar: { userId in
+						store.send(.onTapAvatar(userId: userId))
+					}
 				)
 				.listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: AppSpacing.lg, trailing: 0))
 				.listRowSeparator(.hidden)
 			}
 		}
 		.listStyle(.plain)
+		.navigationDestination(
+			item: $store.scope(
+				state: \.destination?.userProfile,
+				action: \.destination.userProfile
+			)
+		) { userProfileStore in
+			UserProfileView(store: userProfileStore)
+		}
 		.task {
 			await store.send(.task).finish()
 		}

@@ -321,6 +321,7 @@ let package = Package(
 				"SnackbarMessagesClient",
 				"InstaBlocks",
 				"UserClient",
+				"UserProfileFeature",
 				.product(name: "Tagged", package: "swift-tagged"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
