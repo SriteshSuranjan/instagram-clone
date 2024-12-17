@@ -3,7 +3,7 @@ import SwiftUI
 import ComposableArchitecture
 import DatabaseClient
 import Shared
-import UserClient
+import InstagramClient
 import AppUI
 import InstagramBlocksUI
 
@@ -45,7 +45,7 @@ public struct UserProfileListTileReducer {
 		}
 	}
 	
-	@Dependency(\.userClient.databaseClient) var databaseClient
+	@Dependency(\.instagramClient.databaseClient) var databaseClient
 	
 	private enum Cancel: Hashable {
 		case isFollowingUser

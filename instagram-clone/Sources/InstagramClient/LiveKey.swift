@@ -5,19 +5,22 @@ import AuthenticationClient
 import Shared
 import PowerSyncRepository
 import DatabaseClient
+import FirebaseRemoteConfigRepository
 
-extension UserClient: DependencyKey {
-	public static let liveValue = UserClient(
+extension InstagramClient: DependencyKey {
+	public static let liveValue = InstagramClient(
 		authClient: unimplemented("Use static live Implementation Inject please. ", placeholder: .liveValue),
 		databaseClient: unimplemented("Use static live Implementation Inject please. ", placeholder: .liveValue),
-		storageUploaderClient: unimplemented("Use static live Implementation Inject please. ", placeholder: .liveValue)
+		storageUploaderClient: unimplemented("Use static live Implementation Inject please. ", placeholder: .liveValue),
+		firebaseRemoteConfigClient: unimplemented("Use static live Implementation Inject please. ", placeholder: .liveValue)
 	)
-	public static func liveUserClient(
+	public static func liveInstagramClient(
 		authClient: AuthenticationClient,
 		databaseClient: DatabaseClient,
-		powerSyncRepository: PowerSyncRepository
-	) -> UserClient {
-		UserClient(
+		powerSyncRepository: PowerSyncRepository,
+		firebaseRemoteConfigRepository: FirebaseRemoteConfigRepository
+	) -> InstagramClient {
+		InstagramClient(
 			authClient: UserAuthClient.liveSupabaseAuthenticationClient(
 				authClient
 			),
@@ -26,6 +29,9 @@ extension UserClient: DependencyKey {
 			),
 			storageUploaderClient: SupabaseStorageUploaderClient.liveSupabaseStorageUploaderClient(
 				powerSyncRepository
+			),
+			firebaseRemoteConfigClient: FirebaseRemoteConfigClient.liveFirebaseRemoteConfigClient(
+				firebaseRemoteConfigRepository
 			)
 		)
 	}
@@ -202,6 +208,23 @@ extension SupabaseStorageUploaderClient: DependencyKey {
 			createSignedUrl: { storageName, path in
 //				try await powerSyncReository.supabase.storage.from(storageName).createSignedUploadURL(path: path)
 				try await powerSyncReository.supabase.storage.from(storageName).createSignedURL(path: path, expiresIn: 60).absoluteString
+			}
+		)
+	}
+}
+
+extension FirebaseRemoteConfigClient: DependencyKey {
+	public static var liveValue = FirebaseRemoteConfigClient(
+		config: unimplemented("Use live implementation please."),
+		fetchRemoteData: unimplemented("Use live implementation please.")
+	)
+	public static func liveFirebaseRemoteConfigClient(_ firebaseRemoteConfigRepository: FirebaseRemoteConfigRepository) -> FirebaseRemoteConfigClient {
+		return FirebaseRemoteConfigClient(
+			config: {
+				try await firebaseRemoteConfigRepository.initialize()
+			},
+			fetchRemoteData: { key in
+				await firebaseRemoteConfigRepository.fetchRemoteData(key)
 			}
 		)
 	}

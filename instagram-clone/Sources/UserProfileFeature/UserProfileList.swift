@@ -2,7 +2,7 @@ import ComposableArchitecture
 import Foundation
 import Shared
 import SwiftUI
-import UserClient
+import InstagramClient
 
 @Reducer
 public struct UserProfileListReducer {
@@ -35,7 +35,7 @@ public struct UserProfileListReducer {
 		}
 	}
 	
-	@Dependency(\.userClient.databaseClient) var databaseClient
+	@Dependency(\.instagramClient.databaseClient) var databaseClient
 	
 	enum Cancel {
 		case subscriptions

@@ -2,7 +2,7 @@ import SwiftUI
 import ComposableArchitecture
 import AppUI
 import ValidatorClient
-import UserClient
+import InstagramClient
 import Shared
 import SnackbarMessagesClient
 
@@ -68,7 +68,7 @@ public struct ChangePasswordReducer {
 	enum CancelID: Hashable {
 		case requestChangePassword
 	}
-	@Dependency(\.userClient.authClient) var authClient
+	@Dependency(\.instagramClient.authClient) var authClient
 	@Dependency(\.snackbarMessagesClient) var snackbarMessagesClient
 	
 	public var body: some ReducerOf<Self> {

@@ -2,7 +2,7 @@ import Foundation
 import UniformTypeIdentifiers
 import ComposableArchitecture
 import UploadTaskClient
-import UserClient
+import InstagramClient
 import BlurHashClient
 import Supabase
 import AppLoadingIndeterminateClient
@@ -21,9 +21,9 @@ private let encoder: JSONEncoder = {
 public struct UploadTaskReducer<State> {
 	
 	@Dependency(\.uploadTaskClient) var uploadTaskClient
-	@Dependency(\.userClient.storageUploaderClient) var uploaderClient
+	@Dependency(\.instagramClient.storageUploaderClient) var uploaderClient
 	@Dependency(\.blurHashClient) var blurHashClient
-	@Dependency(\.userClient.databaseClient) var databaseClient
+	@Dependency(\.instagramClient.databaseClient) var databaseClient
 	@Dependency(\.uuid) var uuid
 	@Dependency(\.appLoadingIndeterminateClient) var appLoadingIndeterminateClient
 	@Dependency(\.snackbarMessagesClient) var snackbarMessagesClient

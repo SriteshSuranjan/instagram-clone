@@ -192,9 +192,17 @@ extension SelectedByte {
 	static func selectedByte(with item: YPMediaItem) -> SelectedByte {
 		switch item {
 		case .photo(let p):
-			return .init(selectedFile: p.url ?? URL(string: "nil://placeholder")!, selectedData: p.image.pngData() ?? Data(), isImage: true)
+			return SelectedByte(
+				selectedFile: p.url ?? URL(string: "nil://placeholder")!,
+				selectedData: p.image.jpegData(compressionQuality: 0.7) ?? Data(),
+				isImage: true
+			)
 		case .video(let v):
-			return .init(selectedFile: v.url, selectedData: v.thumbnail.pngData() ?? Data(), isImage: false)
+			return SelectedByte(
+				selectedFile: v.url,
+				selectedData: v.thumbnail.pngData() ?? Data(),
+				isImage: false
+			)
 		}
 	}
 }
@@ -214,7 +222,12 @@ public struct MediaPicker: View {
 			store.send(.onTapNextButton(items))
 		}
 		.toolbar(.hidden, for: .navigationBar)
-		.navigationDestination(item: $store.scope(state: \.createPost, action: \.createPost)) { createPostStore in
+		.navigationDestination(
+			item: $store.scope(
+				state: \.createPost,
+				action: \.createPost
+			)
+		) { createPostStore in
 			CreatePostView(store: createPostStore)
 		}
 	}

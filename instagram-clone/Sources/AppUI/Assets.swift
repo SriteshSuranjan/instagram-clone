@@ -64,6 +64,7 @@ public enum Assets {
 		public static let focusColor = Color(R.color.focusColor)
 		public static let snackbarSuccessBackground = Color(R.color.snackbarSuccess)
 		public static let snackbarErrorBackground = Color(R.color.snackbarError)
+		public static let primaryContainer = Color(R.color.primaryContainer)
 		
 		public static let primaryGradient: [Color] = [
 			Color(R.color.purple),

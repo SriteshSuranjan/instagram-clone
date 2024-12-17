@@ -40,6 +40,8 @@ public struct ImageMedia: Media, Codable {
 	public static var identifier: String {
 		"__image_media__"
 	}
+	
+	public var previewData: Data? { nil }
 }
 
 /*public struct MemoryImageMedia: Media {

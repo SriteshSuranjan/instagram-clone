@@ -6,10 +6,11 @@ import Shared
 import Supabase
 
 @DependencyClient
-public struct UserClient: Sendable {
+public struct InstagramClient: Sendable {
 	public let authClient: UserAuthClient
 	public let databaseClient: UserDatabaseClient
 	public let storageUploaderClient: SupabaseStorageUploaderClient
+	public let firebaseRemoteConfigClient: FirebaseRemoteConfigClient
 }
 
 @DependencyClient
@@ -58,3 +59,10 @@ public struct SupabaseStorageUploaderClient: Sendable {
 	public var getPublicUrl: @Sendable (_ storageName: String, _ path: String) async throws -> String?
 	public var createSignedUrl: @Sendable (_ storageName: String, _ path: String) async throws -> String
 }
+
+@DependencyClient
+public struct FirebaseRemoteConfigClient: Sendable {
+	public var config: @Sendable () async throws -> Void
+	public var fetchRemoteData: @Sendable (_ key: String) async throws -> String
+}
+

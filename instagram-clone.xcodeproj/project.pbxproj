@@ -12,8 +12,9 @@
 		71502C822CF1969400B89BAF /* AppFeature in Frameworks */ = {isa = PBXBuildFile; productRef = 71502C812CF1969400B89BAF /* AppFeature */; };
 		71502CA42CF2556D00B89BAF /* AppUI in Frameworks */ = {isa = PBXBuildFile; productRef = 71502CA32CF2556D00B89BAF /* AppUI */; };
 		71502D222CF6E06E00B89BAF /* AuthenticationClient in Frameworks */ = {isa = PBXBuildFile; productRef = 71502D212CF6E06E00B89BAF /* AuthenticationClient */; };
-		71502D242CF6E19800B89BAF /* UserClient in Frameworks */ = {isa = PBXBuildFile; productRef = 71502D232CF6E19800B89BAF /* UserClient */; };
 		71745F782CFCCE61007571A1 /* DatabaseClient in Frameworks */ = {isa = PBXBuildFile; productRef = 71745F772CFCCE61007571A1 /* DatabaseClient */; };
+		71EEE3212D11B46B0087A5D9 /* InstagramClient in Frameworks */ = {isa = PBXBuildFile; productRef = 71EEE3202D11B46B0087A5D9 /* InstagramClient */; };
+		71EEE3232D11B6DB0087A5D9 /* FirebaseRemoteConfigRepository in Frameworks */ = {isa = PBXBuildFile; productRef = 71EEE3222D11B6DB0087A5D9 /* FirebaseRemoteConfigRepository */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -48,10 +49,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				71502CA42CF2556D00B89BAF /* AppUI in Frameworks */,
+				71EEE3232D11B6DB0087A5D9 /* FirebaseRemoteConfigRepository in Frameworks */,
 				71502C4F2CF08B5200B89BAF /* Env in Frameworks */,
 				71502C822CF1969400B89BAF /* AppFeature in Frameworks */,
+				71EEE3212D11B46B0087A5D9 /* InstagramClient in Frameworks */,
 				71502C7A2CF0F0B500B89BAF /* PowerSyncRepository in Frameworks */,
-				71502D242CF6E19800B89BAF /* UserClient in Frameworks */,
 				71502D222CF6E06E00B89BAF /* AuthenticationClient in Frameworks */,
 				71745F782CFCCE61007571A1 /* DatabaseClient in Frameworks */,
 			);
@@ -110,8 +112,9 @@
 				71502C812CF1969400B89BAF /* AppFeature */,
 				71502CA32CF2556D00B89BAF /* AppUI */,
 				71502D212CF6E06E00B89BAF /* AuthenticationClient */,
-				71502D232CF6E19800B89BAF /* UserClient */,
 				71745F772CFCCE61007571A1 /* DatabaseClient */,
+				71EEE3202D11B46B0087A5D9 /* InstagramClient */,
+				71EEE3222D11B6DB0087A5D9 /* FirebaseRemoteConfigRepository */,
 			);
 			productName = "instagram-clone";
 			productReference = 71502C192CF051FD00B89BAF /* instagram-clone.app */;
@@ -535,13 +538,17 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = AuthenticationClient;
 		};
-		71502D232CF6E19800B89BAF /* UserClient */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = UserClient;
-		};
 		71745F772CFCCE61007571A1 /* DatabaseClient */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = DatabaseClient;
+		};
+		71EEE3202D11B46B0087A5D9 /* InstagramClient */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = InstagramClient;
+		};
+		71EEE3222D11B6DB0087A5D9 /* FirebaseRemoteConfigRepository */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FirebaseRemoteConfigRepository;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

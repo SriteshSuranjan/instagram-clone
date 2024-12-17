@@ -6,7 +6,7 @@ import InstagramBlocksUI
 import MediaPickerFeature
 import Shared
 import SwiftUI
-import UserClient
+import InstagramClient
 import YPImagePicker
 
 enum ProfileTab: Hashable {
@@ -66,8 +66,8 @@ public struct UserProfileReducer {
 		case onTapBackButton
 	}
 
-	@Dependency(\.userClient.authClient) var authClient
-	@Dependency(\.userClient.databaseClient) var databaseClient
+	@Dependency(\.instagramClient.authClient) var authClient
+	@Dependency(\.instagramClient.databaseClient) var databaseClient
 
 	public var body: some ReducerOf<Self> {
 		BindingReducer()
@@ -150,7 +150,6 @@ public struct UserProfileReducer {
 		.ifLet(\.$destination, action: \.destination) {
 			Destination.body
 		}
-		._printChanges()
 	}
 }
 

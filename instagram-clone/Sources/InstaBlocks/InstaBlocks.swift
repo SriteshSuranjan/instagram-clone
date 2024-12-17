@@ -5,10 +5,14 @@ public protocol InstaBlock: Identifiable {
 	var type: String { get }
 }
 
-public enum InstaBlockWrapper: Codable, Equatable, Identifiable {
+public enum InstaBlockWrapper: Codable, Equatable, Identifiable, Hashable {
 	case postLarge(PostLargeBlock)
 	case postSponsored(PostSponsoredBlock)
 	case unknown(UnknownBlock)
+	
+	public func hash(into hasher: inout Hasher) {
+		
+	}
 	
 	private enum CodingKeys: String, CodingKey {
 		case type

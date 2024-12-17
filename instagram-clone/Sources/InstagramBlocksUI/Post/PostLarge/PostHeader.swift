@@ -4,7 +4,7 @@ import Foundation
 import InstaBlocks
 import Shared
 import SwiftUI
-import UserClient
+import InstagramClient
 
 @Reducer
 public struct PostHeaderReducer {
@@ -44,7 +44,7 @@ public struct PostHeaderReducer {
 		}
 	}
 
-	@Dependency(\.userClient.databaseClient) var databaseClient
+	@Dependency(\.instagramClient.databaseClient) var databaseClient
 
 	public enum Action: BindableAction {
 		case binding(BindingAction<State>)

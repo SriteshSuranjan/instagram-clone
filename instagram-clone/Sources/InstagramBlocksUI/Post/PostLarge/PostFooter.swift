@@ -5,7 +5,7 @@ import InstaBlocks
 import Kingfisher
 import Shared
 import SwiftUI
-import UserClient
+import InstagramClient
 
 @Reducer
 public struct PostFooterReducer {
@@ -63,7 +63,7 @@ public struct PostFooterReducer {
 		case subscriptions
 	}
 	
-	@Dependency(\.userClient.databaseClient) var databaseClient
+	@Dependency(\.instagramClient.databaseClient) var databaseClient
 
 	public var body: some ReducerOf<Self> {
 		BindingReducer()
@@ -104,7 +104,11 @@ public struct PostFooterReducer {
 		}
 	}
 
-	private func subscriptions(send: Send<Action>, post: any PostBlock, profileUserId: String) async {
+	private func subscriptions(
+		send: Send<Action>,
+		post: any PostBlock,
+		profileUserId: String
+	) async {
 		async let likesCount: Void = {
 			for await likesCount in await databaseClient.likesOfPost(post.id, true) {
 				await send(.likesCountUpdated(likesCount))
@@ -136,9 +140,22 @@ public struct PostFooterView: View {
 	public var body: some View {
 		VStack(alignment: .leading, spacing: AppSpacing.sm) {
 			if store.block.isSponsored {
-				Color.blue
+				Assets.Colors.primaryContainer
+					.overlay {
+						HStack {
+							Text("Visit Instagram Profile")
+							Spacer()
+							Image(systemName: "arrow.turn.down.right")
+								.imageScale(.large)
+						}
+						.padding(.vertical, AppSpacing.sm)
+						.padding(.horizontal, AppSpacing.lg)
+						.font(textTheme.titleMedium.font)
+						.fontWeight(.semibold)
+						.foregroundStyle(Assets.Colors.bodyColor)
+					}
 					.frame(maxWidth: .infinity)
-					.frame(height: 30)
+					.frame(height: 48)
 					.padding(.bottom, AppSpacing.sm)
 			}
 			
@@ -272,7 +289,9 @@ public struct PostFooterView: View {
 			}
 			Group {
 				if let firstLiker = store.firstLikerInFollowings {
-					Text("Liked by \(firstLiker.displayFullName)")
+					Text("Liked by ")
+					+
+					Text("\(firstLiker.displayFullName)")
 						.bold()
 					if store.suffixLikersCount > 0 {
 						Text("and")

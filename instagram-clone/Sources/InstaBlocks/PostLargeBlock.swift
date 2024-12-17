@@ -64,4 +64,15 @@ public struct PostLargeBlock: PostBlock, Equatable {
 		try container.encode(self.type, forKey: .type)
 		try container.encode(self.media, forKey: .media)
 	}
+	
+//	public func hash(into hasher: inout Hasher) {
+//		hasher.combine(id)
+//		hasher.combine(author)
+//		hasher.combine(createdAt)
+//		hasher.combine(caption)
+//		hasher.combine(action)
+//		hasher.combine(isSponsored)
+//		hasher.combine(type)
+//		hasher.combine(media)
+//	}
 }

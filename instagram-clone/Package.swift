@@ -59,8 +59,8 @@ let package = Package(
 			targets: ["AuthenticationClient"]
 		),
 		.library(
-			name: "UserClient",
-			targets: ["UserClient"]
+			name: "InstagramClient",
+			targets: ["InstagramClient"]
 		),
 		.library(
 			name: "InstagramBlocksUI",
@@ -122,6 +122,10 @@ let package = Package(
 			name: "InstaBlocks",
 			targets: ["InstaBlocks"]
 		),
+		.library(
+			name: "FirebaseRemoteConfigRepository",
+			targets: ["FirebaseRemoteConfigRepository"]
+		)
 	],
 	dependencies: [
 		.package(url: "https://github.com/powersync-ja/powersync-kotlin", exact: "1.0.0-BETA5.0"),
@@ -185,7 +189,7 @@ let package = Package(
 			name: "AppFeature",
 			dependencies: [
 				"AuthFeature",
-				"UserClient",
+				"InstagramClient",
 				"Env",
 				"LaunchFeature",
 				"FirebaseCoreClient",
@@ -212,7 +216,7 @@ let package = Package(
 				"AppUI",
 				"ValidatorClient",
 				"Shared",
-				"UserClient",
+				"InstagramClient",
 				"InstagramBlocksUI",
 				"SnackbarMessagesClient",
 				"MediaPickerFeature",
@@ -264,12 +268,13 @@ let package = Package(
 			]
 		),
 		.target(
-			name: "UserClient",
+			name: "InstagramClient",
 			dependencies: [
 				"Shared",
 				"PowerSyncRepository",
 				"AuthenticationClient",
 				"DatabaseClient",
+				"FirebaseRemoteConfigRepository",
 				.product(name: "Supabase", package: "supabase-swift"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
@@ -281,7 +286,7 @@ let package = Package(
 				"AppUI",
 				"InstaBlocks",
 				"BlurHashClient",
-				"UserClient",
+				"InstagramClient",
 				.product(name: "Kingfisher", package: "Kingfisher"),
 				.product(name: "VideoPlayer", package: "VideoPlayer"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
@@ -306,7 +311,7 @@ let package = Package(
 				"TimelineFeature",
 				"ReelsFeature",
 				"UserProfileFeature",
-				"UserClient",
+				"InstagramClient",
 				"BottomBarVisiblePreference",
 				.product(name: "Tagged", package: "swift-tagged"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
@@ -320,7 +325,7 @@ let package = Package(
 				"InstagramBlocksUI",
 				"SnackbarMessagesClient",
 				"InstaBlocks",
-				"UserClient",
+				"InstagramClient",
 				"UserProfileFeature",
 				.product(name: "Tagged", package: "swift-tagged"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
@@ -355,7 +360,7 @@ let package = Package(
 				"AppUI",
 				"InstagramBlocksUI",
 				"SnackbarMessagesClient",
-				"UserClient",
+				"InstagramClient",
 				"MediaPickerFeature",
 //				"CreatePostFeature",
 				.product(name: "UnifiedBlurHash", package: "UnifiedBlurHash"),
@@ -397,6 +402,7 @@ let package = Package(
 				"Shared",
 				"AppUI",
 				"UploadTaskClient",
+				"InstagramBlocksUI",
 				.product(name: "UnifiedBlurHash", package: "UnifiedBlurHash"),
 				.product(name: "YPImagePicker", package: "YPImagePicker"),
 				.product(name: "Supabase", package: "supabase-swift"),
@@ -434,6 +440,12 @@ let package = Package(
 			name: "InstaBlocksTest",
 			dependencies: [
 				"InstaBlocks"
+			]
+		),
+		.target(
+			name: "FirebaseRemoteConfigRepository",
+			dependencies: [
+				.product(name: "FirebaseRemoteConfig", package: "firebase-ios-sdk")
 			]
 		)
 	],

@@ -2,7 +2,7 @@ import AppUI
 import ComposableArchitecture
 import Foundation
 import SwiftUI
-import UserClient
+import InstagramClient
 
 public struct UserProfileEditInfoDetail: Equatable {
 	let editInfoType: UserProfileEditInfoType
@@ -53,7 +53,7 @@ public struct UserProfileEditInfoReducer {
 		}
 	}
 	
-	@Dependency(\.userClient.databaseClient) var databaseClient
+	@Dependency(\.instagramClient.databaseClient) var databaseClient
 
 	public enum Action: BindableAction {
 		case binding(BindingAction<State>)

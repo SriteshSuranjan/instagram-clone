@@ -15,6 +15,7 @@ public struct PostCaption: View {
 			Text(" \(caption)")
 				.font(textTheme.bodyMedium.font)
 		}
+		.lineLimit(2)
 		.foregroundStyle(Assets.Colors.bodyColor)
 	}
 }

@@ -22,6 +22,8 @@ public struct VideoMedia: Media {
 		"__video_media__"
 	}
 	
+	public var previewData: Data? { nil }
+	
 	private enum CodingKeys: String, CodingKey {
 		case id = "mediaId"
 		case url

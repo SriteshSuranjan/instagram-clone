@@ -4,7 +4,7 @@ import InstagramBlocksUI
 import MediaPickerFeature
 import Shared
 import SwiftUI
-import UserClient
+import InstagramClient
 import SnackbarMessagesClient
 import UploadTaskClient
 
@@ -39,7 +39,7 @@ public struct UserProfileEditReducer {
 		case userProfileUpdated(User)
 	}
 
-	@Dependency(\.userClient.databaseClient) var databaseClient
+	@Dependency(\.instagramClient.databaseClient) var databaseClient
 	@Dependency(\.snackbarMessagesClient) var snackbarMessagesClient
 	@Dependency(\.uploadTaskClient.uploadTask) var uploadTask
 	

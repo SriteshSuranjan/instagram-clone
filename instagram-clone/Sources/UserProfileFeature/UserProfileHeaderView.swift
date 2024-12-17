@@ -4,7 +4,7 @@ import Foundation
 import InstagramBlocksUI
 import Shared
 import SwiftUI
-import UserClient
+import InstagramClient
 
 @Reducer
 public struct UserProfileHeaderReducer {
@@ -47,7 +47,7 @@ public struct UserProfileHeaderReducer {
 		case subscriptions
 	}
 
-	@Dependency(\.userClient.databaseClient) var databaseClient
+	@Dependency(\.instagramClient.databaseClient) var databaseClient
 
 	public var body: some ReducerOf<Self> {
 		BindingReducer()

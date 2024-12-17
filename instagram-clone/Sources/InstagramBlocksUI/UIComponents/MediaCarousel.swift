@@ -104,7 +104,6 @@ public struct MediaCarouselReducer {
 				return .none
 			}
 		}
-		._printChanges()
 	}
 }
 
@@ -117,62 +116,70 @@ public struct MediaCarouselView: View {
 
 	public var body: some View {
 		ScrollView(.horizontal) {
-			LazyHStack {
+			HStack {
 				ForEach(store.media) { media in
-					KFImage.url(URL(string: media.previewUrl ?? ""))
-						.placeholder {
-							if let blurHashImage = store.blurHashImages[media.id] {
-								Image(uiImage: blurHashImage)
-									.resizable()
-							} else {
-								Assets.Colors.customAdaptiveColor(
-									colorScheme,
-									light: Assets.Colors.gray,
-									dark: Assets.Colors.darkGray
-								)
-							}
-						}
-						.resizable()
-						.fade(duration: 0.2)
-						.scaledToFit()
-						.overlay {
-							if media.isVideo && media.id == store.playingVideoMediaId {
-								// TODO: seek to previous play time when scroll
-								VideoPlayer(
-									url: URL(string: media.url) ?? URL(string: "nil://placeholder")!,
-									// Start of Selection
-									play: Binding<Bool>(
-										get: {
-											store.playingVideoMediaId == media.id
-										},
-										set: { isPlaying in
-											if isPlaying {
-												store.send(.startPlayVideo(mediaId: media.id))
-											} else if store.playingVideoMediaId == media.id {
-												store.send(.stopPlayVideo(mediaId: media.id))
-											}
-										}
-									)
-								)
-								.mute(store.videoMuted)
-								.autoReplay(true)
-								.overlay {
-									// TODO: control play and pause
+					Group {
+						if let previewData = media.previewData {
+							Image(uiImage: UIImage(data: previewData)!)
+								.resizable()
+								.scaledToFit()
+						} else {
+							KFImage.url(URL(string: media.previewUrl ?? ""))
+								.placeholder {
+									if let blurHashImage = store.blurHashImages[media.id] {
+										Image(uiImage: blurHashImage)
+											.resizable()
+									} else {
+										Assets.Colors.customAdaptiveColor(
+											colorScheme,
+											light: Assets.Colors.gray,
+											dark: Assets.Colors.darkGray
+										)
+									}
 								}
+								.resizable()
+								.fade(duration: 0.2)
+								.scaledToFit()
+						}
+					}
+					.overlay {
+						if media.isVideo && media.id == store.playingVideoMediaId {
+							// TODO: seek to previous play time when scroll
+							VideoPlayer(
+								url: URL(string: media.url) ?? URL(string: "nil://placeholder")!,
+								// Start of Selection
+								play: Binding<Bool>(
+									get: {
+										store.playingVideoMediaId == media.id
+									},
+									set: { isPlaying in
+										if isPlaying {
+											store.send(.startPlayVideo(mediaId: media.id))
+										} else if store.playingVideoMediaId == media.id {
+											store.send(.stopPlayVideo(mediaId: media.id))
+										}
+									}
+								)
+							)
+							.mute(store.videoMuted)
+							.autoReplay(true)
+							.overlay {
+								// TODO: control play and pause
 							}
 						}
-						.id(media.id)
-						.containerRelativeFrame(.horizontal)
-						.onAppear {
-							if media.isVideo {
-								store.send(.startPlayVideo(mediaId: media.id))
-							}
+					}
+					.id(media.id)
+					.containerRelativeFrame(.horizontal)
+					.onAppear {
+						if media.isVideo {
+							store.send(.startPlayVideo(mediaId: media.id))
 						}
-						.onDisappear {
-							if store.playingVideoMediaId == media.id {
-								store.send(.stopPlayVideo(mediaId: media.id))
-							}
+					}
+					.onDisappear {
+						if store.playingVideoMediaId == media.id {
+							store.send(.stopPlayVideo(mediaId: media.id))
 						}
+					}
 				}
 			}
 			.scrollTargetLayout()

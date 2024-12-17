@@ -128,9 +128,9 @@ public actor PowerSyncRepository {
 		guard let powerSyncRepository = PowerSyncRepository(env: env) else {
 			fatalError("")
 		}
-		Task {
-			await powerSyncRepository.initialize()
-		}
+//		Task {
+//			await powerSyncRepository.initialize()
+//		}
 		return powerSyncRepository
 	}
 

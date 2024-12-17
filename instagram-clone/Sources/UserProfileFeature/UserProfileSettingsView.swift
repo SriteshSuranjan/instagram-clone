@@ -1,7 +1,7 @@
 import SwiftUI
 import ComposableArchitecture
 import AppUI
-import UserClient
+import InstagramClient
 
 @Reducer
 public struct UserProfileSettingsReducer {
@@ -22,7 +22,7 @@ public struct UserProfileSettingsReducer {
 		}
 	}
 	
-	@Dependency(\.userClient.authClient) var authClient
+	@Dependency(\.instagramClient.authClient) var authClient
 	
 	public var body: some ReducerOf<Self> {
 		BindingReducer()

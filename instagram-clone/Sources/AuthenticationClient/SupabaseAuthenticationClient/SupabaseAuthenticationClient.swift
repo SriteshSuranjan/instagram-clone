@@ -53,8 +53,15 @@ public final class SupabaseAuthenticationClient {
 		userChangeTask?.cancel()
 	}
 
-	public init(powerSyncRepository: PowerSyncRepository, tokenStorage: TokenStorage, googleSignIn: GIDSignIn) {
+	public init(
+		powerSyncRepository: PowerSyncRepository,
+		tokenStorage: TokenStorage,
+		googleSignIn: GIDSignIn
+	) {
 		self.powerSyncRepository = powerSyncRepository
+		Task {
+			await powerSyncRepository.initialize()
+		}
 		self.tokenStorage = tokenStorage
 		self.googleSignIn = googleSignIn
 		startListening()

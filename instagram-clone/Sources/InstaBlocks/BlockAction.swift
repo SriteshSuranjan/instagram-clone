@@ -5,12 +5,12 @@ public enum BlockActionType: String, Encodable {
 	case unknown
 }
 
-public protocol BlockAction: Equatable, Codable {
+public protocol BlockAction: Equatable, Codable, Hashable {
 	var type: String { get }
 	var actionType: BlockActionType { get }
 }
 
-public enum BlockActionWrapper: Codable, Equatable {
+public enum BlockActionWrapper: Codable, Equatable, Hashable {
 	case navigateToPostAuthor(NavigateToPostAuthorProfileAction)
 	case navigateToSponsor(NavigateToSponsoredPostAuthorProfileAction)
 	case unknown(UnknownBlockAction)

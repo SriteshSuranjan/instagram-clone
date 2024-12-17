@@ -20,7 +20,7 @@ private let _confirmedUsers = [
 	)
 ]
 
-public struct PostAuthor: Encodable, Identifiable, Equatable {
+public struct PostAuthor: Codable, Identifiable, Equatable, Hashable {
 	public var id: String
 	public var avatarUrl: String
 	public var username: String
@@ -57,6 +57,14 @@ public struct PostAuthor: Encodable, Identifiable, Equatable {
 		try container.encode(self.avatarUrl, forKey: .avatarUrl)
 		try container.encode(self.username, forKey: .username)
 		try container.encode(self.isConfirmed, forKey: .isConfirmed)
+	}
+	
+	public init(from decoder: any Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		self.id = try container.decode(String.self, forKey: .id)
+		self.avatarUrl = try container.decode(String.self, forKey: .avatarUrl)
+		self.username = try container.decode(String.self, forKey: .username)
+		self.isConfirmed = try container.decode(Bool.self, forKey: .isConfirmed)
 	}
 }
 

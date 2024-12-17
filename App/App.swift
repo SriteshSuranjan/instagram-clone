@@ -7,7 +7,8 @@ import Env
 import GoogleSignIn
 import PowerSyncRepository
 import SwiftUI
-import UserClient
+import InstagramClient
+import FirebaseRemoteConfigRepository
 
 final class AppDelegate: NSObject, UIApplicationDelegate {
 	let store: StoreOf<AppReducer>
@@ -24,15 +25,17 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 		let databaseClient = PowerSyncDatabaseClient(
 			powerSyncRepository: powerSyncRepository
 		)
+		let firebaseRemoteConfigRepository = FirebaseRemoteConfigRepository()
 		self.store = Store(
 			initialState: AppReducer.State()
 		) {
 			AppReducer()
 				.transformDependency(\.self) {
-					$0.userClient = .liveUserClient(
+					$0.instagramClient = .liveInstagramClient(
 						authClient: authClient,
 						databaseClient: databaseClient,
-						powerSyncRepository: powerSyncRepository
+						powerSyncRepository: powerSyncRepository,
+						firebaseRemoteConfigRepository: firebaseRemoteConfigRepository
 					)
 				}
 		}

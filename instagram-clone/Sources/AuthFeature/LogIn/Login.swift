@@ -3,7 +3,7 @@ import ComposableArchitecture
 import Foundation
 import Shared
 import SwiftUI
-import UserClient
+import InstagramClient
 import ValidatorClient
 import SnackbarMessagesClient
 
@@ -114,7 +114,7 @@ public struct LoginReducer: Sendable {
 		}
 	}
 
-	@Dependency(\.userClient.authClient) var authClient
+	@Dependency(\.instagramClient.authClient) var authClient
 	@Dependency(\.snackbarMessagesClient) var snackbarMessagesClient
 	
 	public var body: some ReducerOf<Self> {

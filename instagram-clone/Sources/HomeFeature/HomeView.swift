@@ -7,7 +7,7 @@ import ReelsFeature
 import Shared
 import SwiftUI
 import TimelineFeature
-import UserClient
+import InstagramClient
 import UserProfileFeature
 import InstagramBlocksUI
 
@@ -65,7 +65,7 @@ public struct HomeReducer {
 		case updateAppLoadingIndeterminate(show: Bool)
 	}
 
-	@Dependency(\.userClient.databaseClient) var databaseClient
+	@Dependency(\.instagramClient.databaseClient) var databaseClient
 
 	public var body: some ReducerOf<Self> {
 		BindingReducer()

@@ -1,13 +1,13 @@
 import Foundation
 
-private let encoder: JSONEncoder = {
+public let encoder: JSONEncoder = {
 	let encoder = JSONEncoder()
 	encoder.dateEncodingStrategy = .iso8601
 	encoder.keyEncodingStrategy = .convertToSnakeCase
 	return encoder
 }()
 
-private let decoder: JSONDecoder = {
+public let decoder: JSONDecoder = {
 	let decoder = JSONDecoder()
 	decoder.dateDecodingStrategy = .iso8601
 	decoder.keyDecodingStrategy = .convertFromSnakeCase

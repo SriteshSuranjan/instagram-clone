@@ -1,23 +1,24 @@
 import Foundation
 
-public protocol Media: Equatable, Codable {
+public protocol Media: Equatable, Codable, Hashable {
 	var id: String { get }
 	var url: String { get }
 	var blurHash: String? { get }
 	var type: String { get }
+	var previewData: Data? { get }
 	static var identifier: String { get }
 }
 
-public enum MediaItem: Equatable, Codable, Identifiable {
-//	case memoryImage(MemoryImageMedia)
-//	case memoryVideo(MemoryVideoMedia)
+public enum MediaItem: Equatable, Codable, Identifiable, Hashable {
+	case memoryImage(MemoryImageMedia)
+	case memoryVideo(MemoryVideoMedia)
 	case image(ImageMedia)
 	case video(VideoMedia)
 
 	public var id: String {
 		switch self {
-//		case .memoryImage(let memoryImageMedia): return memoryImageMedia.id
-//		case .memoryVideo(let memoryVideoMedia): return memoryVideoMedia.id
+		case .memoryImage(let memoryImageMedia): return memoryImageMedia.id
+		case .memoryVideo(let memoryVideoMedia): return memoryVideoMedia.id
 		case let .image(imageMedia): return imageMedia.id
 		case let .video(videoMedia): return videoMedia.id
 		}
@@ -25,8 +26,8 @@ public enum MediaItem: Equatable, Codable, Identifiable {
 
 	public var url: String {
 		switch self {
-//		case .memoryImage(let memoryImageMedia): return memoryImageMedia.url
-//		case .memoryVideo(let memoryVideoMedia): return memoryVideoMedia.url
+		case .memoryImage(let memoryImageMedia): return memoryImageMedia.url
+		case .memoryVideo(let memoryVideoMedia): return memoryVideoMedia.url
 		case let .image(imageMedia): return imageMedia.url
 		case let .video(videoMedia): return videoMedia.url
 		}
@@ -34,8 +35,8 @@ public enum MediaItem: Equatable, Codable, Identifiable {
 
 	public var blurHash: String? {
 		switch self {
-//		case .memoryImage(let memoryImageMedia): return memoryImageMedia.blurHash
-//		case .memoryVideo(let memoryVideoMedia): return memoryVideoMedia.blurHash
+		case .memoryImage(let memoryImageMedia): return memoryImageMedia.blurHash
+		case .memoryVideo(let memoryVideoMedia): return memoryVideoMedia.blurHash
 		case let .image(imageMedia): return imageMedia.blurHash
 		case let .video(videoMedia): return videoMedia.blurHash
 		}
@@ -72,6 +73,7 @@ public enum MediaItem: Equatable, Codable, Identifiable {
 			try container.encode(imageMedia)
 		case let .video(videoMedia):
 			try container.encode(videoMedia)
+		default: fatalError("InMemory type should not call encode")
 		}
 	}
 
@@ -84,6 +86,8 @@ public enum MediaItem: Equatable, Codable, Identifiable {
 	
 	public var isVideo: Bool {
 		switch self {
+		case .memoryImage: return false
+		case .memoryVideo: return true
 		case .image: return false
 		case .video: return true
 		}
@@ -93,11 +97,24 @@ public enum MediaItem: Equatable, Codable, Identifiable {
 		switch self {
 		case .image(let imageMedia): return imageMedia.url
 		case .video(let videoMedia): return videoMedia.firstFrameUrl
+		case let .memoryImage(imageMedia): return imageMedia.url
+		case let .memoryVideo(videoMeida): return videoMeida.url
+		}
+	}
+	
+	public var previewData: Data? {
+		switch self {
+		case .image: return nil
+		case .video: return nil
+		case let .memoryImage(imageMedia): return imageMedia.previewData
+		case let .memoryVideo(videoMedia): return videoMedia.previewData
 		}
 	}
 }
 
 public struct MemoryImageMedia: Media {
+	
+	
 	public static var identifier: String {
 		"__memory_image_media__"
 	}
@@ -105,9 +122,11 @@ public struct MemoryImageMedia: Media {
 	public var id: String
 	public var url: String
 	public var blurHash: String?
-	public init(id: String, url: String, blurHash: String? = nil) {
+	public var previewData: Data?
+	public init(id: String, url: String, previewData: Data?, blurHash: String? = nil) {
 		self.id = id
 		self.url = url
+		self.previewData = previewData
 		self.blurHash = blurHash
 	}
 
@@ -123,10 +142,12 @@ public struct MemoryVideoMedia: Media {
 
 	public var id: String
 	public var url: String
+	public var previewData: Data?
 	public var blurHash: String?
-	public init(id: String, url: String, blurHash: String? = nil) {
+	public init(id: String, url: String, previewData: Data?, blurHash: String? = nil) {
 		self.id = id
 		self.url = url
+		self.previewData = previewData
 		self.blurHash = blurHash
 	}
 

@@ -4,7 +4,7 @@ import DatabaseClient
 import Foundation
 import Shared
 import SwiftUI
-import UserClient
+import InstagramClient
 
 public enum UserStatisticsTab: Int, Hashable {
 	case followers = 1
@@ -53,7 +53,7 @@ public struct UserStatisticsReducer {
 		case followersSubscription
 	}
 	
-	@Dependency(\.userClient.databaseClient) var databaseClient
+	@Dependency(\.instagramClient.databaseClient) var databaseClient
 	
 	public var body: some ReducerOf<Self> {
 		BindingReducer()

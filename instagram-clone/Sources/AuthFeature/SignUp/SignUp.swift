@@ -64,8 +64,8 @@ public struct SignUpReducer {
 		}
 	}
 	
-	@Dependency(\.userClient.authClient) var authClient
-	@Dependency(\.userClient.storageUploaderClient) var storageUploaderClient
+	@Dependency(\.instagramClient.authClient) var authClient
+	@Dependency(\.instagramClient.storageUploaderClient) var storageUploaderClient
 	@Dependency(\.snackbarMessagesClient) var snackbarMessagesClient
 	
 	public var body: some ReducerOf<Self> {

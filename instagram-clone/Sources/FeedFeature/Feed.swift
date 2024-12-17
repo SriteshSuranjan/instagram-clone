@@ -5,7 +5,7 @@ import InstaBlocks
 import InstagramBlocksUI
 import Shared
 import SwiftUI
-import UserClient
+import InstagramClient
 import UserProfileFeature
 
 public enum FeedStatus {
@@ -20,12 +20,12 @@ private let pageLimit = 10
 @Reducer
 public struct FeedReducer {
 	public init() {}
-	
+
 	@Reducer(state: .equatable)
 	public enum Destination {
 		case userProfile(UserProfileReducer)
 	}
-	
+
 	@ObservableState
 	public struct State: Equatable {
 		var profileUserId: String
@@ -43,14 +43,17 @@ public struct FeedReducer {
 		case binding(BindingAction<State>)
 		case task
 		case feedPageRequest(page: Int)
-		case feedPageResponse(Result<[PostLargeBlock], Error>, fetchPage: Int, isRefresh: Bool)
+		case feedPageNextPage
+//		case feedPageResponse(Result<FeedPage, Error>)
+		case feedPageResponse(Result<FeedPage, Error>)
+//		case feedPageFailure(Error)
 		case post(IdentifiedActionOf<PostLargeReducer>)
 		case destination(PresentationAction<Destination.Action>)
 		case onTapAvatar(userId: String)
 		case refreshFeedPage
 	}
 
-	@Dependency(\.userClient.databaseClient) var databaseClient
+	@Dependency(\.instagramClient.databaseClient) var databaseClient
 
 	private enum Cancel: Hashable {
 		case feedPageRequest
@@ -76,43 +79,31 @@ public struct FeedReducer {
 				}
 				state.status = .loading
 				return .run { send in
-					let posts = try await databaseClient.getPost(page * pageLimit, pageLimit, false)
-					await send(.feedPageResponse(.success(posts.map { $0.toPostLargeBlock() }), fetchPage: page, isRefresh: page == 0))
-					//					let postLikers = try await withThrowingTaskGroup(of: (String, [User]).self) { group in
-					//						for post in posts {
-					//							group.addTask {
-					//								let users = try await databaseClient.getPostLikersInFollowings(post.id, 0, 3)
-					//								return (post.id, users)
-					//							}
-					//						}
-					//						var likers: [(String, [User])] = []
-					//						for try await liker in group {
-					//							likers.append(liker)
-					//						}
-					//						return likers
-					//					}
-
+					try await fetchFeedPage(send: send, page: page)
+//					if let updatedFeedPage = blockPage as? FeedPage {
+//						await send(.feedPageSuccess(updatedFeedPage))
+//					}
 				} catch: { error, send in
-					await send(.feedPageResponse(.failure(error), fetchPage: page, isRefresh: page == 0))
+					await send(.feedPageResponse(.failure(error)))
 				}
+				.debounce(id: "FeedPageRequest", for: .milliseconds(500), scheduler: DispatchQueue.main)
 				.cancellable(id: Cancel.feedPageRequest, cancelInFlight: true)
-			case let .feedPageResponse(result, fetchPage, isRefresh):
-
+			case let .feedPageResponse(result):
 				switch result {
-				case let .success(postBlocks):
+				case let .success(feedPage):
 					state.status = .populated
-					state.feed.feedPage.page = fetchPage + 1
-					state.feed.feedPage.hasMore = postBlocks.count >= pageLimit
-					if isRefresh {
-						state.feed.feedPage.blocks = postBlocks.map { InstaBlockWrapper.postLarge($0) }
-					} else {
-						state.feed.feedPage.blocks.append(contentsOf: postBlocks.map { InstaBlockWrapper.postLarge($0) })
-					}
-					state.feed.feedPage.totalBlocks = state.feed.feedPage.totalBlocks
+					let isRefresh = feedPage.page == 1
+					let updatedFeedPage = FeedPage(
+						blocks: isRefresh ? feedPage.blocks : state.feed.feedPage.blocks + feedPage.blocks,
+						totalBlocks: isRefresh ? feedPage.totalBlocks : state.feed.feedPage.totalBlocks + feedPage.totalBlocks,
+						page: feedPage.page,
+						hasMore: feedPage.hasMore
+					)
+					state.feed.feedPage = updatedFeedPage
 					let profileUserId = state.profileUserId
-					let posts = postBlocks.map {
+					let posts = state.feed.feedPage.blocks.map {
 						PostLargeReducer.State(
-							block: InstaBlockWrapper.postLarge($0),
+							block: $0,
 							isOwner: $0.author.id == profileUserId,
 							isFollowed: false,
 							isLiked: false,
@@ -124,7 +115,9 @@ public struct FeedReducer {
 						)
 					}
 					if isRefresh {
-						state.post = IdentifiedArray(uniqueElements: posts)
+						for post in posts.reversed() {
+							state.post.updateOrInsert(post, at: 0)
+						}
 					} else {
 						state.post.append(contentsOf: posts)
 					}
@@ -133,6 +126,11 @@ public struct FeedReducer {
 					state.status = .failure
 					return .none
 				}
+				
+			
+//			case let .feedPageFailure(error):
+//				state.status = .failure
+//				return .none
 			case .post:
 				return .none
 			case .destination:
@@ -141,12 +139,15 @@ public struct FeedReducer {
 				let profileState = UserProfileReducer.State(authenticatedUserId: state.profileUserId, profileUserId: userId, showBackButton: true)
 				state.destination = .userProfile(profileState)
 				return .none
-				
+
 			case .refreshFeedPage:
 				guard state.status != .loading else {
 					return .none
 				}
 				return .send(.feedPageRequest(page: 0))
+
+			case .feedPageNextPage:
+				return .send(.feedPageRequest(page: state.feed.feedPage.page))
 			}
 		}
 		.forEach(\.post, action: \.post) {
@@ -155,6 +156,43 @@ public struct FeedReducer {
 		.ifLet(\.$destination, action: \.destination) {
 			Destination.body
 		}
+	}
+	
+	typealias PostToBlockMapper = (Post) -> InstaBlockWrapper
+	
+	private func fetchFeedPage(
+		send: Send<Action>,
+		page: Int = 0,
+		postToBlock: PostToBlockMapper? = nil,
+		with sponsoredBlocks: Bool = true
+	) async throws {
+		let currentPage = page
+		let posts = try await databaseClient.getPost(page * pageLimit, pageLimit, false)
+		let newPage = currentPage + 1
+		let hasMore = posts.count >= pageLimit
+		var instaBlocks: [InstaBlockWrapper] = posts.map { post in
+			if let postToBlock {
+				postToBlock(post)
+			} else {
+				.postLarge(post.toPostLargeBlock())
+			}
+		}
+		
+		if hasMore && sponsoredBlocks {
+			@Dependency(\.instagramClient.firebaseRemoteConfigClient) var firebaseRemoteConfigClient
+			let sponsoredBlocksJsonString = try await firebaseRemoteConfigClient.fetchRemoteData(key: "sponsored_blocks")
+			let sponsoredBlocks = try decoder.decode([InstaBlockWrapper].self, from: sponsoredBlocksJsonString.data(using: .utf8)!)
+			for sponsoredBlock in sponsoredBlocks {
+				instaBlocks.insert(sponsoredBlock, at: (2..<instaBlocks.count).randomElement()!)
+			}
+		}
+		let feedPage = FeedPage(
+			blocks: instaBlocks,
+			totalBlocks: instaBlocks.count,
+			page: newPage,
+			hasMore: hasMore
+		)
+		await send(.feedPageResponse(.success(feedPage)))
 	}
 }
 
@@ -187,28 +225,37 @@ public struct FeedView: View {
 	}
 
 	public var body: some View {
-		List {
-			ForEachStore(store.scope(state: \.post, action: \.post)) { postStore in
-				PostLargeView(
-					store: postStore,
-					postOptionsSettings: postStore.block.author.id == store.profileUserId ? PostOptionsSettings.owner(
-						onPostDelete: { _ in
-						},
-						onPostEdit: { _ in
+		VStack(spacing: 0) {
+			List {
+				ForEachStore(store.scope(state: \.post, action: \.post)) { postStore in
+					PostLargeView(
+						store: postStore,
+						postOptionsSettings: postStore.block.author.id == store.profileUserId ? PostOptionsSettings.owner(
+							onPostDelete: { _ in
+							},
+							onPostEdit: { _ in
+							}
+						) : PostOptionsSettings.viewer,
+						onTapAvatar: { userId in
+							store.send(.onTapAvatar(userId: userId))
 						}
-					) : PostOptionsSettings.viewer,
-					onTapAvatar: { userId in
-						store.send(.onTapAvatar(userId: userId))
-					}
-				)
-				.listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: AppSpacing.lg, trailing: 0))
-				.listRowSeparator(.hidden)
+					)
+					.listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: AppSpacing.lg, trailing: 0))
+					.listRowSeparator(.hidden)
+				}
+				if store.feed.feedPage.hasMore {
+					ProgressView()
+						.listRowSeparator(.hidden)
+						.onAppear {
+							store.send(.feedPageNextPage)
+						}
+				}
 			}
+			.refreshable {
+				store.send(.refreshFeedPage)
+			}
+			.listStyle(.plain)
 		}
-		.refreshable {
-			store.send(.refreshFeedPage)
-		}
-		.listStyle(.plain)
 		.navigationDestination(
 			item: $store.scope(
 				state: \.destination?.userProfile,

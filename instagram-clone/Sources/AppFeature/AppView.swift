@@ -5,7 +5,7 @@ import Env
 import Foundation
 import LaunchFeature
 import SwiftUI
-import UserClient
+import InstagramClient
 import Shared
 import SnackbarMessagesClient
 import HomeFeature
@@ -39,7 +39,7 @@ public struct AppReducer {
 		}
 	}
 
-	@Dependency(\.userClient.authClient) var authClient
+	@Dependency(\.instagramClient.authClient) var authClient
 	@Dependency(\.snackbarMessagesClient) var snackbarMessagesClient
 	@Dependency(\.appLoadingIndeterminateClient) var appLoadingIndeterminateClient
 	

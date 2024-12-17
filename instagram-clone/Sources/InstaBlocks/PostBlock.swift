@@ -1,7 +1,7 @@
 import Foundation
 import Shared
 
-public protocol PostBlock: InstaBlock, Equatable {
+public protocol PostBlock: InstaBlock, Equatable, Hashable {
 	var author: PostAuthor { get }
 	var id: String { get }
 	var createdAt: Date { get }
