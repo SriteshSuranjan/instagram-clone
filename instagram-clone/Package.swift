@@ -125,6 +125,10 @@ let package = Package(
 		.library(
 			name: "FirebaseRemoteConfigRepository",
 			targets: ["FirebaseRemoteConfigRepository"]
+		),
+		.library(
+			name: "UIApplicationClient",
+			targets: ["UIApplicationClient"]
 		)
 	],
 	dependencies: [
@@ -362,7 +366,8 @@ let package = Package(
 				"SnackbarMessagesClient",
 				"InstagramClient",
 				"MediaPickerFeature",
-//				"CreatePostFeature",
+				"InstaBlocks",
+				"UIApplicationClient",
 				.product(name: "UnifiedBlurHash", package: "UnifiedBlurHash"),
 				.product(name: "Tagged", package: "swift-tagged"),
 				.product(name: "YPImagePicker", package: "YPImagePicker"),
@@ -447,7 +452,8 @@ let package = Package(
 			dependencies: [
 				.product(name: "FirebaseRemoteConfig", package: "firebase-ios-sdk")
 			]
-		)
+		),
+		.target(name: "UIApplicationClient")
 	],
 	swiftLanguageModes: [.v5]
 )

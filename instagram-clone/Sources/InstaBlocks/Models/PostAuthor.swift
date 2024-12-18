@@ -20,6 +20,20 @@ private let _confirmedUsers = [
 	)
 ]
 
+extension PostAuthor {
+	public func toUser() -> User {
+		User(
+			id: id,
+			email: nil,
+			username: username,
+			fullName: username,
+			avatarUrl: avatarUrl,
+			pushToken: nil,
+			isNewUser: false
+		)
+	}
+}
+
 public struct PostAuthor: Codable, Identifiable, Equatable, Hashable {
 	public var id: String
 	public var avatarUrl: String

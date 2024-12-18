@@ -23,7 +23,7 @@ public struct DividerBlock: View {
 					.font(textTheme.bodyLarge.font)
 					.foregroundStyle(Assets.Colors.gray)
 			}
-			.padding()
+			.padding(AppSpacing.xlg)
 		}
 	}
 }

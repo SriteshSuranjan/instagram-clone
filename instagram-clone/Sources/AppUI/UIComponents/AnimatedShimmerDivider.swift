@@ -43,7 +43,7 @@ public struct AnimatedShimmerDivider: View {
 			.frame(maxWidth: .infinity)
 			.frame(height: 1)
 			.onAppear {
-				withAnimation(.easeInOut(duration: 2).delay(0.3)) {
+				withAnimation(.easeInOut(duration: 2.2).delay(0.3)) {
 					isAnimating = true
 				} completion: {
 					showShimmer = false

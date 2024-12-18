@@ -18,9 +18,10 @@ public struct UserProfileHeaderReducer {
 		var followingsCount: Int = 0
 		var isFollowing: Bool?
 		var profileUser: User?
-		public init(profileUserId: String, isOwner: Bool) {
+		public init(profileUserId: String, isOwner: Bool, profileUser: User? = nil) {
 			self.profileUserId = profileUserId
 			self.isOwner = isOwner
+			self.profileUser = profileUser
 		}
 		public var id: String {
 			profileUserId

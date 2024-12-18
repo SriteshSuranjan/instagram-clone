@@ -3,9 +3,9 @@ import ComposableArchitecture
 import Foundation
 import InstaBlocks
 import InstagramBlocksUI
+import InstagramClient
 import Shared
 import SwiftUI
-import InstagramClient
 import UserProfileFeature
 
 public enum FeedStatus {
@@ -101,7 +101,7 @@ public struct FeedReducer {
 					)
 					state.feed.feedPage = updatedFeedPage
 					let profileUserId = state.profileUserId
-					
+
 					let posts = state.feed.feedPage.blocks.map {
 						PostLargeReducer.State(
 							block: $0,
@@ -116,9 +116,7 @@ public struct FeedReducer {
 						)
 					}
 					if isRefresh {
-						for post in posts.reversed() {
-							state.post.updateOrInsert(post, at: 0)
-						}
+						state.post = IdentifiedArray(uniqueElements: posts)
 					} else {
 						state.post.append(contentsOf: posts)
 					}
@@ -127,8 +125,7 @@ public struct FeedReducer {
 					state.status = .failure
 					return .none
 				}
-				
-			
+
 //			case let .feedPageFailure(error):
 //				state.status = .failure
 //				return .none
@@ -136,8 +133,38 @@ public struct FeedReducer {
 				return .none
 			case .destination:
 				return .none
+				/*void _handleOnPostTap(BuildContext context, {required BlockAction action}) =>
+				 action.when(
+			 navigateToPostAuthor: (action) =>
+					 _navigateToPostAuthor(context, id: action.authorId),
+			 navigateToSponsoredPostAuthor: (action) => _navigateToPostAuthor(
+				 context,
+				 id: action.authorId,
+				 props: UserProfileProps.build(
+					 isSponsored: true,
+					 promoBlockAction: action,
+					 sponsoredPost: block as PostSponsoredBlock,
+				 ),
+			 ),
+		 );*/
 			case let .onTapAvatar(userId):
-				let profileState = UserProfileReducer.State(authenticatedUserId: state.profileUserId, profileUserId: userId, showBackButton: true)
+				guard let block = state.feed.feedPage.blocks.first(where: { $0.author.id == userId }) else {
+					return .none
+				}
+				let author = block.author
+				let user = author.toUser()
+				let props: UserProfileProps? = block.isSponsored ? UserProfileProps(
+					isSponsored: true,
+					sponsoredBlock: block.block as! PostSponsoredBlock,
+					promoBlockAction: block.action
+				) : nil
+				let profileState = UserProfileReducer.State(
+					authenticatedUserId: state.profileUserId,
+					profileUser: user,
+					profileUserId: userId,
+					showBackButton: true,
+					props: props
+				)
 				state.destination = .userProfile(profileState)
 				return .none
 
@@ -158,9 +185,9 @@ public struct FeedReducer {
 			Destination.body
 		}
 	}
-	
+
 	typealias PostToBlockMapper = (Post) -> InstaBlockWrapper
-	
+
 	private func fetchFeedPage(
 		send: Send<Action>,
 		page: Int = 0,
@@ -178,17 +205,18 @@ public struct FeedReducer {
 				.postLarge(post.toPostLargeBlock())
 			}
 		}
-		
-		if hasMore && sponsoredBlocks {
+
+		if hasMore, sponsoredBlocks {
 			@Dependency(\.instagramClient.firebaseRemoteConfigClient) var firebaseRemoteConfigClient
 			let sponsoredBlocksJsonString = try await firebaseRemoteConfigClient.fetchRemoteData(key: "sponsored_blocks")
 			let sponsoredBlocks = try decoder.decode([InstaBlockWrapper].self, from: sponsoredBlocksJsonString.data(using: .utf8)!)
 			for sponsoredBlock in sponsoredBlocks {
-				instaBlocks.insert(sponsoredBlock, at: (2..<instaBlocks.count).randomElement()!)
+				instaBlocks.insert(sponsoredBlock, at: (2 ..< instaBlocks.count).randomElement()!)
 			}
 		}
 		if !hasMore {
 			instaBlocks.append(.horizontalDivider(DividerHorizontalBlock()))
+			instaBlocks.append(.sectionHeader(SectionHeaderBlock()))
 		}
 		let feedPage = FeedPage(
 			blocks: instaBlocks,
@@ -233,17 +261,19 @@ public struct FeedView: View {
 			List {
 				ForEachStore(store.scope(state: \.post, action: \.post)) { postStore in
 					blockBuilder(postStore: postStore)
-					.listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: AppSpacing.lg, trailing: 0))
-					.listRowSeparator(.hidden)
+						.listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: AppSpacing.lg, trailing: 0))
+						.listRowSeparator(.hidden)
 				}
 				if store.feed.feedPage.hasMore {
 					ProgressView()
 						.listRowSeparator(.hidden)
+						.frame(maxWidth: .infinity, alignment: .center)
 						.onAppear {
 							store.send(.feedPageNextPage)
 						}
 				}
 			}
+			.scrollIndicators(.hidden)
 			.refreshable {
 				store.send(.refreshFeedPage)
 			}
@@ -261,7 +291,7 @@ public struct FeedView: View {
 			await store.send(.task).finish()
 		}
 	}
-	
+
 	@ViewBuilder
 	private func blockBuilder(postStore: StoreOf<PostLargeReducer>) -> some View {
 		Group {
@@ -281,6 +311,12 @@ public struct FeedView: View {
 				)
 			case .horizontalDivider:
 				DividerBlock()
+			case let .sectionHeader(sectionHeader):
+				if sectionHeader.sectionType == .suggested {
+					Text("Suggested for you")
+						.font(textTheme.headlineSmall.font)
+						.foregroundStyle(Assets.Colors.bodyColor)
+				}
 			default: EmptyView()
 			}
 		}

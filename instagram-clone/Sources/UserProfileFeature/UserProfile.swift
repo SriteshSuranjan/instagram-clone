@@ -1,6 +1,5 @@
 import AppUI
 import ComposableArchitecture
-//import CreatePostFeature
 import Foundation
 import InstagramBlocksUI
 import MediaPickerFeature
@@ -8,6 +7,7 @@ import Shared
 import SwiftUI
 import InstagramClient
 import YPImagePicker
+import UIApplicationClient
 
 enum ProfileTab: Hashable {
 	case posts
@@ -35,13 +35,22 @@ public struct UserProfileReducer {
 		var profileUser: User?
 		var profileHeader: UserProfileHeaderReducer.State
 		var activeTab: ProfileTab = .posts
+		var props: UserProfileProps?
 		@Presents var destination: Destination.State?
 		var showBackButton: Bool
-		public init(authenticatedUserId: String, profileUserId: String, showBackButton: Bool = false) {
+		public init(
+			authenticatedUserId: String,
+			profileUser: User? = nil,
+			profileUserId: String,
+			showBackButton: Bool = false,
+			props: UserProfileProps? = nil
+		) {
 			self.authenticatedUserId = authenticatedUserId
+			self.profileUser = profileUser
 			self.profileUserId = profileUserId
 			self.showBackButton = showBackButton
-			self.profileHeader = UserProfileHeaderReducer.State(profileUserId: profileUserId, isOwner: authenticatedUserId == profileUserId)
+			self.props = props
+			self.profileHeader = UserProfileHeaderReducer.State(profileUserId: profileUserId, isOwner: authenticatedUserId == profileUserId, profileUser: profileUser)
 		}
 
 		var isOwner: Bool {
@@ -64,6 +73,7 @@ public struct UserProfileReducer {
 		case onTapAddMediaButton
 		case onTapMoreButton
 		case onTapBackButton
+		case onTapSponsoredPromoAction(URL?)
 	}
 
 	@Dependency(\.instagramClient.authClient) var authClient
@@ -145,6 +155,15 @@ public struct UserProfileReducer {
 					@Dependency(\.dismiss) var dismiss
 					await dismiss()
 				}
+			case let .onTapSponsoredPromoAction(url):
+				guard let url else {
+					return .none
+				}
+				return .run { _ in
+					@Dependency(\.openURL) var openURL
+					await openURL(url)
+				}
+				.debounce(id: "Open_Sponsored_Promo", for: .milliseconds(300), scheduler: DispatchQueue.main)
 			}
 		}
 		.ifLet(\.$destination, action: \.destination) {
@@ -185,12 +204,40 @@ public struct UserProfileView: View {
 		.navigationDestination(item: $store.scope(state: \.destination?.userStatistics, action: \.destination.userStatistics)) { userStatisticsStore in
 			UserStatisticsView(store: userStatisticsStore)
 		}
-		.navigationDestination(item: $store.scope(state: \.destination?.mediaPicker, action: \.destination.mediaPicker)) { mediaPickerStore in
+		.navigationDestination(
+			item: $store.scope(
+				state: \.destination?.mediaPicker,
+				action: \.destination.mediaPicker
+			)
+		) { mediaPickerStore in
 			MediaPicker(store: mediaPickerStore)
+		}
+		.overlay(alignment: .bottom) {
+			sponsoredPromoFloatingAction()
 		}
 		.toolbar(.hidden, for: .navigationBar)
 		.task {
 			await store.send(.task).finish()
+		}
+	}
+	
+	@ViewBuilder
+	private func sponsoredPromoFloatingAction() -> some View {
+		if case let .navigateToSponsor(sponsorAction) = store.props?.promoBlockAction {
+			Button {
+				store.send(.onTapSponsoredPromoAction(URL(string: sponsorAction.promoUrl)))
+			} label: {
+				PromoFloatingAction(
+					url: sponsorAction.promoUrl,
+					promoImageUrl: sponsorAction.promoPreviewImageUrl,
+					title: "Learn more",
+					subTitle: "Go to website"
+				)
+				.contentShape(.rect)
+			}
+			.scaleEffect()
+			.padding()
+			.transition(.move(edge: .bottom))
 		}
 	}
 	
