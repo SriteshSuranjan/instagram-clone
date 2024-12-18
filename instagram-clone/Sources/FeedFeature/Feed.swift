@@ -101,6 +101,7 @@ public struct FeedReducer {
 					)
 					state.feed.feedPage = updatedFeedPage
 					let profileUserId = state.profileUserId
+					
 					let posts = state.feed.feedPage.blocks.map {
 						PostLargeReducer.State(
 							block: $0,
@@ -186,6 +187,9 @@ public struct FeedReducer {
 				instaBlocks.insert(sponsoredBlock, at: (2..<instaBlocks.count).randomElement()!)
 			}
 		}
+		if !hasMore {
+			instaBlocks.append(.horizontalDivider(DividerHorizontalBlock()))
+		}
 		let feedPage = FeedPage(
 			blocks: instaBlocks,
 			totalBlocks: instaBlocks.count,
@@ -228,18 +232,7 @@ public struct FeedView: View {
 		VStack(spacing: 0) {
 			List {
 				ForEachStore(store.scope(state: \.post, action: \.post)) { postStore in
-					PostLargeView(
-						store: postStore,
-						postOptionsSettings: postStore.block.author.id == store.profileUserId ? PostOptionsSettings.owner(
-							onPostDelete: { _ in
-							},
-							onPostEdit: { _ in
-							}
-						) : PostOptionsSettings.viewer,
-						onTapAvatar: { userId in
-							store.send(.onTapAvatar(userId: userId))
-						}
-					)
+					blockBuilder(postStore: postStore)
 					.listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: AppSpacing.lg, trailing: 0))
 					.listRowSeparator(.hidden)
 				}
@@ -266,6 +259,30 @@ public struct FeedView: View {
 		}
 		.task {
 			await store.send(.task).finish()
+		}
+	}
+	
+	@ViewBuilder
+	private func blockBuilder(postStore: StoreOf<PostLargeReducer>) -> some View {
+		Group {
+			switch postStore.block {
+			case .postLarge, .postSponsored:
+				PostLargeView(
+					store: postStore,
+					postOptionsSettings: postStore.block.author.id == store.profileUserId ? PostOptionsSettings.owner(
+						onPostDelete: { _ in
+						},
+						onPostEdit: { _ in
+						}
+					) : PostOptionsSettings.viewer,
+					onTapAvatar: { userId in
+						store.send(.onTapAvatar(userId: userId))
+					}
+				)
+			case .horizontalDivider:
+				DividerBlock()
+			default: EmptyView()
+			}
 		}
 	}
 }

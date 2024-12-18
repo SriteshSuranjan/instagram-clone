@@ -188,7 +188,6 @@ public struct PostFooterView: View {
 				.font(textTheme.bodyMedium.font)
 				.foregroundStyle(Assets.Colors.gray)
 				.padding(.horizontal, AppSpacing.md)
-			Divider()
 		}
 		.task {
 			await store.send(.task).finish()

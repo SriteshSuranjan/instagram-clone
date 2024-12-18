@@ -2,9 +2,9 @@ import RswiftResources
 import SwiftUI
 import Lottie
 
-@MainActor
+
 public enum Assets {
-	@MainActor
+	
 	public struct Icons {
 		public static let google = AppImageResource(imageResource: R.image.google)
 		public static let github = AppImageResource(imageResource: R.image.github)
@@ -19,7 +19,6 @@ public enum Assets {
 		public static let verifiedUser = AppImageResource(imageResource: R.image.verified_user)
 	}
 
-	@MainActor
 	public struct Images {
 		public static let logo = AppImageResource(imageResource: R.image.instagram_text_logo)
 		public static let chatBackgroundDarkMask = AppImageResource(imageResource: R.image.chat_background_dark_mask)
@@ -29,7 +28,6 @@ public enum Assets {
 		public static let profilePhoto = AppImageResource(imageResource: R.image.profile_photo)
 	}
 
-	@MainActor
 	public struct Colors {
 		public static func customAdaptiveColor(_ colorScheme: ColorScheme, light: Color? = nil, dark: Color? = nil) -> Color {
 			colorScheme == .dark ? (light ?? Colors.white) : (dark ?? Colors.black)
@@ -88,16 +86,14 @@ public enum Assets {
 			Color(R.color.background_fourth),
 		]
 	}
+	
+	
+	public struct Animations {
+		public static let checkedAnimation = R.file.checkedAnimationJson
+	}
 }
 
 
-
-@MainActor
-public struct Animations {
-	public let checkedAnimation = AnimationResource(animationFile: R.file.checkedAnimationJson)
-}
-
-@MainActor
 public struct AppImageResource {
 	public let imageResource: RswiftResources.ImageResource
 	public init(imageResource: RswiftResources.ImageResource) {
@@ -121,16 +117,35 @@ public struct AppImageResource {
 
 public struct AnimationResource {
 	private let animationFile: RswiftResources.FileResource
-
-	init(animationFile: FileResource) {
+	private var playbackMode: LottiePlaybackMode
+	init(animationFile: FileResource, playbackMode: LottiePlaybackMode) {
 		self.animationFile = animationFile
+		self.playbackMode = playbackMode
 	}
-
 	public func view(
 		width: CGFloat? = nil,
 		height: CGFloat? = nil
 	) -> some View {
-		LottieView(animation: .named(animationFile.name))
+		LottieView(animation: .named(animationFile.name, bundle: .module))
+			.playbackMode(playbackMode)
 			.frame(width: width, height: height)
+	}
+}
+
+public struct InstaLottieAnimationView: View {
+	@State private var playbackMode: LottiePlaybackMode = .paused
+	private var animationFile: FileResource
+	public init(animationFile: FileResource) {
+		self.animationFile = animationFile
+	}
+	public var body: some View {
+		LottieView(animation: .named(animationFile.name, bundle: .module))
+			.playbackMode(playbackMode)
+			.onAppear {
+				DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+					playbackMode = .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce))
+				}
+			}
+			.frame(width: nil, height: nil)
 	}
 }
