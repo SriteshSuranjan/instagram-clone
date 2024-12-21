@@ -105,7 +105,9 @@ extension UserDatabaseClient: DependencyKey {
 		postCommentsCount: unimplemented("Use live implementation please.", placeholder: .never),
 		isLiked: unimplemented("Use live implementation please.", placeholder: .never),
 		postAuthorFollowingStatus: unimplemented("Use live implementation please.", placeholder: .never),
-		likePost: unimplemented("Use live implementation please.")
+		likePost: unimplemented("Use live implementation please."),
+		deletePost: unimplemented("Use live implementation please."),
+		updatePost: unimplemented("Use live implementation please.")
 	)
 	public static func livePowerSyncDatabaseClient(
 		_ client: DatabaseClient
@@ -176,6 +178,12 @@ extension UserDatabaseClient: DependencyKey {
 			},
 			likePost: { postId, post in
 				try await client.likePost(postId: postId, post: post)
+			},
+			deletePost: { postId in
+				try await client.deletePost(postId: postId)
+			},
+			updatePost: { postId, caption in
+				try await client.updatePost(postId: postId, caption: caption)
 			}
 		)
 	}
@@ -206,7 +214,6 @@ extension SupabaseStorageUploaderClient: DependencyKey {
 				try await powerSyncReository.supabase.storage.from(storageName).getPublicURL(path: path, download: false).absoluteString
 			},
 			createSignedUrl: { storageName, path in
-//				try await powerSyncReository.supabase.storage.from(storageName).createSignedUploadURL(path: path)
 				try await powerSyncReository.supabase.storage.from(storageName).createSignedURL(path: path, expiresIn: 60).absoluteString
 			}
 		)

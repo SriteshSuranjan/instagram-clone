@@ -127,9 +127,17 @@ let package = Package(
 			targets: ["FirebaseRemoteConfigRepository"]
 		),
 		.library(
-			name: "UIApplicationClient",
-			targets: ["UIApplicationClient"]
-		)
+			name: "FeedUpdateRequestClient",
+			targets: ["FeedUpdateRequestClient"]
+		),
+		.library(
+			name: "PostEditFeature",
+			targets: ["PostEditFeature"]
+		),
+		.library(
+			name: "ChatsFeature",
+			targets: ["ChatsFeature"]
+		),
 	],
 	dependencies: [
 		.package(url: "https://github.com/powersync-ja/powersync-kotlin", exact: "1.0.0-BETA5.0"),
@@ -203,6 +211,7 @@ let package = Package(
 				"UploadTaskClient",
 				"BlurHashClient",
 				"Shared",
+				"FeedUpdateRequestClient",
 				.product(name: "Supabase", package: "supabase-swift"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 				.product(name: "GoogleSignIn", package: "GoogleSignIn-iOS"),
@@ -331,6 +340,11 @@ let package = Package(
 				"InstaBlocks",
 				"InstagramClient",
 				"UserProfileFeature",
+				"FeedUpdateRequestClient",
+				"PostEditFeature",
+				"MediaPickerFeature",
+				"CreatePostFeature",
+				"ChatsFeature",
 				.product(name: "Tagged", package: "swift-tagged"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
@@ -367,7 +381,6 @@ let package = Package(
 				"InstagramClient",
 				"MediaPickerFeature",
 				"InstaBlocks",
-				"UIApplicationClient",
 				.product(name: "UnifiedBlurHash", package: "UnifiedBlurHash"),
 				.product(name: "Tagged", package: "swift-tagged"),
 				.product(name: "YPImagePicker", package: "YPImagePicker"),
@@ -453,7 +466,33 @@ let package = Package(
 				.product(name: "FirebaseRemoteConfig", package: "firebase-ios-sdk")
 			]
 		),
-		.target(name: "UIApplicationClient")
+		.target(
+			name: "FeedUpdateRequestClient",
+			dependencies: [
+				"InstaBlocks",
+				"Shared",
+					.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+			]
+		),
+		.target(
+			name: "PostEditFeature",
+			dependencies: [
+				"Shared",
+				"AppUI",
+				"InstagramBlocksUI",
+				"FeedUpdateRequestClient",
+				"InstagramClient",
+				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+			]
+		),
+		.target(
+			name: "ChatsFeature",
+			dependencies: [
+				"Shared",
+				"AppUI",
+				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+			]
+		)
 	],
 	swiftLanguageModes: [.v5]
 )

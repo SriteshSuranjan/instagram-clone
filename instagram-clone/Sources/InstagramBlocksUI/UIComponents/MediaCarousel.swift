@@ -116,7 +116,7 @@ public struct MediaCarouselView: View {
 
 	public var body: some View {
 		ScrollView(.horizontal) {
-			HStack {
+			LazyHStack {
 				ForEach(store.media) { media in
 					Group {
 						if let previewData = media.previewData {

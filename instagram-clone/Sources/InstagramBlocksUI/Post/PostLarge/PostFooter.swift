@@ -47,6 +47,13 @@ public struct PostFooterReducer {
 		var suffixLikersCount: Int {
 			likersInFollowings.count - 1
 		}
+		
+		var publishAt: (String?, Date) {
+			if let updatedAt = block.updatedAt {
+				return ("Edited at", updatedAt)
+			}
+			return (nil, block.createdAt)
+		}
 	}
 
 	public enum Action: BindableAction {
@@ -184,10 +191,15 @@ public struct PostFooterView: View {
 				caption: store.block.caption
 			)
 			.padding(.horizontal, AppSpacing.md)
-			Text("\(timeAgo(from: store.block.createdAt))")
-				.font(textTheme.bodyMedium.font)
-				.foregroundStyle(Assets.Colors.gray)
-				.padding(.horizontal, AppSpacing.md)
+			HStack(spacing: AppSpacing.xxs) {
+				if let publishAtText = store.publishAt.0 {
+					Text(publishAtText)
+				}
+				Text("\(timeAgo(from: store.publishAt.1))")
+			}
+			.font(textTheme.bodyMedium.font)
+			.foregroundStyle(Assets.Colors.gray)
+			.padding(.horizontal, AppSpacing.md)
 		}
 		.task {
 			await store.send(.task).finish()

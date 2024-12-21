@@ -27,6 +27,8 @@ public struct AppDelegateReducer {
 				firebaseCore.config()
 				return .run { _ in
 					try await firebaseRemoteConfigClient.config()
+				} catch: { error, send in
+					
 				}
 			}
 		}

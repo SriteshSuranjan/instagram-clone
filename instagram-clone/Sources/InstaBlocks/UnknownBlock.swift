@@ -5,6 +5,8 @@ public struct UnknownBlock: PostBlock, Codable, Equatable {
 	
 	public var createdAt: Date = .now
 	
+	public var updatedAt: Date? = nil
+	
 	public var media: [MediaItem] = []
 	
 	public var caption: String = ""

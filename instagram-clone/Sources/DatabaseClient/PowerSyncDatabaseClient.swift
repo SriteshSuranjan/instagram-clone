@@ -308,7 +308,7 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 					currentUserId,
 					caption,
 					mediaJsonString,
-					Date.now.ISO8601Format()
+					Date.now.ISO8601Format(.iso8601)
 				]
 			)
 
@@ -384,7 +384,7 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 	 FROM
 		posts
 		inner join profiles p on posts.user_id = p.id
-		ORDER BY created_at DESC LIMIT ?1 OFFSET ?2
+		ORDER BY created_at DESC LIMIT ? OFFSET ?
 """,
 			parameters: [
 				limit, offset
@@ -419,15 +419,15 @@ FROM profiles
 WHERE id IN (
 		SELECT l.user_id
 		FROM likes l
-		WHERE l.post_id = ?1
+		WHERE l.post_id = ?
 		AND EXISTS (
 				SELECT *
 				FROM subscriptions f
 				WHERE f.subscribed_to_id = l.user_Id
-				AND f.subscriber_id = ?2
-		) AND id <> ?2
+				AND f.subscriber_id = ?
+		) AND id <> ?
 )
-LIMIT ?3 OFFSET ?4
+LIMIT ? OFFSET ?
 """,
 			parameters: [postId, currentUserId.lowercased(), limit, offset],
 			mapper: { cursor in
@@ -534,6 +534,86 @@ LIMIT ?3 OFFSET ?4
 				parameters: [currentUserId.lowercased(), postId]
 			)
 		}
+	}
+	
+	public func deletePost(postId: String) async throws {
+		try await self.powerSyncRepository.db.execute(
+			sql: "DELETE FROM posts WHERE id = ?",
+			parameters: [postId]
+		)
+	}
+	
+	public func updatePost(postId: String, caption: String) async throws -> Post? {
+		guard let currentUserId = await currentUserId else {
+			return nil
+		}
+		return try await powerSyncRepository.db.writeTransaction(callback: SuspendTaskWrapper<Post?> { _ in
+			try await self.powerSyncRepository.db.execute(
+				sql: """
+	UPDATE posts
+	SET
+		caption = ?,
+		updated_at = ?
+	WHERE id = ?
+	""",
+				parameters: [caption, Date.now.ISO8601Format(.iso8601), postId]
+			)
+			let postData = try await self.powerSyncRepository.db.get(
+				sql: "SELECT id, user_id, caption, media, created_at, updated_at FROM posts WHERE id = ?",
+				parameters: [postId],
+				mapper: { cursor in
+					guard let id = cursor.getString(index: 0),
+								let userId = cursor.getString(index: 1),
+								let caption = cursor.getString(index: 2),
+								let mediaJson = cursor.getString(index: 3),
+								let createdAt = cursor.getString(index: 4),
+								let updatedAt = cursor.getString(index: 5)
+					else {
+						return ("", "", "", "", "", "")
+					}
+					return (id, userId, caption, mediaJson, createdAt, updatedAt)
+				}
+			)
+
+			let author = try await self.powerSyncRepository.db.get(
+				sql: "SELECT * FROM profiles WHERE id = ?",
+				parameters: [currentUserId.lowercased()],
+				mapper: { cursor in
+					guard let id = cursor.getString(index: 0) else {
+						return Shared.User.anonymous
+					}
+					return Shared.User(
+						id: id,
+						email: cursor.getString(index: 2),
+						username: cursor.getString(index: 3),
+						fullName: cursor.getString(index: 1),
+						avatarUrl: cursor.getString(index: 4),
+						pushToken: cursor.getString(index: 5),
+						isNewUser: false
+					)
+				}
+			)
+
+			guard let postTuple = postData as? (String, String, String, String, String, String),
+						let user = author as? Shared.User,
+						let createdAt = try? Date(postTuple.4, strategy: .dateTime),
+						let updatedAt = try? Date(postTuple.5, strategy: .iso8601),
+						let mediaData = postTuple.3.data(using: .utf8)
+			else {
+				return nil
+			}
+			let mediaItems = (try? PowerSyncRepository.decoder.decode([MediaItem].self, from: mediaData)) ?? []
+
+			let post = Post(
+				id: postTuple.0,
+				author: user,
+				caption: postTuple.2,
+				createdAt: createdAt,
+				updatedAt: updatedAt,
+				media: mediaItems
+			)
+			return post
+		}) as? Post
 	}
 }
 

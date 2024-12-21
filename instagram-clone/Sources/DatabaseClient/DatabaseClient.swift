@@ -26,6 +26,8 @@ public protocol PostsBaseRepository: Sendable {
 	func isLiked(postId: String, userId: String?, post: Bool) async -> AsyncStream<Bool>
 	func postAuthorFollowingStatus(postAuthorId: String, userId: String?) async -> AsyncStream<Bool>
 	func likePost(postId: String, post: Bool) async throws -> Void
+	func deletePost(postId: String) async throws -> Void
+	func updatePost(postId: String, caption: String) async throws -> Post?
 }
 
 public protocol DatabaseClient: UserBaseRepository, PostsBaseRepository {}

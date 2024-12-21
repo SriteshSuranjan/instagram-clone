@@ -5,6 +5,7 @@ public struct PostLargeBlock: PostBlock, Equatable {
 	public var id: String
 	public var author: PostAuthor
 	public var createdAt: Date
+	public var updatedAt: Date?
 	public var caption: String
 	public var media: [MediaItem]
 	public var action: BlockActionWrapper?
@@ -14,6 +15,7 @@ public struct PostLargeBlock: PostBlock, Equatable {
 		id: String,
 		author: PostAuthor,
 		createdAt: Date,
+		updatedAt: Date? = nil,
 		caption: String,
 		media: [MediaItem]? = nil,
 		action: BlockActionWrapper? = nil,
@@ -22,6 +24,7 @@ public struct PostLargeBlock: PostBlock, Equatable {
 		self.id = id
 		self.author = author
 		self.createdAt = createdAt
+		self.updatedAt = updatedAt
 		self.caption = caption
 		self.action = action
 		self.media = media ?? []
@@ -34,6 +37,7 @@ public struct PostLargeBlock: PostBlock, Equatable {
 		case id
 		case author
 		case createdAt
+		case updatedAt
 		case caption
 		case action
 		case isSponsored
@@ -46,6 +50,7 @@ public struct PostLargeBlock: PostBlock, Equatable {
 		id = try container.decode(String.self, forKey: .id)
 		author = try container.decode(PostAuthor.self, forKey: .author, configuration: .normal)
 		createdAt = try container.decode(Date.self, forKey: .createdAt)
+		updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt)
 		caption = try container.decode(String.self, forKey: .caption)
 		action = try container.decodeIfPresent(BlockActionWrapper.self, forKey: .action)
 		media = try container.decode([MediaItem].self, forKey: .media)

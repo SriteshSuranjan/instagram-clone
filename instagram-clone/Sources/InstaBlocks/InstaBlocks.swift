@@ -89,6 +89,16 @@ public enum InstaBlockWrapper: Codable, Equatable, Identifiable, Hashable {
 		}
 	}
 	
+	public var updatedAt: Date? {
+		switch self {
+		case .postLarge(let postLargeBlock): return postLargeBlock.updatedAt
+		case .postSponsored(let postSponsoredBlock): return postSponsoredBlock.updatedAt
+		case .unknown(let unknownBlock): return unknownBlock.updatedAt
+		case .horizontalDivider(let dividerBlock): return dividerBlock.updatedAt
+		case .sectionHeader(let sectionHeaderBlock): return sectionHeaderBlock.updatedAt
+		}
+	}
+	
 	public var caption: String {
 		switch self {
 		case .postLarge(let postLargeBlock): return postLargeBlock.caption

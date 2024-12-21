@@ -9,6 +9,7 @@ import AppLoadingIndeterminateClient
 import SnackbarMessagesClient
 import AppUI
 import Shared
+import FeedUpdateRequestClient
 
 private let encoder: JSONEncoder = {
 	let encoder = JSONEncoder()
@@ -27,6 +28,7 @@ public struct UploadTaskReducer<State> {
 	@Dependency(\.uuid) var uuid
 	@Dependency(\.appLoadingIndeterminateClient) var appLoadingIndeterminateClient
 	@Dependency(\.snackbarMessagesClient) var snackbarMessagesClient
+	@Dependency(\.feedUpdateRequestClient) var feedUpdateRequestClient
 	
 	public func reduce(into state: inout State, action: AppReducer.Action) -> Effect<AppReducer.Action> {
 		switch action {
@@ -84,8 +86,9 @@ public struct UploadTaskReducer<State> {
 							firstFrameUrl = try await uploaderClient.getPublicUrl("posts", firstFrameUploadResponse.path)
 						}
 						let mediaJson = #"[{"media_id":"\#(uuid().uuidString.lowercased())","url":"\#(mediaUrl!)","type":"__video_media__","blur_hash":"\#(blurHash)","first_frame_url":"\#(firstFrameUrl ?? "")"}]"#
-						let post = try await databaseClient.createPost(caption, mediaJson)
-						debugPrint(post)
+						if let post = try await databaseClient.createPost(caption, mediaJson) {
+							await feedUpdateRequestClient.addFeedUpdateRequest(.create(newPost: post))
+						}
 					} else {
 						var media: [MediaItem] = []
 						for (index, file) in selectedFiles.enumerated() {
@@ -144,8 +147,9 @@ public struct UploadTaskReducer<State> {
 							}
 						}
 						let mediaData = try encoder.encode(media)
-						if let mediaJson = String(data: mediaData, encoding: .utf8) {
-							let post = try await databaseClient.createPost(caption, mediaJson)
+						if let mediaJson = String(data: mediaData, encoding: .utf8),
+							 let post = try await databaseClient.createPost(caption, mediaJson) {
+							await feedUpdateRequestClient.addFeedUpdateRequest(.create(newPost: post))
 						}
 					}
 					await appLoadingIndeterminateClient.updateLoading(showLoading: false)

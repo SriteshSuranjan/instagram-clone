@@ -117,10 +117,10 @@ public struct CreatePostView: View {
 			} label: {
 				Text("Share")
 					.frame(maxWidth: .infinity)
+					.padding(.vertical, AppSpacing.sm)
 					.contentShape(.rect)
 			}
 			.buttonStyle(.borderedProminent)
-			.frame(height: 50)
 			.padding(.horizontal, AppSpacing.lg)
 		}
 	}

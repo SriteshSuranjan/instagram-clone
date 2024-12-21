@@ -5,6 +5,7 @@ public struct DividerHorizontalBlock: PostBlock, Equatable {
 	public var id: String
 	public var author: PostAuthor
 	public var createdAt: Date
+	public var updatedAt: Date? = nil
 	public var caption: String
 	public var media: [MediaItem]
 	public var action: BlockActionWrapper?

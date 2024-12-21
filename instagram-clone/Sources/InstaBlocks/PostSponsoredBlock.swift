@@ -8,6 +8,8 @@ public struct PostSponsoredBlock: PostBlock, Codable, Equatable {
 	
 	public var createdAt: Date
 	
+	public var updatedAt: Date? = nil
+	
 	public var media: [Shared.MediaItem]
 	
 	public var caption: String

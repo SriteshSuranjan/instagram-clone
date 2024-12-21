@@ -10,6 +10,7 @@ import TimelineFeature
 import InstagramClient
 import UserProfileFeature
 import InstagramBlocksUI
+import SnackbarMessagesClient
 
 public enum HomeTab: Identifiable, Hashable, CaseIterable {
 	case feed
@@ -63,9 +64,11 @@ public struct HomeReducer {
 		case authenticatedUserProfileUpdated(User)
 		case userProfile(UserProfileReducer.Action)
 		case updateAppLoadingIndeterminate(show: Bool)
+		case onTapTab(HomeTab)
 	}
 
 	@Dependency(\.instagramClient.databaseClient) var databaseClient
+	@Dependency(\.snackbarMessagesClient) var snackbarMessagesClient
 
 	public var body: some ReducerOf<Self> {
 		BindingReducer()
@@ -103,6 +106,16 @@ public struct HomeReducer {
 				}
 			case .reels:
 				return .none
+			case let .userProfile(.delegate(.routeToFeed(scrollToTop))):
+				state.currentTab = .feed
+				if scrollToTop {
+					return .run { send in
+						@Dependency(\.continuousClock) var clock
+						try await clock.sleep(for: .milliseconds(200))
+						await send(.feed(.scrollToTop), animation: .snappy)
+					}
+				}
+				return .none
 			case .userProfile:
 				return .none
 			case let .updateAppLoadingIndeterminate(show):
@@ -111,6 +124,11 @@ public struct HomeReducer {
 				}
 				state.showAppLoadingIndeterminate = show
 				return .none
+			case let .onTapTab(tab):
+				state.currentTab = tab
+				return .run { _ in
+//					await snackbarMessagesClient.show(message: .success(title: "Changed to tab \(tab)", backgroundColor: Assets.Colors.snackbarSuccessBackground))
+				}
 			}
 		}
 	}
@@ -127,7 +145,7 @@ public struct HomeView: View {
 	public var body: some View {
 		NavigationStack {
 			ZStack(alignment: .bottom) {
-				TabView(selection: $currentTab) {
+				TabView(selection: $store.currentTab) {
 					FeedView(store: store.scope(state: \.feed, action: \.feed))
 						.tag(HomeTab.feed)
 					TimelineView(store: store.scope(state: \.timeline, action: \.timeline))
@@ -137,15 +155,10 @@ public struct HomeView: View {
 					UserProfileView(store: store.scope(state: \.userProfile, action: \.userProfile))
 						.tag(HomeTab.userProfile)
 				}
-				.task {
-					await store.send(.task).finish()
-				}
 				HStack {
 					ForEach(HomeTab.allCases) { tab in
 						Button {
-							withAnimation {
-								currentTab = tab
-							}
+							store.send(.onTapTab(tab))
 						} label: {
 							switch tab {
 							case .feed:
@@ -157,21 +170,22 @@ public struct HomeView: View {
 							case .userProfile:
 								Group {
 									UserProfileAvatar(userId: store.authenticatedUser.id, avatarUrl: store.authenticatedUser.avatarUrl, radius: 18, isLarge: false, onTap: { _ in
-										withAnimation {
-											currentTab = tab
-										}
+										store.send(.onTapTab(tab))
 									})
 								}
-								.animation(.snappy, value: currentTab)
+								.animation(.snappy, value: store.currentTab)
 							}
 						}
 						.noneEffect()
-						.foregroundStyle(currentTab == tab ? Assets.Colors.bodyColor : Color(.systemGray5))
+						.foregroundStyle(store.currentTab == tab ? Assets.Colors.bodyColor : Color(.systemGray5))
 						.frame(maxWidth: .infinity)
 					}
 				}
 				.frame(height: 48)
 				.background(Assets.Colors.appBarBackgroundColor)
+			}
+			.task {
+				await store.send(.task).finish()
 			}
 			.toolbar(.hidden, for: .navigationBar)
 		}

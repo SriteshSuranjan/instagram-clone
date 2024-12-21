@@ -2,9 +2,9 @@ import AppUI
 import ComposableArchitecture
 import Foundation
 import InstaBlocks
+import InstagramClient
 import Shared
 import SwiftUI
-import InstagramClient
 
 @Reducer
 public struct PostHeaderReducer {
@@ -51,6 +51,7 @@ public struct PostHeaderReducer {
 		case task
 		case postAuthorFollowingStatusDidUpdated(Bool)
 		case followAuthor
+		case onTapPostOptionsButton(isOwner: Bool)
 	}
 
 	private enum Cancel: Hashable {
@@ -82,6 +83,8 @@ public struct PostHeaderReducer {
 					try await databaseClient.follow(postAuthorId, profileUserId)
 				}
 				.cancellable(id: Cancel.followRequest, cancelInFlight: true)
+			case .onTapPostOptionsButton:
+				return .none
 			}
 		}
 	}
@@ -134,21 +137,23 @@ public struct PostHeaderView: View {
 			}
 
 			Spacer()
-			if store.showFollowButton && store.enableFollowButton {
-				HStack(spacing: AppSpacing.md) {
+			HStack(spacing: AppSpacing.md) {
+				if store.showFollowButton && store.enableFollowButton {
 					FollowButton(
 						isFollowed: store.isFollowed,
 						isOutlined: color != nil
 					) {
 						store.send(.followAuthor)
 					}
-					Button {} label: {
-						Image(systemName: "ellipsis")
-							.rotationEffect(.degrees(90))
-							.contentShape(.rect)
-					}
-					.fadeEffect()
 				}
+				Button {
+					store.send(.onTapPostOptionsButton(isOwner: store.isOwner))
+				} label: {
+					Image(systemName: "ellipsis")
+						.rotationEffect(.degrees(90))
+						.contentShape(.rect)
+				}
+				.fadeEffect()
 			}
 		}
 		.padding(.horizontal, AppSpacing.sm)

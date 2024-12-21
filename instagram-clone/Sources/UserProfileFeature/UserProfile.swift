@@ -7,7 +7,6 @@ import Shared
 import SwiftUI
 import InstagramClient
 import YPImagePicker
-import UIApplicationClient
 
 enum ProfileTab: Hashable {
 	case posts
@@ -74,6 +73,10 @@ public struct UserProfileReducer {
 		case onTapMoreButton
 		case onTapBackButton
 		case onTapSponsoredPromoAction(URL?)
+		case delegate(Delegate)
+		public enum Delegate {
+			case routeToFeed(scrollToTop: Bool)
+		}
 	}
 
 	@Dependency(\.instagramClient.authClient) var authClient
@@ -92,7 +95,7 @@ public struct UserProfileReducer {
 				return .none
 			case .destination(.presented(.mediaPicker(.delegate(.createPostPopToRoot)))):
 				state.destination = nil
-				return .none
+				return .send(.delegate(.routeToFeed(scrollToTop: true)))
 			case let .destination(.presented(.profileAddMedia(.delegate(.onTapAddMediaButton(mediaType))))):
 				let isReels = mediaType == .reels
 				state.destination = .mediaPicker(MediaPickerReducer.State(pickerConfiguration: MediaPickerView.Configuration(maxItems: 10, reels: isReels)))
@@ -164,6 +167,8 @@ public struct UserProfileReducer {
 					await openURL(url)
 				}
 				.debounce(id: "Open_Sponsored_Promo", for: .milliseconds(300), scheduler: DispatchQueue.main)
+			case .delegate:
+				return .none
 			}
 		}
 		.ifLet(\.$destination, action: \.destination) {
@@ -189,19 +194,34 @@ public struct UserProfileView: View {
 			.scrollIndicators(.hidden)
 		}
 		.coverStatusBar()
-		.sheet(item: $store.scope(state: \.destination?.profileSettings, action: \.destination.profileSettings)) { profileSettingsStore in
+		.sheet(
+			item: $store.scope(
+				state: \.destination?.profileSettings,
+				action: \.destination.profileSettings
+			)
+		) { profileSettingsStore in
 			UserProfileSettingsView(store: profileSettingsStore)
 				.presentationDetents([.height(240)])
 				.presentationDragIndicator(.visible)
 				.padding(.horizontal, AppSpacing.sm)
 		}
-		.sheet(item: $store.scope(state: \.destination?.profileAddMedia, action: \.destination.profileAddMedia)) { profileAddMediaStore in
+		.sheet(
+			item: $store.scope(
+				state: \.destination?.profileAddMedia,
+				action: \.destination.profileAddMedia
+			)
+		) { profileAddMediaStore in
 			UserProfileAddMediaView(store: profileAddMediaStore)
 				.presentationDetents([.height(280)])
 				.presentationDragIndicator(.visible)
 				.padding(.horizontal, AppSpacing.sm)
 		}
-		.navigationDestination(item: $store.scope(state: \.destination?.userStatistics, action: \.destination.userStatistics)) { userStatisticsStore in
+		.navigationDestination(
+			item: $store.scope(
+				state: \.destination?.userStatistics,
+				action: \.destination.userStatistics
+			)
+		) { userStatisticsStore in
 			UserStatisticsView(store: userStatisticsStore)
 		}
 		.navigationDestination(

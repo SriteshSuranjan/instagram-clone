@@ -9,6 +9,7 @@ public protocol PostBlock: InstaBlock, Equatable, Hashable {
 	var caption: String { get }
 	var action: BlockActionWrapper? { get }
 	var isSponsored: Bool { get }
+	var updatedAt: Date? { get }
 }
 
 extension PostBlock {

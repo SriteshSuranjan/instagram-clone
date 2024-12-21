@@ -12,6 +12,7 @@ import HomeFeature
 import BottomBarVisiblePreference
 import AppLoadingIndeterminateClient
 import UploadTaskClient
+import FeedUpdateRequestClient
 
 @Reducer
 public struct AppReducer {
@@ -42,6 +43,7 @@ public struct AppReducer {
 	@Dependency(\.instagramClient.authClient) var authClient
 	@Dependency(\.snackbarMessagesClient) var snackbarMessagesClient
 	@Dependency(\.appLoadingIndeterminateClient) var appLoadingIndeterminateClient
+	@Dependency(\.feedUpdateRequestClient) var feedUpdateRequestClient
 	
 	public enum Action: BindableAction {
 		case appDelegate(AppDelegateReducer.Action)
@@ -140,34 +142,12 @@ public struct AppView: View {
 			case let .auth(authStore):
 				AuthView(store: authStore)
 			case let .home(homeStore):
-				NavigationStack {
-					HomeView(store: homeStore)
-				}
+				HomeView(store: homeStore)
 			}
 		}
 		.task { await store.send(.task).finish() }
 		.snackbar(messages: $store.snackbarMessages)
 		.appLoadintIndeterminate(presented: store.showLoading)
-//		NavigationStack(path: $store.scope(state: \.path, action: \.path)) {
-//			Group {
-//				switch store.scope(state: \.view, action: \.view).case {
-//				case let .launch(launchStore):
-//					LaunchView(store: launchStore)
-//				case let .auth(authStore):
-//					AuthView(store: authStore)
-//				case let .home(homeStore):
-//					HomeView(store: homeStore)
-//				}
-//			}
-//			.task { await store.send(.task).finish() }
-//			.snackbar(messages: $store.snackbarMessages)
-//			.appLoadintIndeterminate(presented: store.showLoading)
-//		} destination: { pathStore in
-//			switch pathStore.case {
-//			case let .userProfile(userProfileStore):
-//				UserProfileView(store: userProfileStore)
-//			}
-//		}
 	}
 }
 
