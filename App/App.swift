@@ -79,6 +79,8 @@ struct SwiftInstagramCloneApp: App {
 		WindowGroup {
 			AppView(store: self.appDelegate.store)
 				.environment(\.textTheme, self.textTheme)
+				.environment(\.statusBarHeight, UIApplication.shared.windows.first?.windowScene?.statusBarManager?.statusBarFrame.height ?? 0)
+//				.environment(\.statusHeight, UIWindowScene.)
 		}
 	}
 }

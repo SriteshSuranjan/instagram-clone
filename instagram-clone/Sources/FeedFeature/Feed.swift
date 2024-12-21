@@ -60,6 +60,11 @@ public struct FeedReducer {
 		case onTapPostOptionSheet(optionType: PostOptionType, block: InstaBlockWrapper)
 		case performFeedUpdateRequest(request: FeedUpdateRequest)
 		case scrollToTop
+		case delegate(Delegate)
+		
+		public enum Delegate {
+			case onTapChatsButton
+		}
 
 		@CasePathable
 		public enum Alert: Equatable {
@@ -240,6 +245,9 @@ public struct FeedReducer {
 				default: break // TODO: don't show again and block author
 				}
 				return .none
+				
+			case .delegate:
+				return .none
 			}
 		}
 		.forEach(\.post, action: \.post) {
@@ -335,20 +343,24 @@ public struct FeedView: View {
 		Group {
 			ScrollView {
 				LazyVStack {
-					ForEachStore(store.scope(state: \.post, action: \.post)) { postStore in
-						blockBuilder(postStore: postStore)
-							.id(postStore.block.id)
-							.listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: AppSpacing.lg, trailing: 0))
-							.listRowSeparator(.hidden)
-					}
-					if store.feed.feedPage.hasMore {
-						ProgressView()
-							.id("ProgressLoader")
-							.listRowSeparator(.hidden)
-							.frame(maxWidth: .infinity, alignment: .center)
-							.onAppear {
-								store.send(.feedPageNextPage)
-							}
+					Section {
+						ForEachStore(store.scope(state: \.post, action: \.post)) { postStore in
+							blockBuilder(postStore: postStore)
+								.id(postStore.block.id)
+								.listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: AppSpacing.lg, trailing: 0))
+								.listRowSeparator(.hidden)
+						}
+						if store.feed.feedPage.hasMore {
+							ProgressView()
+								.id("ProgressLoader")
+								.listRowSeparator(.hidden)
+								.frame(maxWidth: .infinity, alignment: .center)
+								.onAppear {
+									store.send(.feedPageNextPage)
+								}
+						}
+					} header: {
+						appLogoView()
 					}
 				}
 			}
@@ -391,6 +403,29 @@ public struct FeedView: View {
 		.task {
 			await store.send(.task).finish()
 		}
+	}
+	
+	@ViewBuilder
+	private func appLogoView() -> some View {
+		HStack {
+			AppLogoView(
+				width: 120,
+				height: 50,
+				color: Assets.Colors.bodyColor,
+				contentMode: .fit
+			)
+			Spacer()
+			Button {
+				store.send(.delegate(.onTapChatsButton))
+			} label: {
+				Assets.Icons.chatCircle
+					.view(width: 36, height: 36)
+					.contentShape(.circle)
+			}
+			.fadeEffect()
+		}
+		.frame(maxWidth: .infinity)
+		.padding(.horizontal)
 	}
 	
 	@ViewBuilder

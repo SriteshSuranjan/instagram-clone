@@ -60,6 +60,9 @@ public struct UserProfileEditReducer {
 				}}()
 				state.destination = .editInfo(UserProfileEditInfoReducer.State(userId: state.user.id, editInfoDetail: UserProfileEditInfoDetail(editInfoType: focus, value: value, maxBound: maxBound)))
 				return .none
+			case .destination(.presented(.mediaPicker(.delegate(.onTapCancelButton)))):
+				state.destination = nil
+				return .none
 			case let .destination(.presented(.mediaPicker(.delegate(.avatarNextAction(imageData))))):
 				return .run { [userId = state.user.id] send in
 					await send(.updateUserAvatar)

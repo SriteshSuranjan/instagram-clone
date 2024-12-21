@@ -326,6 +326,9 @@ let package = Package(
 				"UserProfileFeature",
 				"InstagramClient",
 				"BottomBarVisiblePreference",
+				"MediaPickerFeature",
+				"CreatePostFeature",
+				"ChatsFeature",
 				.product(name: "Tagged", package: "swift-tagged"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]

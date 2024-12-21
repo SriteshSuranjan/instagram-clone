@@ -93,6 +93,9 @@ public struct UserProfileReducer {
 				return .none
 			case .destination(.dismiss):
 				return .none
+			case .destination(.presented(.mediaPicker(.delegate(.onTapCancelButton)))):
+				state.destination = nil
+				return .none
 			case .destination(.presented(.mediaPicker(.delegate(.createPostPopToRoot)))):
 				state.destination = nil
 				return .send(.delegate(.routeToFeed(scrollToTop: true)))

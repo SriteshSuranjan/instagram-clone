@@ -140,6 +140,7 @@ public struct MediaPickerReducer {
 		public enum Delegate {
 			case createPostPopToRoot
 			case avatarNextAction(imageData: Data)
+			case onTapCancelButton
 		}
 	}
 
@@ -172,9 +173,7 @@ public struct MediaPickerReducer {
 				}
 				
 			case .onTapCancelButton:
-				return .run { _ in
-					await dismiss()
-				}
+				return .send(.delegate(.onTapCancelButton), animation: .default)
 			case .createPost(.presented(.delegate(.popToRoot))):
 				state.createPost = nil
 				return .send(.delegate(.createPostPopToRoot))

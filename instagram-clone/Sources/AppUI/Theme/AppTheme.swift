@@ -29,12 +29,13 @@ import SwiftUI
 //
 
 // MARK: - Color Theme
-//@MainActor
-//public enum ColorTheme: String, CaseIterable {
+
+// @MainActor
+// public enum ColorTheme: String, CaseIterable {
 //	case system = "System"
 //	case light = "Light"
 //	case dark = "Dark"
-//	
+//
 //	public var colorScheme: ColorScheme? {
 //		switch self {
 //		case .system: return nil
@@ -42,7 +43,7 @@ import SwiftUI
 //		case .dark: return .dark
 //		}
 //	}
-//	
+//
 //	public func background(_ systemColorScheme: ColorScheme) -> Color {
 //		switch self {
 //		case .system: return systemColorScheme == .dark ? Assets.colors.black : Assets.colors.white
@@ -50,7 +51,7 @@ import SwiftUI
 //		case .dark: return Assets.colors.black
 //		}
 //	}
-//	
+//
 //	public func primary(_ systemColorScheme: ColorScheme) -> Color {
 //		switch self {
 //		case .system: return systemColorScheme == .dark ? Assets.colors.black : Assets.colors.white
@@ -58,39 +59,39 @@ import SwiftUI
 //		case .dark: return Assets.colors.black
 //		}
 //	}
-//	
+//
 //	public func bodyColor() -> Color {
 //		Assets.colors.bodyColor
 //	}
-//	
+//
 //	public func displayColor() -> Color {
 //		Assets.colors.displayColor
 //	}
-//	
+//
 //	public func decorationColor() -> Color {
 //		Assets.colors.decorationColor
 //	}
-//	
+//
 //	public func appBarBackgroundColor() -> Color {
 //		Assets.colors.appBarBackgroundColor
 //	}
-//	
+//
 //	public func appBarSurfaceTintColor() -> Color {
 //		Assets.colors.appBarSurfaceTintColor
 //	}
-//	
+//
 //	public func bottomSheetSurfaceTintColor() -> Color {
 //		Assets.colors.bottomSheetSurfaceTintColor
 //	}
-//	
+//
 //	public func bottomSheetBackgroundColor() -> Color {
 //		Assets.colors.bottomSheetBackgroundColor
 //	}
-//	
+//
 //	public func bottomSheetModalBackgroundColor() -> Color {
 //		Assets.colors.bottomSheetModalBackgroundColor
 //	}
-//	
+//
 //	public func adaptiveColor(_ systemColorScheme: ColorScheme) -> Color {
 //		switch self {
 //		case .system: return systemColorScheme == .dark ? Assets.colors.white : Assets.colors.black
@@ -98,7 +99,7 @@ import SwiftUI
 //		case .dark: return Assets.colors.white
 //		}
 //	}
-//	
+//
 //	public func reversedAdaptiveColor(_ systemColorScheme: ColorScheme) -> Color {
 //		switch self {
 //		case .system: return systemColorScheme == .dark ? Assets.colors.black : Assets.colors.white
@@ -106,7 +107,7 @@ import SwiftUI
 //		case .dark: return Assets.colors.black
 //		}
 //	}
-//	
+//
 //	public func customAdaptiveColor(_ systemColorScheme: ColorTheme, light: Color?, dark: Color?) -> Color {
 //		switch self {
 //		case .system: return systemColorScheme == .dark ? (light ?? Assets.colors.white) : (dark ?? Assets.colors.black)
@@ -114,7 +115,7 @@ import SwiftUI
 //		case .dark: return light ?? Assets.colors.white
 //		}
 //	}
-//	
+//
 //	public func customReversedAdpativeColor(_ systemColorScheme: ColorTheme, light: Color?, dark: Color?) -> Color {
 //		switch self {
 //		case .system: return systemColorScheme == .dark ? (dark ?? Assets.colors.black) : (light ?? Assets.colors.white)
@@ -122,7 +123,7 @@ import SwiftUI
 //		case .dark: return dark ?? Assets.colors.black
 //		}
 //	}
-//}
+// }
 
 // MARK: - Text Theme
 
@@ -142,7 +143,7 @@ public struct TextTheme {
 	public let labelLarge: AppTextStyle
 	public let bodySmall: AppTextStyle
 	public let labelSmall: AppTextStyle
-	
+
 	public nonisolated init(
 		displayLarge: AppTextStyle,
 		displayMedium: AppTextStyle,
@@ -196,17 +197,28 @@ public struct TextTheme {
 	}
 }
 
+private struct StatusBarHeightKey: EnvironmentKey {
+	static let defaultValue: CGFloat = 0
+}
+
+public extension EnvironmentValues {
+	var statusBarHeight: CGFloat {
+		get { self[StatusBarHeightKey.self] }
+		set { self[StatusBarHeightKey.self] = newValue }
+	}
+}
+
 private struct TextThemeKey: @preconcurrency EnvironmentKey {
 	@MainActor
 	static let defaultValue: TextTheme = .defaultValue
 }
 
- public extension EnvironmentValues {
-	 var textTheme: TextTheme {
+public extension EnvironmentValues {
+	var textTheme: TextTheme {
 		get { self[TextThemeKey.self] }
 		set { self[TextThemeKey.self] = newValue }
 	}
- }
+}
 
 // public extension EnvironmentValues {
 //	@Entry var textTheme: TextTheme = .init(

@@ -157,6 +157,9 @@ public struct SignUpReducer {
 						)
 					}
 				}
+			case let .avatarPicker(.presented(.delegate(.onTapCancelButton))):
+				state.avatarPicker = nil
+				return .none
 			case let .avatarPicker(.presented(.delegate(.avatarNextAction(imageData)))):
 				state.avatarImageData = imageData
 				return .none
