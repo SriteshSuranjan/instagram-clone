@@ -342,9 +342,6 @@ let package = Package(
 				"UserProfileFeature",
 				"FeedUpdateRequestClient",
 				"PostEditFeature",
-				"MediaPickerFeature",
-				"CreatePostFeature",
-				"ChatsFeature",
 				.product(name: "Tagged", package: "swift-tagged"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
