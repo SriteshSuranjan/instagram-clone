@@ -107,7 +107,8 @@ extension UserDatabaseClient: DependencyKey {
 		postAuthorFollowingStatus: unimplemented("Use live implementation please.", placeholder: .never),
 		likePost: unimplemented("Use live implementation please."),
 		deletePost: unimplemented("Use live implementation please."),
-		updatePost: unimplemented("Use live implementation please.")
+		updatePost: unimplemented("Use live implementation please."),
+		postsOf: unimplemented("Use live implementation please.", placeholder: .never)
 	)
 	public static func livePowerSyncDatabaseClient(
 		_ client: DatabaseClient
@@ -184,6 +185,9 @@ extension UserDatabaseClient: DependencyKey {
 			},
 			updatePost: { postId, caption in
 				try await client.updatePost(postId: postId, caption: caption)
+			},
+			postsOf: { userId in
+				await client.postsOf(userId: userId)
 			}
 		)
 	}

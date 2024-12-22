@@ -1,11 +1,12 @@
 import AppUI
 import ComposableArchitecture
 import Foundation
+import InstaBlocks
 import InstagramBlocksUI
+import InstagramClient
 import MediaPickerFeature
 import Shared
 import SwiftUI
-import InstagramClient
 import YPImagePicker
 
 enum ProfileTab: Hashable {
@@ -24,6 +25,7 @@ public struct UserProfileReducer {
 		case mediaPicker(MediaPickerReducer)
 		case userStatistics(UserStatisticsReducer)
 		case profileEdit(UserProfileEditReducer)
+		case userProfilePosts(UserProfilePostsReducer)
 	}
 
 	public init() {}
@@ -35,6 +37,7 @@ public struct UserProfileReducer {
 		var profileHeader: UserProfileHeaderReducer.State
 		var activeTab: ProfileTab = .posts
 		var props: UserProfileProps?
+		var smallPosts: IdentifiedArrayOf<PostSmallBlock> = []
 		@Presents var destination: Destination.State?
 		var showBackButton: Bool
 		public init(
@@ -68,11 +71,13 @@ public struct UserProfileReducer {
 		case task
 		case profileUser(User)
 		case profileHeader(UserProfileHeaderReducer.Action)
+		case smallPostsOfUser(blocks: [PostSmallBlock])
 		case onTapSettingsButton
 		case onTapAddMediaButton
 		case onTapMoreButton
 		case onTapBackButton
 		case onTapSponsoredPromoAction(URL?)
+		case onTapSmallPost(postId: String)
 		case delegate(Delegate)
 		public enum Delegate {
 			case routeToFeed(scrollToTop: Bool)
@@ -87,7 +92,9 @@ public struct UserProfileReducer {
 		Scope(state: \.profileHeader, action: \.profileHeader) {
 			UserProfileHeaderReducer()
 		}
-		Reduce{ state, action in
+		Reduce {
+			state,
+			action in
 			switch action {
 			case .binding:
 				return .none
@@ -116,15 +123,15 @@ public struct UserProfileReducer {
 							await send(.profileUser(user))
 						}
 					}()
-					_ = await profileUser
+					async let postsOfUser: Void = {
+						for await posts in await databaseClient.postsOf(profileUserId) {
+							await send(.smallPostsOfUser(blocks: posts.map { $0.toPostSmallBlock() }), animation: .snappy)
+						}
+					}()
+					_ = await (profileUser, postsOfUser)
 				}
 			case let .profileUser(user):
 				state.profileUser = user
-//				if state.profileHeader == nil {
-//					state.profileHeader = UserProfileHeaderReducer.State(profileUser: user, isOwner: state.isOwner)
-//				} else {
-//					state.profileHeader?.update(profileUser: user)
-//				}
 				return .none
 			case let .profileHeader(.delegate(.onTapStatistics(tabIndex))):
 				guard let profileUser = state.profileUser else {
@@ -148,6 +155,21 @@ public struct UserProfileReducer {
 				return .none
 			case .profileHeader:
 				return .none
+			case let .smallPostsOfUser(blocks):
+				for smallBlock in blocks.reversed() {
+					if state.smallPosts[id: smallBlock.id] == nil {
+						state.smallPosts.insert(smallBlock, at: 0)
+					}
+				}
+				var removedBlockIds: [String] = []
+				let blockIds = blocks.map(\.id)
+				for smallPost in state.smallPosts {
+					if !blockIds.contains(smallPost.id) {
+						removedBlockIds.append(smallPost.id)
+					}
+				}
+				state.smallPosts.removeAll(where: { removedBlockIds.contains($0.id) })
+				return .none
 			case .onTapSettingsButton:
 				state.destination = .profileSettings(UserProfileSettingsReducer.State())
 				return .none
@@ -170,6 +192,14 @@ public struct UserProfileReducer {
 					await openURL(url)
 				}
 				.debounce(id: "Open_Sponsored_Promo", for: .milliseconds(300), scheduler: DispatchQueue.main)
+			case let .onTapSmallPost(postId):
+				state.destination = .userProfilePosts(
+					UserProfilePostsReducer.State(
+						profileUserId: state.profileUserId,
+						scrollTo: postId
+					)
+				)
+				return .none
 			case .delegate:
 				return .none
 			}
@@ -183,6 +213,7 @@ public struct UserProfileReducer {
 public struct UserProfileView: View {
 	@Bindable var store: StoreOf<UserProfileReducer>
 	@Environment(\.textTheme) var textTheme
+	private let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 3)
 	public init(store: StoreOf<UserProfileReducer>) {
 		self.store = store
 	}
@@ -243,7 +274,7 @@ public struct UserProfileView: View {
 			await store.send(.task).finish()
 		}
 	}
-	
+
 	@ViewBuilder
 	private func sponsoredPromoFloatingAction() -> some View {
 		if case let .navigateToSponsor(sponsorAction) = store.props?.promoBlockAction {
@@ -263,7 +294,7 @@ public struct UserProfileView: View {
 			.transition(.move(edge: .bottom))
 		}
 	}
-	
+
 	@ViewBuilder
 	private func appBar() -> some View {
 		AppNavigationBar(
@@ -284,7 +315,7 @@ public struct UserProfileView: View {
 		)
 		.padding(.horizontal, AppSpacing.md)
 	}
-	
+
 	@ViewBuilder
 	private func userProfileHeader() -> some View {
 		UserProfileHeaderView(store: store.scope(state: \.profileHeader, action: \.profileHeader))
@@ -295,13 +326,27 @@ public struct UserProfileView: View {
 				UserProfileEditView(store: profileEditStore)
 			}
 	}
-	
+
 	@ViewBuilder
 	private func posts() -> some View {
-		LazyVStack(pinnedViews: [.sectionHeaders]) {
+		LazyVGrid(columns: columns, spacing: 2, pinnedViews: [.sectionHeaders]) {
 			Section {
-				Color.clear.frame(height: 50)
-				Text("Posts")
+				ForEach(store.smallPosts) { smallPost in
+						Button {
+							store.send(.onTapSmallPost(postId: smallPost.id))
+						} label: {
+							PostSmall<EmptyView>(
+								mediaUrl: smallPost.firstMediaUrl!,
+								blurHash: smallPost.media.first?.blurHash,
+								pinned: false,
+								multiMedia: smallPost.media.count > 1
+							)
+							.frame(height: 120)
+							.contentShape(.rect)
+						}
+						.fadeEffect()
+					
+				}
 			} header: {
 				VStack(spacing: 0) {
 					ScrollTabBarView(selection: $store.activeTab) {
@@ -313,7 +358,17 @@ public struct UserProfileView: View {
 						}
 					}
 				}
+				.padding(.bottom, 40)
 			}
+		}
+		.padding(.bottom, 48)
+		.navigationDestination(
+			item: $store.scope(
+				state: \.destination?.userProfilePosts,
+				action: \.destination.userProfilePosts
+			)
+		) { userProfilePostsStore in
+			UserProfilePostsView(store: userProfilePostsStore)
 		}
 	}
 }

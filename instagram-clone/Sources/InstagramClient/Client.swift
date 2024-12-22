@@ -51,6 +51,7 @@ public struct UserDatabaseClient: Sendable {
 	public var likePost: @Sendable (_ postId: String, _ post: Bool) async throws -> Void
 	public var deletePost: @Sendable (_ postId: String) async throws -> Void
 	public var updatePost: @Sendable (_ postId: String, _ caption: String) async throws -> Post?
+	public var postsOf: @Sendable (_ userId: String?) async -> AsyncStream<[Post]> = { _ in .never }
 }
 
 @DependencyClient

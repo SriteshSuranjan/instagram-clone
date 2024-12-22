@@ -138,6 +138,10 @@ let package = Package(
 			name: "ChatsFeature",
 			targets: ["ChatsFeature"]
 		),
+		.library(
+			name: "PostsListFeature",
+			targets: ["PostsListFeature"]
+		),
 	],
 	dependencies: [
 		.package(url: "https://github.com/powersync-ja/powersync-kotlin", exact: "1.0.0-BETA5.0"),
@@ -381,6 +385,7 @@ let package = Package(
 				"InstagramClient",
 				"MediaPickerFeature",
 				"InstaBlocks",
+				"PostsListFeature",
 				.product(name: "UnifiedBlurHash", package: "UnifiedBlurHash"),
 				.product(name: "Tagged", package: "swift-tagged"),
 				.product(name: "YPImagePicker", package: "YPImagePicker"),
@@ -402,6 +407,10 @@ let package = Package(
 				),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
+		),
+		.testTarget(
+			name: "DatabaseClientTest",
+			dependencies: ["DatabaseClient"]
 		),
 		.target(
 			name: "MediaPickerFeature",
@@ -490,6 +499,17 @@ let package = Package(
 			dependencies: [
 				"Shared",
 				"AppUI",
+				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+			]
+		),
+		.target(
+			name: "PostsListFeature",
+			dependencies: [
+				"Shared",
+				"AppUI",
+				"InstaBlocks",
+				"InstagramBlocksUI",
+				"InstagramClient",
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
 		)

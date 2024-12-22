@@ -2,8 +2,8 @@ import Foundation
 import Shared
 
 extension Post {
-	public func toPostLargeBlock() -> PostLargeBlock {
-		PostLargeBlock(
+	public func toPostSmallBlock() -> PostSmallBlock {
+		PostSmallBlock(
 			id: id,
 			author: PostAuthor(
 				confirmed: author.id,
@@ -23,16 +23,25 @@ extension Post {
 	}
 }
 
-public struct PostLargeBlock: PostBlock, Equatable {
-	public var id: String
+public struct PostSmallBlock: PostBlock, Equatable {
 	public var author: PostAuthor
+	
+	public var id: String
+	
 	public var createdAt: Date
-	public var updatedAt: Date?
+	
+	public var media: [Shared.MediaItem]
+	
 	public var caption: String
-	public var media: [MediaItem]
+	
 	public var action: BlockActionWrapper?
+	
 	public var isSponsored: Bool
-	public var type: String = PostLargeBlock.identifier
+	
+	public var updatedAt: Date?
+	
+	public var type: String = PostSmallBlock.identifier
+	
 	public init(
 		id: String,
 		author: PostAuthor,
@@ -53,7 +62,9 @@ public struct PostLargeBlock: PostBlock, Equatable {
 		self.isSponsored = isSponsored
 	}
 	
-	public static var identifier = "__post_large__"
+	public static var identifier: String {
+		"__post_small__"
+	}
 	
 	enum CodingKeys: CodingKey {
 		case id
@@ -77,7 +88,7 @@ public struct PostLargeBlock: PostBlock, Equatable {
 		action = try container.decodeIfPresent(BlockActionWrapper.self, forKey: .action)
 		media = try container.decode([MediaItem].self, forKey: .media)
 		isSponsored = try container.decode(Bool.self, forKey: .isSponsored)
-		type = "__post_large__"
+		type = "__post_small__"
 	}
 	
 	public func encode(to encoder: any Encoder) throws {
@@ -91,15 +102,4 @@ public struct PostLargeBlock: PostBlock, Equatable {
 		try container.encode(self.type, forKey: .type)
 		try container.encode(self.media, forKey: .media)
 	}
-	
-//	public func hash(into hasher: inout Hasher) {
-//		hasher.combine(id)
-//		hasher.combine(author)
-//		hasher.combine(createdAt)
-//		hasher.combine(caption)
-//		hasher.combine(action)
-//		hasher.combine(isSponsored)
-//		hasher.combine(type)
-//		hasher.combine(media)
-//	}
 }

@@ -28,6 +28,7 @@ public protocol PostsBaseRepository: Sendable {
 	func likePost(postId: String, post: Bool) async throws -> Void
 	func deletePost(postId: String) async throws -> Void
 	func updatePost(postId: String, caption: String) async throws -> Post?
+	func postsOf(userId: String?) async -> AsyncStream<[Post]>
 }
 
 public protocol DatabaseClient: UserBaseRepository, PostsBaseRepository {}

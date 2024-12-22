@@ -5,7 +5,6 @@ import Shared
 import Supabase
 
 public actor PowerSyncDatabaseClient: DatabaseClient {
-	
 	public let powerSyncRepository: PowerSyncRepository
 	public init(powerSyncRepository: PowerSyncRepository) {
 		self.powerSyncRepository = powerSyncRepository
@@ -219,7 +218,7 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 				}) as? [Shared.User]
 		) ?? []
 	}
-	
+
 	public func followingStatus(of userId: String, followerId: String) async -> AsyncStream<Bool> {
 		AsyncStream { continuation in
 			Task {
@@ -236,17 +235,17 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 			}
 		}
 	}
-	
+
 	public func removeFollower(of userId: String) async throws {
 		guard let currentUserId = await currentUserId else {
 			return
 		}
-		try await self.powerSyncRepository.db.execute(
+		try await powerSyncRepository.db.execute(
 			sql: "DELETE FROM subscriptions WHERE subscriber_id = ? AND subscribed_to_id = ?",
 			parameters: [userId, currentUserId.lowercased()]
 		)
 	}
-	
+
 	public func updateUser(
 		email: String? = nil,
 		avatarUrl: String? = nil,
@@ -267,7 +266,7 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 		if let pushToken {
 			data["push_token"] = .string(pushToken)
 		}
-		try await self.powerSyncRepository.updateUser(data: data)
+		try await powerSyncRepository.updateUser(data: data)
 	}
 
 	// MARK: - PostsBaseRepository
@@ -366,26 +365,26 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 			return post
 		}) as? Post
 	}
-	
+
 	public func getPage(
 		offset: Int,
 		limit: Int,
 		onlyReels: Bool = false
 	) async throws -> [Post] {
-		let value = try await self.powerSyncRepository.db.getAll(
+		let value = try await powerSyncRepository.db.getAll(
 			sql:
-"""
-	 SELECT 
-		posts.*,
-		p.id as user_id,
-		p.avatar_url as avatar_url,
-		p.username as username,
-		p.full_name as full_name
-	 FROM
-		posts
-		inner join profiles p on posts.user_id = p.id
-		ORDER BY created_at DESC LIMIT ? OFFSET ?
-""",
+			"""
+				 SELECT 
+					posts.*,
+					p.id as user_id,
+					p.avatar_url as avatar_url,
+					p.username as username,
+					p.full_name as full_name
+				 FROM
+					posts
+					inner join profiles p on posts.user_id = p.id
+					ORDER BY created_at DESC LIMIT ? OFFSET ?
+			""",
 			parameters: [
 				limit, offset
 			],
@@ -407,28 +406,28 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 		}
 		return posts
 	}
-	
+
 	public func getPostLikersInFollowings(postId: String, offset: Int = 0, limit: Int = 3) async throws -> [Shared.User] {
 		guard let currentUserId = await currentUserId else {
 			return []
 		}
-		return try await self.powerSyncRepository.db.getAll(
+		return try await powerSyncRepository.db.getAll(
 			sql: """
-SELECT id, avatar_url, username, full_name
-FROM profiles
-WHERE id IN (
-		SELECT l.user_id
-		FROM likes l
-		WHERE l.post_id = ?
-		AND EXISTS (
-				SELECT *
-				FROM subscriptions f
-				WHERE f.subscribed_to_id = l.user_Id
-				AND f.subscriber_id = ?
-		) AND id <> ?
-)
-LIMIT ? OFFSET ?
-""",
+			SELECT id, avatar_url, username, full_name
+			FROM profiles
+			WHERE id IN (
+					SELECT l.user_id
+					FROM likes l
+					WHERE l.post_id = ?
+					AND EXISTS (
+							SELECT *
+							FROM subscriptions f
+							WHERE f.subscribed_to_id = l.user_Id
+							AND f.subscriber_id = ?
+					) AND id <> ?
+			)
+			LIMIT ? OFFSET ?
+			""",
 			parameters: [postId, currentUserId.lowercased(), limit, offset],
 			mapper: { cursor in
 				let userId = cursor.getString(index: 0) ?? ""
@@ -510,13 +509,13 @@ LIMIT ? OFFSET ?
 		}
 		return await followingStatus(of: postAuthorId, followerId: userId ?? currentUserId)
 	}
-	
+
 	public func likePost(postId: String, post: Bool = true) async throws {
 		guard let currentUserId = await currentUserId else {
 			return
 		}
 		let statement = post ? "post_id" : "comment_id"
-		let exists = (try await self.powerSyncRepository.db.get(
+		let exists = try (await powerSyncRepository.db.get(
 			sql: "SELECT EXISTS(SELECT 1 FROM likes WHERE user_id = ? AND \(statement) = ? AND \(statement) IS NOT NULL)",
 			parameters: [currentUserId.lowercased(), postId],
 			mapper: { cursor in
@@ -524,25 +523,25 @@ LIMIT ? OFFSET ?
 			}
 		) as? Int ?? 0) > 0
 		if !exists {
-			try await self.powerSyncRepository.db.execute(
+			try await powerSyncRepository.db.execute(
 				sql: "INSERT INTO likes (user_id, \(statement), id) VALUES (?, ?, uuid())",
 				parameters: [currentUserId.lowercased(), postId]
 			)
 		} else {
-			try await self.powerSyncRepository.db.execute(
+			try await powerSyncRepository.db.execute(
 				sql: "DELETE FROM likes WHERE user_id = ? AND \(statement) = ? AND \(statement) IS NOT NULL",
 				parameters: [currentUserId.lowercased(), postId]
 			)
 		}
 	}
-	
+
 	public func deletePost(postId: String) async throws {
-		try await self.powerSyncRepository.db.execute(
+		try await powerSyncRepository.db.execute(
 			sql: "DELETE FROM posts WHERE id = ?",
 			parameters: [postId]
 		)
 	}
-	
+
 	public func updatePost(postId: String, caption: String) async throws -> Post? {
 		guard let currentUserId = await currentUserId else {
 			return nil
@@ -550,12 +549,12 @@ LIMIT ? OFFSET ?
 		return try await powerSyncRepository.db.writeTransaction(callback: SuspendTaskWrapper<Post?> { _ in
 			try await self.powerSyncRepository.db.execute(
 				sql: """
-	UPDATE posts
-	SET
-		caption = ?,
-		updated_at = ?
-	WHERE id = ?
-	""",
+				UPDATE posts
+				SET
+					caption = ?,
+					updated_at = ?
+				WHERE id = ?
+				""",
 				parameters: [caption, Date.now.ISO8601Format(.iso8601), postId]
 			)
 			let postData = try await self.powerSyncRepository.db.get(
@@ -563,11 +562,11 @@ LIMIT ? OFFSET ?
 				parameters: [postId],
 				mapper: { cursor in
 					guard let id = cursor.getString(index: 0),
-								let userId = cursor.getString(index: 1),
-								let caption = cursor.getString(index: 2),
-								let mediaJson = cursor.getString(index: 3),
-								let createdAt = cursor.getString(index: 4),
-								let updatedAt = cursor.getString(index: 5)
+					      let userId = cursor.getString(index: 1),
+					      let caption = cursor.getString(index: 2),
+					      let mediaJson = cursor.getString(index: 3),
+					      let createdAt = cursor.getString(index: 4),
+					      let updatedAt = cursor.getString(index: 5)
 					else {
 						return ("", "", "", "", "", "")
 					}
@@ -595,10 +594,10 @@ LIMIT ? OFFSET ?
 			)
 
 			guard let postTuple = postData as? (String, String, String, String, String, String),
-						let user = author as? Shared.User,
-						let createdAt = try? Date(postTuple.4, strategy: .dateTime),
-						let updatedAt = try? Date(postTuple.5, strategy: .iso8601),
-						let mediaData = postTuple.3.data(using: .utf8)
+			      let user = author as? Shared.User,
+			      let createdAt = try? Date(postTuple.4, strategy: .dateTime),
+			      let updatedAt = try? Date(postTuple.5, strategy: .iso8601),
+			      let mediaData = postTuple.3.data(using: .utf8)
 			else {
 				return nil
 			}
@@ -614,6 +613,58 @@ LIMIT ? OFFSET ?
 			)
 			return post
 		}) as? Post
+	}
+
+	public func postsOf(userId: String?) async -> AsyncStream<[Post]> {
+		AsyncStream { continuation in
+			Task {
+				guard let currentUserId = await currentUserId else {
+					continuation.finish()
+					return
+				}
+				for await data in await self.powerSyncRepository.db.watch(
+					sql: """
+					SELECT 
+					  posts.*,
+					  p.avatar_url as avatar_url,
+					  p.username as username,
+					  p.full_name as full_name
+					FROM 
+					  posts
+					  left join profiles p on posts.user_id = p.id
+					WHERE user_id = ?
+					ORDER BY created_at DESC
+					""",
+					parameters: [userId ?? currentUserId],
+					mapper: { cursor -> Post in
+						let postId = cursor.getString(index: 0)
+						let userId = cursor.getString(index: 1)
+						let createdAt = cursor.getString(index: 2)
+						let caption = cursor.getString(index: 3)
+						let updatedAt = cursor.getString(index: 4)
+						let mediaJson = cursor.getString(index: 5)
+						let avatarUrl = cursor.getString(index: 6)
+						let username = cursor.getString(index: 7)
+						let fullName = cursor.getString(index: 8)
+						return Post(
+							id: postId ?? "",
+							author: Shared.User(id: userId ?? "", username: username, fullName: fullName, avatarUrl: avatarUrl),
+							caption: caption ?? "",
+							createdAt: (try? Date(createdAt ?? "", strategy: .dateTime)) ?? .now,
+							updatedAt: try? Date(updatedAt ?? "", strategy: .dateTime),
+							media: (try? PowerSyncRepository.decoder.decode([MediaItem].self, from: (mediaJson ?? "").data(using: .utf8)!)) ?? []
+						)
+					}
+				) {
+					if let posts = data as? [Post] {
+						continuation.yield(posts)
+					} else {
+						continuation.yield([])
+					}
+				}
+				continuation.finish()
+			}
+		}
 	}
 }
 

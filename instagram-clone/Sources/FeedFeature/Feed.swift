@@ -310,63 +310,51 @@ public struct FeedReducer {
 	}
 }
 
-extension Post {
-	func toPostLargeBlock() -> PostLargeBlock {
-		PostLargeBlock(
-			id: id,
-			author: PostAuthor(
-				confirmed: author.id,
-				avatarUrl: author.avatarUrl,
-				username: author.username
-			),
-			createdAt: createdAt,
-			updatedAt: updatedAt,
-			caption: caption,
-			media: media,
-			action: .navigateToPostAuthor(
-				NavigateToPostAuthorProfileAction(
-					authorId: author.id
-				)
-			)
-		)
-	}
-}
-
 public struct FeedView: View {
 	@Environment(\.textTheme) var textTheme
 	@Bindable var store: StoreOf<FeedReducer>
+	@State private var scrollToPosition: String?
 	public init(store: StoreOf<FeedReducer>) {
 		self.store = store
 	}
-
 	public var body: some View {
 		Group {
-			ScrollView {
-				LazyVStack {
-					Section {
-						ForEachStore(store.scope(state: \.post, action: \.post)) { postStore in
-							blockBuilder(postStore: postStore)
-								.id(postStore.block.id)
-								.listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: AppSpacing.lg, trailing: 0))
-								.listRowSeparator(.hidden)
+			ScrollViewReader { proxy in
+				ScrollView {
+					LazyVStack {
+						Section {
+							ForEachStore(store.scope(state: \.post, action: \.post)) { postStore in
+								blockBuilder(postStore: postStore)
+									.id(postStore.block.id)
+									.listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: AppSpacing.lg, trailing: 0))
+									.listRowSeparator(.hidden)
+							}
+							if store.feed.feedPage.hasMore {
+								ProgressView()
+									.id("ProgressLoader")
+									.listRowSeparator(.hidden)
+									.frame(maxWidth: .infinity, alignment: .center)
+									.onAppear {
+										store.send(.feedPageNextPage)
+									}
+							}
+						} header: {
+							appLogoView()
 						}
-						if store.feed.feedPage.hasMore {
-							ProgressView()
-								.id("ProgressLoader")
-								.listRowSeparator(.hidden)
-								.frame(maxWidth: .infinity, alignment: .center)
-								.onAppear {
-									store.send(.feedPageNextPage)
-								}
-						}
-					} header: {
-						appLogoView()
 					}
 				}
-			}
-			.scrollIndicators(.hidden)
-			.refreshable {
-				store.send(.refreshFeedPage)
+				.scrollIndicators(.hidden)
+				.refreshable {
+					store.send(.refreshFeedPage)
+				}
+				.onChange(of: scrollToPosition) { oldValue, newValue in
+					if let newValue {
+						withAnimation(.easeInOut(duration: 1.3)) {
+							proxy.scrollTo(newValue)
+						}
+					}
+				}
+				.bind($store.scrollToPosition, to: $scrollToPosition)
 			}
 		}
 		.navigationDestination(
@@ -425,7 +413,7 @@ public struct FeedView: View {
 			.fadeEffect()
 		}
 		.frame(maxWidth: .infinity)
-		.padding(.horizontal)
+		.padding(.horizontal, AppSpacing.sm)
 	}
 	
 	@ViewBuilder

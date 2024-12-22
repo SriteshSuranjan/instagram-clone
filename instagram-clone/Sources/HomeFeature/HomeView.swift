@@ -180,7 +180,7 @@ public struct HomeReducer {
 				return .none
 			case .mediaPicker(.delegate(.createPostPopToRoot)):
 				state.pageType = .feedBody
-				return .none
+				return .send(.feed(.scrollToTop), animation: .snappy)
 			case .mediaPicker:
 				return .none
 			case .chats:
