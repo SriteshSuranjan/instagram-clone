@@ -5,16 +5,25 @@ import AppUI
 import InstagramBlocksUI
 import InstagramClient
 import InstaBlocks
+import Shared
+import PostOptionsSheet
 
 @Reducer
 public struct PostsListReducer {
 	public init() {}
+	
+	@Reducer(state: .equatable)
+	public enum Destination {
+		case postOptionsSheet(PostOptionsSheetReducer)
+	}
+	
 	@ObservableState
 	public struct State: Equatable {
 		var blocks: [InstaBlockWrapper]
 		var scrollTo: String?
 		var profileUserId: String
 		var posts: IdentifiedArrayOf<PostLargeReducer.State>
+		@Presents var destination: Destination.State?
 		public init(
 			blocks: [InstaBlockWrapper] = [],
 			scrollTo: String? = nil,
@@ -45,6 +54,8 @@ public struct PostsListReducer {
 		case updateBlocks([InstaBlockWrapper], scrollTo: String?)
 		case scrollTo(postId: String?)
 		case task
+		case destination(PresentationAction<Destination.Action>)
+		case onTapPostOptionSheet(optionType: PostOptionType, block: InstaBlockWrapper)
 	}
 	public var body: some ReducerOf<Self> {
 		BindingReducer()
@@ -54,6 +65,16 @@ public struct PostsListReducer {
 				return .none
 			case .task:
 				return .none
+			case let .posts(.element(id, subAction)):
+				switch subAction {
+				case let .header(.onTapPostOptionsButton(isOwner)):
+					guard let block = state.blocks.first(where: { $0.id == id }) else {
+						return .none
+					}
+					state.destination = .postOptionsSheet(PostOptionsSheetReducer.State(optionsSettings: isOwner ? .owner : .viewer, block: block))
+					return .none
+				default: return .none
+				}
 			case .posts:
 				return .none
 			case let .updateBlocks(blocks, scrollTo):
@@ -63,7 +84,7 @@ public struct PostsListReducer {
 						state.posts.insert(
 							PostLargeReducer.State(
 								block: block,
-								isOwner: false,
+								isOwner: block.author.id == state.profileUserId,
 								isFollowed: false,
 								isLiked: false,
 								likesCount: 0,
@@ -86,10 +107,17 @@ public struct PostsListReducer {
 			case let .scrollTo(postId):
 				state.scrollTo = postId
 				return .none
+			case .destination:
+				return .none
+			case let .onTapPostOptionSheet(optionType, block):
+				return .none
 			}
 		}
 		.forEach(\.posts, action: \.posts) {
 			PostLargeReducer()
+		}
+		.ifLet(\.$destination, action: \.destination) {
+			Destination.body
 		}
 	}
 }
@@ -124,6 +152,19 @@ public struct PostsListView: View {
 					}
 				}
 				.scrollIndicators(.hidden)
+				.sheet(
+					item: $store.scope(
+						state: \.destination?.postOptionsSheet,
+						action: \.destination.postOptionsSheet
+					)
+				) { postOptionsSheetStore in
+					PostOptionsSheetView(store: postOptionsSheetStore) { postOptionType, block in
+						store.send(.onTapPostOptionSheet(optionType: postOptionType, block: block))
+					}
+					.presentationDetents([.height(140)])
+					.presentationDragIndicator(.visible)
+					.padding(.horizontal, AppSpacing.sm)
+				}
 				.onChange(of: scrollTo) { oldValue, newValue in
 					if let newValue {
 						withAnimation(.easeInOut(duration: 1.3)) {

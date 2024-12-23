@@ -1,5 +1,4 @@
 import Foundation
-import InstaBlocks
 
 // public enum PostOptionsSettings: Equatable {
 //	public static func == (lhs: PostOptionsSettings, rhs: PostOptionsSettings) -> Bool {

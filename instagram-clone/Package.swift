@@ -142,6 +142,14 @@ let package = Package(
 			name: "PostsListFeature",
 			targets: ["PostsListFeature"]
 		),
+		.library(
+			name: "PostOptionsSheet",
+			targets: ["PostOptionsSheet"]
+		),
+		.library(
+			name: "PostPreviewFeature",
+			targets: ["PostPreviewFeature"]
+		)
 	],
 	dependencies: [
 		.package(url: "https://github.com/powersync-ja/powersync-kotlin", exact: "1.0.0-BETA5.0"),
@@ -349,6 +357,7 @@ let package = Package(
 				"UserProfileFeature",
 				"FeedUpdateRequestClient",
 				"PostEditFeature",
+				"PostOptionsSheet",
 				.product(name: "Tagged", package: "swift-tagged"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
@@ -371,7 +380,11 @@ let package = Package(
 				"AppUI",
 				"InstagramBlocksUI",
 				"SnackbarMessagesClient",
+				"InstaBlocks",
+				"InstagramClient",
 				.product(name: "Tagged", package: "swift-tagged"),
+				.product(name: "Kingfisher", package: "Kingfisher"),
+				.product(name: "VideoPlayer", package: "VideoPlayer"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
 		),
@@ -386,6 +399,7 @@ let package = Package(
 				"MediaPickerFeature",
 				"InstaBlocks",
 				"PostsListFeature",
+				"PostPreviewFeature",
 				.product(name: "UnifiedBlurHash", package: "UnifiedBlurHash"),
 				.product(name: "Tagged", package: "swift-tagged"),
 				.product(name: "YPImagePicker", package: "YPImagePicker"),
@@ -510,6 +524,27 @@ let package = Package(
 				"InstaBlocks",
 				"InstagramBlocksUI",
 				"InstagramClient",
+				"PostOptionsSheet",
+				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+			]
+		),
+		.target(
+			name: "PostOptionsSheet",
+			dependencies: [
+				"AppUI",
+				"InstaBlocks",
+				"Shared",
+				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+			]
+		),
+		.target(
+			name: "PostPreviewFeature",
+			dependencies: [
+				"AppUI",
+				"InstaBlocks",
+				"InstagramBlocksUI",
+				"Shared",
+				.product(name: "Kingfisher", package: "Kingfisher"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
 		)

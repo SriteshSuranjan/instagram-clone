@@ -2,7 +2,6 @@ import AppUI
 import ComposableArchitecture
 import Foundation
 import InstaBlocks
-import InstagramBlocksUI
 import Shared
 import SwiftUI
 

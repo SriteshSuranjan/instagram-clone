@@ -9,6 +9,7 @@ import PostEditFeature
 import Shared
 import SwiftUI
 import UserProfileFeature
+import PostOptionsSheet
 
 private let pageLimit = 10
 

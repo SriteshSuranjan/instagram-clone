@@ -22,6 +22,7 @@ public struct MediaCarouselReducer {
 			self._currentMediaIndex = currentMediaIndex
 			self._videoMuted = videoMuted
 			self.media = IdentifiedArray(uniqueElements: media)
+			self.currentMediaPosition = media.first?.id
 		}
 	}
 
@@ -73,9 +74,9 @@ public struct MediaCarouselReducer {
 				state.playingVideoMediaId = mediaId
 				return .none
 			case let .stopPlayVideo(mediaId):
-				guard state.playingVideoMediaId == mediaId else {
-					return .none
-				}
+//				guard state.playingVideoMediaId == mediaId else {
+//					return .none
+//				}
 				state.playingVideoMediaId = nil
 				return .none
 			case let .mediaPositionUpdated(mediaId):
@@ -104,6 +105,7 @@ public struct MediaCarouselReducer {
 				return .none
 			}
 		}
+		._printChanges()
 	}
 }
 
@@ -112,6 +114,18 @@ public struct MediaCarouselView: View {
 	@Environment(\.colorScheme) var colorScheme
 	public init(store: StoreOf<MediaCarouselReducer>) {
 		self.store = store
+	}
+	
+	private var play: Binding<Bool> {
+		Binding(
+			get: {
+				if store.playingVideoMediaId == nil {
+					return false
+				}
+				return store.playingVideoMediaId == store.currentMediaPosition
+			},
+			set: { _ in }
+		)
 	}
 
 	public var body: some View {
@@ -122,7 +136,7 @@ public struct MediaCarouselView: View {
 						if let previewData = media.previewData {
 							Image(uiImage: UIImage(data: previewData)!)
 								.resizable()
-								.scaledToFit()
+								.scaledToFill()
 						} else {
 							KFImage.url(URL(string: media.previewUrl ?? ""))
 								.placeholder {
@@ -139,7 +153,7 @@ public struct MediaCarouselView: View {
 								}
 								.resizable()
 								.fade(duration: 0.2)
-								.scaledToFit()
+								.scaledToFill()
 						}
 					}
 					.overlay {
@@ -148,37 +162,38 @@ public struct MediaCarouselView: View {
 							VideoPlayer(
 								url: URL(string: media.url) ?? URL(string: "nil://placeholder")!,
 								// Start of Selection
-								play: Binding<Bool>(
-									get: {
-										store.playingVideoMediaId == media.id
-									},
-									set: { isPlaying in
-										if isPlaying {
-											store.send(.startPlayVideo(mediaId: media.id))
-										} else if store.playingVideoMediaId == media.id {
-											store.send(.stopPlayVideo(mediaId: media.id))
-										}
-									}
-								)
+								play: .constant(false)
+//								play: Binding<Bool>(
+//									get: {
+//										store.playingVideoMediaId == media.id
+//									},
+//									set: { isPlaying in
+//										if isPlaying {
+//											store.send(.startPlayVideo(mediaId: media.id))
+//										} else if store.playingVideoMediaId == media.id {
+//											store.send(.stopPlayVideo(mediaId: media.id))
+//										}
+//									}
+//								)
 							)
-							.mute(store.videoMuted)
+							.mute(store.videoMuted || store.playingVideoMediaId == nil)
 							.autoReplay(true)
-							.overlay {
-								// TODO: control play and pause
-							}
+//							.overlay {
+//								// TODO: control play and pause
+//							}
 						}
 					}
 					.id(media.id)
 					.containerRelativeFrame(.horizontal)
 					.onAppear {
-						if media.isVideo {
-							store.send(.startPlayVideo(mediaId: media.id))
-						}
+//						if media.isVideo {
+//							store.send(.startPlayVideo(mediaId: media.id))
+//						}
 					}
 					.onDisappear {
-						if store.playingVideoMediaId == media.id {
-							store.send(.stopPlayVideo(mediaId: media.id))
-						}
+//						if store.playingVideoMediaId == media.id {
+//							store.send(.stopPlayVideo(mediaId: media.id))
+//						}
 					}
 				}
 			}

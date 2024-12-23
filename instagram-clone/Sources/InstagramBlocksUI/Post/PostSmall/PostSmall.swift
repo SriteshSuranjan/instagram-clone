@@ -4,43 +4,96 @@ import InstaBlocks
 import Kingfisher
 import Shared
 import SwiftUI
+import ComposableArchitecture
+import InstagramClient
 
-public struct PostSmall<ImageThumbnailView: View>: View {
-	public let mediaUrl: String
-	public let blurHash: String?
-	public let isReel: Bool?
-	public let pinned: Bool
-	public let multiMedia: Bool
-	@ViewBuilder public let imageThumbnailViewBuilder: ((_ url: String) -> ImageThumbnailView)?
+@Reducer
+public struct PostSmallReducer {
+	public init() {}
+	@ObservableState
+	public struct State: Equatable, Identifiable {
+		public private(set) var block: PostSmallBlock
+		public private(set) var isOwner: Bool
+		public fileprivate(set) var isLiked: Bool
+		public init(
+			block: PostSmallBlock,
+			isOwner: Bool,
+			isLiked: Bool
+		) {
+			self.block = block
+			self.isOwner = isOwner
+			self.isLiked = isLiked
+		}
+		public var id: String {
+			block.id
+		}
+	}
+	public enum Action: BindableAction {
+		case binding(BindingAction<State>)
+		case task
+		case isLikedUpdate(Bool)
+	}
 	
+	private enum Cancel: Hashable {
+		case subscriptions
+	}
+	
+	@Dependency(\.instagramClient) var instagramClient
+	
+	public var body: some ReducerOf<Self> {
+		BindingReducer()
+		Reduce { state, action in
+			switch action {
+			case .binding:
+				return .none
+			case .task:
+				return .run { [postId = state.block.id] send in
+					await subscriptions(send: send, postId: postId)
+				}
+				.cancellable(id: Cancel.subscriptions, cancelInFlight: true)
+			case let .isLikedUpdate(isLiked):
+				state.isLiked = isLiked
+				return .none
+			}
+		}
+	}
+	
+	private func subscriptions(send: Send<Action>, postId: String) async {
+		async let isLikedStream: Void = {
+			for await isLiked in await instagramClient.databaseClient.isLiked(postId, nil, true) {
+				await send(.isLikedUpdate(isLiked))
+			}
+		}()
+		_ = await isLikedStream
+	}
+}
+
+public struct PostSmallView<ImageThumbnailView: View>: View {
+	let store: StoreOf<PostSmallReducer>
+	public let pinned: Bool
+	@ViewBuilder public let imageThumbnailViewBuilder: ((_ url: String) -> ImageThumbnailView)?
 	@Environment(\.colorScheme) var colorScheme
 	@State private var blurHashImage: UIImage?
 	public init(
-		mediaUrl: String,
-		blurHash: String?,
-		isReel: Bool? = nil,
+		store: StoreOf<PostSmallReducer>,
 		pinned: Bool,
-		multiMedia: Bool,
 		imageThumbnailViewBuilder: ((_ url: String) -> ImageThumbnailView)? = nil
 	) {
-		self.mediaUrl = mediaUrl
-		self.blurHash = blurHash
-		self.isReel = isReel
+		self.store = store
 		self.pinned = pinned
-		self.multiMedia = multiMedia
 		self.imageThumbnailViewBuilder = imageThumbnailViewBuilder
 	}
 	
 	private var showPinned: Bool {
-		pinned && multiMedia || pinned && !multiMedia
+		pinned && store.block.media.count > 1 || pinned && !(store.block.media.count > 1)
 	}
 	
 	private var showHasMultiplePhotos: Bool {
-		!pinned && multiMedia
+		!pinned && (store.block.media.count > 1)
 	}
 	
 	private var showVideoIcon: Bool {
-		!showPinned && (isReel ?? false)
+		!showPinned && (store.block.isReel)
 	}
 
 	public var body: some View {
@@ -60,11 +113,11 @@ public struct PostSmall<ImageThumbnailView: View>: View {
 	private func thumbnailImage() -> some View {
 		GeometryReader { proxy in
 			if let imageThumbnailViewBuilder {
-				imageThumbnailViewBuilder(mediaUrl)
+				imageThumbnailViewBuilder(store.block.firstMediaUrl!)
 					.frame(width: proxy.size.width, height: proxy.size.height)
 					.clipped()
 			} else {
-				KFImage.url(URL(string: mediaUrl))
+				KFImage.url(URL(string: store.block.firstMediaUrl!))
 					.placeholder {
 						if let blurHashImage {
 							Image(uiImage: blurHashImage)
@@ -83,6 +136,9 @@ public struct PostSmall<ImageThumbnailView: View>: View {
 					.frame(width: proxy.size.width, height: proxy.size.height)
 					.clipped()
 			}
+		}
+		.task {
+			await store.send(.task).finish()
 		}
 	}
 	

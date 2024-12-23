@@ -5,6 +5,7 @@ import InstaBlocks
 import InstagramBlocksUI
 import InstagramClient
 import MediaPickerFeature
+import PostPreviewFeature
 import Shared
 import SwiftUI
 import YPImagePicker
@@ -37,7 +38,7 @@ public struct UserProfileReducer {
 		var profileHeader: UserProfileHeaderReducer.State
 		var activeTab: ProfileTab = .posts
 		var props: UserProfileProps?
-		var smallPosts: IdentifiedArrayOf<PostSmallBlock> = []
+		var smallPosts: IdentifiedArrayOf<PostSmallReducer.State> = []
 		@Presents var destination: Destination.State?
 		var showBackButton: Bool
 		public init(
@@ -78,6 +79,8 @@ public struct UserProfileReducer {
 		case onTapBackButton
 		case onTapSponsoredPromoAction(URL?)
 		case onTapSmallPost(postId: String)
+		case smallPosts(IdentifiedActionOf<PostSmallReducer>)
+		case onTapLikePost(postId: String)
 		case delegate(Delegate)
 		public enum Delegate {
 			case routeToFeed(scrollToTop: Bool)
@@ -94,7 +97,7 @@ public struct UserProfileReducer {
 		}
 		Reduce {
 			state,
-			action in
+				action in
 			switch action {
 			case .binding:
 				return .none
@@ -138,7 +141,11 @@ public struct UserProfileReducer {
 					return .none
 				}
 				guard tabIndex > 0 else {
-					// TODO: route to posts
+					state.destination = .userProfilePosts(
+						UserProfilePostsReducer.State(
+							profileUserId: state.profileUserId
+						)
+					)
 					return .none
 				}
 				guard let selectedTab = UserStatisticsTab(rawValue: tabIndex) else {
@@ -158,7 +165,12 @@ public struct UserProfileReducer {
 			case let .smallPostsOfUser(blocks):
 				for smallBlock in blocks.reversed() {
 					if state.smallPosts[id: smallBlock.id] == nil {
-						state.smallPosts.insert(smallBlock, at: 0)
+						let smallBlockState = PostSmallReducer.State(
+							block: smallBlock,
+							isOwner: state.authenticatedUserId == smallBlock.author.id,
+							isLiked: false
+						)
+						state.smallPosts.insert(smallBlockState, at: 0)
 					}
 				}
 				var removedBlockIds: [String] = []
@@ -202,10 +214,19 @@ public struct UserProfileReducer {
 				return .none
 			case .delegate:
 				return .none
+			case .smallPosts:
+				return .none
+			case let .onTapLikePost(postId):
+				return .run { _ in
+					try await databaseClient.likePost(postId, true)
+				}
 			}
 		}
 		.ifLet(\.$destination, action: \.destination) {
 			Destination.body
+		}
+		.forEach(\.smallPosts, action: \.smallPosts) {
+			PostSmallReducer()
 		}
 	}
 }
@@ -331,21 +352,45 @@ public struct UserProfileView: View {
 	private func posts() -> some View {
 		LazyVGrid(columns: columns, spacing: 2, pinnedViews: [.sectionHeaders]) {
 			Section {
-				ForEach(store.smallPosts) { smallPost in
+				ForEach(store.scope(state: \.smallPosts, action: \.smallPosts)) { smallPostStore in
+					Button {
+						store.send(.onTapSmallPost(postId: smallPostStore.id))
+					} label: {
+						PostSmallView<EmptyView>(
+							store: smallPostStore,
+							pinned: false
+						)
+						.frame(height: 140)
+					}
+					.fadeEffect()
+					.contextMenu {
 						Button {
-							store.send(.onTapSmallPost(postId: smallPost.id))
+							store.send(.onTapLikePost(postId: smallPostStore.id))
 						} label: {
-							PostSmall<EmptyView>(
-								mediaUrl: smallPost.firstMediaUrl!,
-								blurHash: smallPost.media.first?.blurHash,
-								pinned: false,
-								multiMedia: smallPost.media.count > 1
-							)
-							.frame(height: 120)
-							.contentShape(.rect)
+							Label(smallPostStore.isLiked ? "Unlike" : "Like", systemImage: smallPostStore.isLiked ? "heart.fill" : "heart")
 						}
-						.fadeEffect()
-					
+						Button {
+							
+						} label: {
+							Label("Comments", systemImage: "message")
+						}
+						
+						Button {
+							
+						} label: {
+							Label(smallPostStore.isOwner ? "Share post" : "View UserProfile", systemImage: smallPostStore.isOwner ? "location" : "person.circle")
+						}
+						
+						Button {
+							
+						} label: {
+							Label("Options", systemImage: "ellipsis")
+						}
+					} preview: {
+						PostPreview(block: .postSmall(smallPostStore.block))
+							.frame(idealWidth: 400, idealHeight: 400 * 1.2)
+							.frame(minWidth: 320, minHeight: 320 * 1.2)
+					}
 				}
 			} header: {
 				VStack(spacing: 0) {
