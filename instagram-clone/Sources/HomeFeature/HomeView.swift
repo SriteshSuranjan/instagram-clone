@@ -72,7 +72,7 @@ public struct HomeReducer {
 		var pageType: HomePageType? = .feedBody
 		var feed: FeedReducer.State
 		var timeline = TimelineReducer.State()
-		var reels = ReelsReducer.State()
+		var reels: ReelsReducer.State
 		var userProfile: UserProfileReducer.State
 		var mediaPicker: MediaPickerReducer.State
 		var chats: ChatsReducer.State
@@ -83,6 +83,7 @@ public struct HomeReducer {
 			self.feed = FeedReducer.State(profileUserId: authenticatedUser.id)
 			self.mediaPicker = MediaPickerReducer.State(pickerConfiguration: MediaPickerView.Configuration(maxItems: 10, reels: false, showVideo: true))
 			self.chats = ChatsReducer.State()
+			self.reels = ReelsReducer.State(authorizedId: authenticatedUser.id)
 		}
 	}
 

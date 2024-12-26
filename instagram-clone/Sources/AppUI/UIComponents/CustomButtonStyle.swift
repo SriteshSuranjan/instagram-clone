@@ -1,6 +1,7 @@
 import SwiftUI
 
 public enum ScaleStrength: CGFloat {
+	case none = 0
 	case xxxxs = 0.0325
 	case xxxs = 0.0625
 	case xxs = 0.125
@@ -51,7 +52,7 @@ public struct ButtonAnimationConfig: Sendable {
 	)
 
 	public static let none = ButtonAnimationConfig(
-		scale: .xxxxs,
+		scale: .none,
 		opacity: 1.0,
 		duration: 0.0,
 		hapticFeedback: nil

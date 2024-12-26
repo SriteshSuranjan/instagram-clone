@@ -105,7 +105,6 @@ public struct MediaCarouselReducer {
 				return .none
 			}
 		}
-		._printChanges()
 	}
 }
 

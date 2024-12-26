@@ -145,7 +145,7 @@ public struct PostSmallView<ImageThumbnailView: View>: View {
 	@ViewBuilder
 	private func videoReelIcon() -> some View {
 		Assets.Icons.instagramReel
-			.view(width: 22, height: 22, renderMode: .original)
+			.view(width: 22, height: 22, renderMode: .template)
 			.foregroundStyle(.white)
 			.shadow(color: .black.opacity(0.26), radius: 15, x: 2, y: 2)
 			.padding(.top, 4)

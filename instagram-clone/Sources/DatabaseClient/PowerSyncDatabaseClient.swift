@@ -404,7 +404,12 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 		guard let posts = value as? [Post] else {
 			return []
 		}
-		return posts
+		if onlyReels {
+			return posts.filter { $0.media.count == 1 && $0.media[0].isVideo }
+		} else {
+			return posts
+		}
+		
 	}
 
 	public func getPostLikersInFollowings(postId: String, offset: Int = 0, limit: Int = 3) async throws -> [Shared.User] {

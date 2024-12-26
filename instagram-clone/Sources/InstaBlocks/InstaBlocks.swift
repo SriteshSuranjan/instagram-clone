@@ -11,6 +11,7 @@ public enum InstaBlockWrapper: Codable, Equatable, Identifiable, Hashable {
 	case horizontalDivider(DividerHorizontalBlock)
 	case sectionHeader(SectionHeaderBlock)
 	case postSmall(PostSmallBlock)
+	case postReel(PostReelBlock)
 	case unknown(UnknownBlock)
 	
 	private enum CodingKeys: String, CodingKey {
@@ -31,6 +32,8 @@ public enum InstaBlockWrapper: Codable, Equatable, Identifiable, Hashable {
 			self = .sectionHeader(SectionHeaderBlock())
 		case PostSmallBlock.identifier:
 			self = .postSmall(try PostSmallBlock(from: decoder))
+		case PostReelBlock.identifier:
+			self = .postReel(try PostReelBlock(from: decoder))
 		case UnknownBlock.identifier:
 			self = .unknown(try UnknownBlock(from: decoder))
 		default: fatalError("Unknown Block ")
@@ -45,6 +48,8 @@ public enum InstaBlockWrapper: Codable, Equatable, Identifiable, Hashable {
 			try postSponsoredBlock.encode(to: encoder)
 		case .postSmall(let postSmallBlock):
 			try postSmallBlock.encode(to: encoder)
+		case .postReel(let postReelBlock):
+			try postReelBlock.encode(to: encoder)
 		case .unknown(let unknownBlock):
 			try unknownBlock.encode(to: encoder)
 		case .horizontalDivider:
@@ -58,6 +63,7 @@ public enum InstaBlockWrapper: Codable, Equatable, Identifiable, Hashable {
 		switch self {
 		case .postLarge(let postLargeBlock): return postLargeBlock.id
 		case .postSponsored(let postSponsoredBlock): return postSponsoredBlock.id
+		case .postReel(let postReelBlock): return postReelBlock.id
 		case .unknown(let unknownBlock): return unknownBlock.id
 		case .horizontalDivider(let dividerBlock): return dividerBlock.id
 		case .sectionHeader(let sectionHeaderBlock): return sectionHeaderBlock.id
@@ -70,6 +76,7 @@ public enum InstaBlockWrapper: Codable, Equatable, Identifiable, Hashable {
 		case .postLarge(let postLargeBlock): return postLargeBlock.media
 		case .postSponsored(let postSponsoredBlock): return postSponsoredBlock.media
 		case .postSmall(let postSmallBlock): return postSmallBlock.media
+		case .postReel(let postReelBlock): return postReelBlock.media
 		case .unknown: return nil
 		case .horizontalDivider: return nil
 		case .sectionHeader: return nil
@@ -84,6 +91,7 @@ public enum InstaBlockWrapper: Codable, Equatable, Identifiable, Hashable {
 		case .horizontalDivider(let dividerBlock): return dividerBlock.author
 		case .sectionHeader(let sectionHeaderBlock): return sectionHeaderBlock.author
 		case .postSmall(let postSmallBlock): return postSmallBlock.author
+		case .postReel(let postReelBlock): return postReelBlock.author
 		}
 	}
 	
@@ -95,6 +103,7 @@ public enum InstaBlockWrapper: Codable, Equatable, Identifiable, Hashable {
 		case .horizontalDivider(let dividerBlock): return dividerBlock.createdAt
 		case .sectionHeader(let sectionHeaderBlock): return sectionHeaderBlock.createdAt
 		case .postSmall(let postSmallBlock): return postSmallBlock.createdAt
+		case .postReel(let postReelBlock): return postReelBlock.createdAt
 		}
 	}
 	
@@ -106,6 +115,7 @@ public enum InstaBlockWrapper: Codable, Equatable, Identifiable, Hashable {
 		case .horizontalDivider(let dividerBlock): return dividerBlock.updatedAt
 		case .sectionHeader(let sectionHeaderBlock): return sectionHeaderBlock.updatedAt
 		case .postSmall(let postSmallBlock): return postSmallBlock.updatedAt
+		case .postReel(let postReelBlock): return postReelBlock.updatedAt
 		}
 	}
 	
@@ -117,6 +127,7 @@ public enum InstaBlockWrapper: Codable, Equatable, Identifiable, Hashable {
 		case .horizontalDivider(let dividerBlock): return dividerBlock.caption
 		case .sectionHeader(let sectionHeaderBlock): return sectionHeaderBlock.caption
 		case .postSmall(let postSmallBlock): return postSmallBlock.caption
+		case .postReel(let postReelBlock): return postReelBlock.caption
 		}
 	}
 	
@@ -126,6 +137,7 @@ public enum InstaBlockWrapper: Codable, Equatable, Identifiable, Hashable {
 		case .postSponsored(let postSponsoredBlock): return postSponsoredBlock.action
 		case .postSmall(let postSmallBlock): return postSmallBlock.action
 		case .unknown(let unknownBlock): return unknownBlock.action
+		case .postReel(let postReelBlock): return postReelBlock.action
 		case .horizontalDivider: return nil
 		case .sectionHeader: return nil
 		}
@@ -144,6 +156,7 @@ public enum InstaBlockWrapper: Codable, Equatable, Identifiable, Hashable {
 		case .postSponsored(let postSponsoredBlock): return postSponsoredBlock.mediaUrls
 		case .postSmall(let postSmallBlock): return postSmallBlock.mediaUrls
 		case .unknown(let unknownBlock): return unknownBlock.mediaUrls
+		case .postReel(let postReelBlock): return postReelBlock.mediaUrls
 		case .horizontalDivider: return []
 		case .sectionHeader: return []
 		}
@@ -155,6 +168,7 @@ public enum InstaBlockWrapper: Codable, Equatable, Identifiable, Hashable {
 		case .postSponsored(let postSponsoredBlock): return postSponsoredBlock.isReel
 		case .postSmall(let postSmallBlock): return postSmallBlock.isReel
 		case .unknown(let unknownBlock): return unknownBlock.isReel
+		case .postReel(let postReelBlock): return postReelBlock.isReel
 		case .horizontalDivider: return false
 		case .sectionHeader: return false
 		}
@@ -162,6 +176,7 @@ public enum InstaBlockWrapper: Codable, Equatable, Identifiable, Hashable {
 	
 	public var block: any PostBlock {
 		switch self {
+		case .postReel(let postReelBlock): return postReelBlock
 		case .postLarge(let postLargeBlock): return postLargeBlock
 		case .postSponsored(let postSponsoredBlock): return postSponsoredBlock
 		case .unknown(let unknownBlock): return unknownBlock
