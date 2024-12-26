@@ -149,6 +149,10 @@ let package = Package(
 		.library(
 			name: "PostPreviewFeature",
 			targets: ["PostPreviewFeature"]
+		),
+		.library(
+			name: "SearchFeature",
+			targets: ["SearchFeature"]
 		)
 	],
 	dependencies: [
@@ -369,6 +373,12 @@ let package = Package(
 				"AppUI",
 				"InstagramBlocksUI",
 				"SnackbarMessagesClient",
+				"InstaBlocks",
+				"InstagramClient",
+				"PostPreviewFeature",
+				"SearchFeature",
+				.product(name: "Kingfisher", package: "Kingfisher"),
+				.product(name: "VideoPlayer", package: "VideoPlayer"),
 				.product(name: "Tagged", package: "swift-tagged"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
@@ -544,6 +554,17 @@ let package = Package(
 				"InstaBlocks",
 				"InstagramBlocksUI",
 				"Shared",
+				.product(name: "Kingfisher", package: "Kingfisher"),
+				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+			]
+		),
+		.target(
+			name: "SearchFeature",
+			dependencies: [
+				"AppUI",
+				"Shared",
+				"InstagramClient",
+				"InstagramBlocksUI",
 				.product(name: "Kingfisher", package: "Kingfisher"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]

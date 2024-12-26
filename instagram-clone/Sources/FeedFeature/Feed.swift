@@ -6,10 +6,10 @@ import InstaBlocks
 import InstagramBlocksUI
 import InstagramClient
 import PostEditFeature
+import PostOptionsSheet
 import Shared
 import SwiftUI
 import UserProfileFeature
-import PostOptionsSheet
 
 private let pageLimit = 10
 
@@ -19,7 +19,6 @@ public enum FeedStatus {
 	case populated
 	case failure
 }
-
 
 @Reducer
 public struct FeedReducer {
@@ -62,7 +61,7 @@ public struct FeedReducer {
 		case performFeedUpdateRequest(request: FeedUpdateRequest)
 		case scrollToTop
 		case delegate(Delegate)
-		
+
 		public enum Delegate {
 			case onTapChatsButton
 		}
@@ -76,7 +75,7 @@ public struct FeedReducer {
 
 	@Dependency(\.instagramClient.databaseClient) var databaseClient
 	@Dependency(\.feedUpdateRequestClient) var feedUpdateRequestClient
-	
+
 	private enum Cancel: Hashable {
 		case feedPageRequest
 		case subscriptions
@@ -246,7 +245,7 @@ public struct FeedReducer {
 				default: break // TODO: don't show again and block author
 				}
 				return .none
-				
+
 			case .delegate:
 				return .none
 			}
@@ -318,13 +317,14 @@ public struct FeedView: View {
 	public init(store: StoreOf<FeedReducer>) {
 		self.store = store
 	}
+
 	public var body: some View {
 		Group {
 			ScrollViewReader { proxy in
 				ScrollView {
 					LazyVStack {
 						Section {
-							ForEachStore(store.scope(state: \.post, action: \.post)) { postStore in
+							ForEach(store.scope(state: \.post, action: \.post)) { postStore in
 								blockBuilder(postStore: postStore)
 									.id(postStore.block.id)
 									.listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: AppSpacing.lg, trailing: 0))
@@ -348,7 +348,7 @@ public struct FeedView: View {
 				.refreshable {
 					store.send(.refreshFeedPage)
 				}
-				.onChange(of: scrollToPosition) { oldValue, newValue in
+				.onChange(of: scrollToPosition) { _, newValue in
 					if let newValue {
 						withAnimation(.easeInOut(duration: 1.3)) {
 							proxy.scrollTo(newValue)
@@ -393,7 +393,7 @@ public struct FeedView: View {
 			await store.send(.task).finish()
 		}
 	}
-	
+
 	@ViewBuilder
 	private func appLogoView() -> some View {
 		HStack {
@@ -416,7 +416,7 @@ public struct FeedView: View {
 		.frame(maxWidth: .infinity)
 		.padding(.horizontal, AppSpacing.sm)
 	}
-	
+
 	@ViewBuilder
 	private func blockBuilder(postStore: StoreOf<PostLargeReducer>) -> some View {
 		Group {

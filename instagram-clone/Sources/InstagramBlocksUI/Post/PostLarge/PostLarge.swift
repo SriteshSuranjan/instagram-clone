@@ -62,7 +62,7 @@ public struct PostLargeReducer {
 				media: block.media ?? [],
 				postIndex: 0,
 				isLiked: true,
-				currentMediaIndex: self._currentMediaIndex
+				currentMediaIndex: _currentMediaIndex
 			)
 			self.footer = PostFooterReducer.State(
 				block: block,
@@ -72,9 +72,10 @@ public struct PostLargeReducer {
 				commentsCount: commentCount,
 				mediaUrls: block.mediaUrls,
 				likersInFollowings: [],
-				currentMediaIndex: self._currentMediaIndex
+				currentMediaIndex: _currentMediaIndex
 			)
 		}
+
 		public var id: String {
 			block.id
 		}
@@ -159,7 +160,7 @@ public struct PostLargeView: View {
 			color: nil
 		)
 	}
-	
+
 	@ViewBuilder
 	private func postFooter() -> some View {
 		PostFooterView(store: store.scope(state: \.footer, action: \.footer))

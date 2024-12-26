@@ -18,7 +18,11 @@ public struct MediaCarouselReducer {
 		var currentMediaPosition: String? // media id
 		var playVideo = false
 		@Shared var videoMuted: Bool
-		public init(media: [MediaItem], currentMediaIndex: Shared<Int>, videoMuted: Shared<Bool>) {
+		public init(
+			media: [MediaItem],
+			currentMediaIndex: Shared<Int>,
+			videoMuted: Shared<Bool>
+		) {
 			self._currentMediaIndex = currentMediaIndex
 			self._videoMuted = videoMuted
 			self.media = IdentifiedArray(uniqueElements: media)
@@ -111,100 +115,99 @@ public struct MediaCarouselReducer {
 public struct MediaCarouselView: View {
 	@Bindable var store: StoreOf<MediaCarouselReducer>
 	@Environment(\.colorScheme) var colorScheme
+	@State private var playingVideoMediaId: String?
 	public init(store: StoreOf<MediaCarouselReducer>) {
 		self.store = store
-	}
-	
-	private var play: Binding<Bool> {
-		Binding(
-			get: {
-				if store.playingVideoMediaId == nil {
-					return false
-				}
-				return store.playingVideoMediaId == store.currentMediaPosition
-			},
-			set: { _ in }
-		)
 	}
 
 	public var body: some View {
 		ScrollView(.horizontal) {
 			LazyHStack {
 				ForEach(store.media) { media in
-					Group {
-						if let previewData = media.previewData {
-							Image(uiImage: UIImage(data: previewData)!)
-								.resizable()
-								.scaledToFill()
-						} else {
-							KFImage.url(URL(string: media.previewUrl ?? ""))
-								.placeholder {
-									if let blurHashImage = store.blurHashImages[media.id] {
-										Image(uiImage: blurHashImage)
-											.resizable()
-									} else {
-										Assets.Colors.customAdaptiveColor(
-											colorScheme,
-											light: Assets.Colors.gray,
-											dark: Assets.Colors.darkGray
-										)
-									}
-								}
-								.resizable()
-								.fade(duration: 0.2)
-								.scaledToFill()
-						}
-					}
-					.overlay {
-						if media.isVideo && media.id == store.playingVideoMediaId {
-							// TODO: seek to previous play time when scroll
-							VideoPlayer(
-								url: URL(string: media.url) ?? URL(string: "nil://placeholder")!,
-								// Start of Selection
-								play: .constant(false)
-//								play: Binding<Bool>(
-//									get: {
-//										store.playingVideoMediaId == media.id
-//									},
-//									set: { isPlaying in
-//										if isPlaying {
-//											store.send(.startPlayVideo(mediaId: media.id))
-//										} else if store.playingVideoMediaId == media.id {
-//											store.send(.stopPlayVideo(mediaId: media.id))
-//										}
-//									}
-//								)
-							)
-							.mute(store.videoMuted || store.playingVideoMediaId == nil)
-							.autoReplay(true)
-//							.overlay {
-//								// TODO: control play and pause
-//							}
-						}
-					}
-					.id(media.id)
-					.containerRelativeFrame(.horizontal)
-					.onAppear {
-//						if media.isVideo {
-//							store.send(.startPlayVideo(mediaId: media.id))
-//						}
-					}
-					.onDisappear {
-//						if store.playingVideoMediaId == media.id {
-//							store.send(.stopPlayVideo(mediaId: media.id))
-//						}
-					}
+					mediaCarouselPage(media: media)
 				}
 			}
-			.scrollTargetLayout()
 		}
 		.scrollPosition(id: $store.currentMediaPosition.sending(\.mediaPositionUpdated))
 		.scrollIndicators(.hidden)
 		.scrollTargetBehavior(.viewAligned)
 		.scrollTargetLayout()
+		.onDisappear {
+			playingVideoMediaId = nil
+		}
 		.task {
 			await store.send(.task).finish()
 		}
+	}
+
+	@ViewBuilder
+	private func mediaCarouselPage(media: MediaItem) -> some View {
+		GeometryReader { geometry in
+			Group {
+				if !media.isVideo || playingVideoMediaId == nil {
+					if let previewData = media.previewData {
+						Image(uiImage: UIImage(data: previewData)!)
+							.resizable()
+							.scaledToFill()
+							.frame(width: geometry.size.width, height: geometry.size.height)
+							.clipped()
+					} else {
+						KFImage.url(URL(string: media.previewUrl ?? ""))
+							.placeholder {
+								if let blurHashImage = store.blurHashImages[media.id] {
+									Image(uiImage: blurHashImage)
+										.resizable()
+								} else {
+									Assets.Colors.customAdaptiveColor(
+										colorScheme,
+										light: Assets.Colors.gray,
+										dark: Assets.Colors.darkGray
+									)
+								}
+							}
+							.resizable()
+							.fade(duration: 0.2)
+							.scaledToFill()
+							.frame(width: geometry.size.width, height: geometry.size.height)
+							.clipped()
+					}
+				} else {
+					VideoPlayer(
+						url: URL(string: media.url) ?? URL(string: "nil://placeholder")!,
+						play: Binding(
+							get: { playingVideoMediaId == media.id },
+							set: { playing in
+								if playing {
+									playingVideoMediaId = media.id
+								} else {
+									playingVideoMediaId = nil
+								}
+							}
+						)
+					)
+					.mute(store.videoMuted || playingVideoMediaId == nil)
+					.autoReplay(true)
+					.frame(width: geometry.size.width, height: geometry.size.height)
+					.onDisappear {
+						playingVideoMediaId = nil
+					}
+				}
+			}
+			.frame(maxWidth: .infinity, maxHeight: .infinity)
+			
+		}
+		.scaledToFill()
+		.id(media.id)
+		.containerRelativeFrame(.horizontal)
+		.onAppear {
+			if media.isVideo {
+				playingVideoMediaId = media.id
+			}
+		}
+		.onDisappear {
+			playingVideoMediaId = nil
+		}
+		.scrollTargetLayout()
 	}
 }
 

@@ -71,7 +71,7 @@ public struct HomeReducer {
 		var showAppLoadingIndeterminate = false
 		var pageType: HomePageType? = .feedBody
 		var feed: FeedReducer.State
-		var timeline = TimelineReducer.State()
+		var timeline: TimelineReducer.State
 		var reels: ReelsReducer.State
 		var userProfile: UserProfileReducer.State
 		var mediaPicker: MediaPickerReducer.State
@@ -84,6 +84,7 @@ public struct HomeReducer {
 			self.mediaPicker = MediaPickerReducer.State(pickerConfiguration: MediaPickerView.Configuration(maxItems: 10, reels: false, showVideo: true))
 			self.chats = ChatsReducer.State()
 			self.reels = ReelsReducer.State(authorizedId: authenticatedUser.id)
+			self.timeline = TimelineReducer.State(authorizedId: authenticatedUser.id)
 		}
 	}
 
@@ -228,7 +229,6 @@ public struct HomeView: View {
 			.task {
 				await store.send(.task).finish()
 			}
-			.toolbar(.hidden, for: .navigationBar)
 		}
 	}
 

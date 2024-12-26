@@ -90,10 +90,6 @@ public struct ReelsReducer {
 		let instaBlocks: [InstaBlockWrapper] = posts.map { post in
 				.postReel(post.toPostReelBlock())
 		}
-//		if !hasMore {
-//			instaBlocks.append(.horizontalDivider(DividerHorizontalBlock()))
-//			instaBlocks.append(.sectionHeader(SectionHeaderBlock()))
-//		}
 		let reelsPage = ReelsPage(
 			blocks: instaBlocks,
 			totalBlocks: instaBlocks.count,

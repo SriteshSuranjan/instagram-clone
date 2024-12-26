@@ -52,8 +52,9 @@ public struct PostMediaReducer {
 			self._videoMuted = Shared(videoMuted)
 			self.carousel = MediaCarouselReducer.State(media: media, currentMediaIndex: self._currentMediaIndex, videoMuted: self._videoMuted)
 		}
+
 		var currentMedia: MediaItem {
-			media[currentMediaIndex]
+			self.media[self.currentMediaIndex]
 		}
 	}
 
@@ -70,12 +71,12 @@ public struct PostMediaReducer {
 			case didScrollToMediaIndex(Int)
 		}
 	}
-	
+
 	fileprivate enum Cancel: Hashable {
 		case subscriptions
 		case pageIndicatorTimer
 	}
-	
+
 	public var body: some ReducerOf<Self> {
 		BindingReducer()
 		Scope(state: \.carousel, action: \.carousel) {
@@ -83,17 +84,17 @@ public struct PostMediaReducer {
 		}
 		Reduce {
 			state,
-			action in
+				action in
 			switch action {
 			case .task:
 				var effect = Effect<Action>.none
 				// TODO: add other subscriptions here
-				
+
 				// hide media index effect
 				let autoHideCurrentIndex = state.autoHideCurrentIndex
 				let showCurrentIndex = state.showCurrentIndex
 				let currentMediaIndexEffect: Effect<Action> =
-				(autoHideCurrentIndex && showCurrentIndex) ? Effect.hidePageIndicatorTimer() : .none
+					(autoHideCurrentIndex && showCurrentIndex) ? Effect.hidePageIndicatorTimer() : .none
 				let currentMediaIndexPublisherEffect: Effect<Action> = .publisher {
 					state.$currentMediaIndex.publisher
 						.removeDuplicates()
@@ -140,7 +141,6 @@ public struct PostMediaReducer {
 	}
 }
 
-
 extension Effect where Action == PostMediaReducer.Action {
 	static func hidePageIndicatorTimer() -> Effect<Action> {
 		.run { send in
@@ -152,7 +152,6 @@ extension Effect where Action == PostMediaReducer.Action {
 	}
 }
 
-
 public struct PostMediaView: View {
 	@Bindable var store: StoreOf<PostMediaReducer>
 	@Environment(\.textTheme) var textTheme
@@ -162,49 +161,54 @@ public struct PostMediaView: View {
 	}
 
 	public var body: some View {
-		MediaCarouselView(store: store.scope(state: \.carousel, action: \.carousel))
-			.overlay(alignment: .topTrailing) {
-				if store.media.count > 1 && store.isShowingCurrentIndex {
-					Text("\(store.currentMediaIndex + 1)/\(store.media.count)")
-						.foregroundStyle(Assets.Colors.white)
-						.padding(.horizontal, AppSpacing.md)
-						.padding(.vertical, AppSpacing.xxs)
+		MediaCarouselView(
+			store: self.store.scope(
+				state: \.carousel,
+				action: \.carousel
+			)
+		)
+		.overlay(alignment: .topTrailing) {
+			if self.store.media.count > 1 && self.store.isShowingCurrentIndex {
+				Text("\(self.store.currentMediaIndex + 1)/\(self.store.media.count)")
+					.foregroundStyle(Assets.Colors.white)
+					.padding(.horizontal, AppSpacing.md)
+					.padding(.vertical, AppSpacing.xxs)
+					.background(
+						Assets.Colors.customAdaptiveColor(
+							self.colorScheme,
+							light: Assets.Colors.black.opacity(0.8),
+							dark: Assets.Colors.black.opacity(0.4)
+						)
+					)
+					.clipShape(.capsule)
+					.transition(.opacity)
+					.padding()
+			}
+		}
+		.overlay(alignment: .bottomTrailing) {
+			if self.store.currentMedia.isVideo {
+				Button {
+					self.store.send(.onTapSoundButton)
+				} label: {
+					Image(systemName: self.store.videoMuted ? "speaker.slash.fill" : "speaker.fill")
+						.padding(8)
 						.background(
-							Assets.Colors.customAdaptiveColor(
-								colorScheme,
-								light: Assets.Colors.black.opacity(0.8),
-								dark: Assets.Colors.black.opacity(0.4)
+							Assets.Colors.customReversedAdaptiveColor(
+								self.colorScheme,
+								light: Assets.Colors.lightDark,
+								dark: Assets.Colors.dark
 							)
 						)
-						.clipShape(.capsule)
-						.transition(.opacity)
-						.padding()
+						.clipShape(.circle)
+						.frame(width: 35, height: 35)
+						.contentShape(.circle)
 				}
+				.fadeEffect()
+				.padding()
 			}
-			.overlay(alignment: .bottomTrailing) {
-				if store.currentMedia.isVideo {
-					Button {
-						store.send(.onTapSoundButton)
-					} label: {
-						Image(systemName: store.videoMuted ? "speaker.slash.fill" : "speaker.fill")
-							.padding(8)
-							.background(
-								Assets.Colors.customReversedAdaptiveColor(
-									colorScheme,
-									light: Assets.Colors.lightDark,
-									dark: Assets.Colors.dark
-								)
-							)
-							.clipShape(.circle)
-							.frame(width: 35, height: 35)
-							.contentShape(.circle)
-					}
-					.fadeEffect()
-					.padding()
-				}
-			}
-			.task {
-				await store.send(.task).finish()
-			}
+		}
+		.task {
+			await self.store.send(.task).finish()
+		}
 	}
 }

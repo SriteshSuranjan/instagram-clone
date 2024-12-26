@@ -216,7 +216,6 @@ public struct ReelView: View {
 					.scaledToFit()
 				}
 			}
-			
 			.frame(width: proxy.size.width, height: proxy.size.height)
 			.onTapGesture {
 				play.toggle()
@@ -315,7 +314,7 @@ public struct ReelView: View {
 			MarqueeText("\(store.block.author.username)", startDelay: 1.0)
 		}
 		.foregroundStyle(Assets.Colors.white)
-		.frame(height: 36)
+		.frame(height: 32)
 		.frame(maxWidth: 80)
 		.padding(.horizontal, AppSpacing.sm)
 		.background(
@@ -338,18 +337,19 @@ public struct ReelView: View {
 			KFImage.url(URL(string: store.block.author.avatarUrl))
 				.placeholder {
 					Assets.Images.profilePhoto
-						.view(width: 84, height: 84, renderMode: .template)
+						.view(width: 42, height: 42, renderMode: .template)
 						.foregroundStyle(Assets.Colors.white)
 				}
 				.resizable()
 				.fade(duration: 0.2)
 				.scaledToFit()
-				.frame(width: 84, height: 84)
+				.frame(width: 42, height: 42)
 				.clipShape(.circle)
 			Text(store.block.author.username)
 				.font(textTheme.titleMedium.font)
 				.foregroundStyle(Assets.Colors.white)
 				.bold()
+				.layoutPriority(1)
 			if let isFollowed = store.isFollowed {
 				Button {
 					store.send(.onTapFollowButton)

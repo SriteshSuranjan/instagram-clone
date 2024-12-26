@@ -11,6 +11,7 @@ public struct InstagramClient: Sendable {
 	public let databaseClient: UserDatabaseClient
 	public let storageUploaderClient: SupabaseStorageUploaderClient
 	public let firebaseRemoteConfigClient: FirebaseRemoteConfigClient
+	public let searchClient: SearchClient
 }
 
 @DependencyClient
@@ -69,3 +70,7 @@ public struct FirebaseRemoteConfigClient: Sendable {
 	public var fetchRemoteData: @Sendable (_ key: String) async throws -> String
 }
 
+@DependencyClient
+public struct SearchClient: Sendable {
+	public var searchUsers: @Sendable (_ query: String, _ limit: Int, _ offset: Int, _ excludeUserIds: [String]) async throws -> [Shared.User]
+}

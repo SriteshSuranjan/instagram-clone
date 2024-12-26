@@ -12,7 +12,8 @@ extension InstagramClient: DependencyKey {
 		authClient: unimplemented("Use static live Implementation Inject please. ", placeholder: .liveValue),
 		databaseClient: unimplemented("Use static live Implementation Inject please. ", placeholder: .liveValue),
 		storageUploaderClient: unimplemented("Use static live Implementation Inject please. ", placeholder: .liveValue),
-		firebaseRemoteConfigClient: unimplemented("Use static live Implementation Inject please. ", placeholder: .liveValue)
+		firebaseRemoteConfigClient: unimplemented("Use static live Implementation Inject please. ", placeholder: .liveValue),
+		searchClient: unimplemented("Use static live Implementation Inject please. ", placeholder: .liveValue)
 	)
 	public static func liveInstagramClient(
 		authClient: AuthenticationClient,
@@ -32,7 +33,8 @@ extension InstagramClient: DependencyKey {
 			),
 			firebaseRemoteConfigClient: FirebaseRemoteConfigClient.liveFirebaseRemoteConfigClient(
 				firebaseRemoteConfigRepository
-			)
+			),
+			searchClient: SearchClient.liveSearchClient(databaseClient)
 		)
 	}
 }
@@ -236,6 +238,19 @@ extension FirebaseRemoteConfigClient: DependencyKey {
 			},
 			fetchRemoteData: { key in
 				await firebaseRemoteConfigRepository.fetchRemoteData(key)
+			}
+		)
+	}
+}
+
+extension SearchClient: DependencyKey {
+	public static var liveValue = SearchClient(
+		searchUsers: unimplemented("Use live implementation please.")
+	)
+	public static func liveSearchClient(_ client: DatabaseClient) -> SearchClient {
+		SearchClient(
+			searchUsers: { query, limit, offset, excludedUserIds in
+				try await client.searchUsers(limit: limit, offset: offset, query: query, userId: nil, excludedUserIds: excludedUserIds)
 			}
 		)
 	}

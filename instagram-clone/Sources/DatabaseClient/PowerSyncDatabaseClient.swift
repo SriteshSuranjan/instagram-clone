@@ -671,6 +671,38 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 			}
 		}
 	}
+	
+	public func searchUsers(
+		limit: Int = 8,
+		offset: Int = 0,
+		query: String,
+		userId: String? = nil,
+		excludedUserIds: [String] = []
+	) async throws -> [Shared.User] {
+		guard let currentUserId = await currentUserId else {
+			return []
+		}
+		guard !query.isEmpty else {
+			return []
+		}
+		let excludeUserIdsStatement = excludedUserIds.isEmpty ? "" : "AND id NOT IN (\(excludedUserIds)"
+		return (try await self.powerSyncRepository.db.getAll(
+			sql: """
+SELECT id, avatar_url, full_name, username
+FROM profiles
+WHERE (LOWER(username) LIKE LOWER('%\(query)%') OR LOWER(full_name) LIKE LOWER('%\(query)%')) AND id <> ?1 \(excludeUserIdsStatement)
+LIMIT ?2 OFFSET ?3
+""",
+			parameters: [currentUserId, limit, offset],
+			mapper: { cursor in
+				let userId = cursor.getString(index: 0) ?? ""
+				let avatarUrl = cursor.getString(index: 1)
+				let full_name = cursor.getString(index: 2)
+				let username = cursor.getString(index: 3)
+				return Shared.User(id: userId, username: username, fullName: full_name, avatarUrl: avatarUrl)
+			}
+		) as? [Shared.User]) ?? []
+	}
 }
 
 private class SuspendTaskWrapper<T>: KotlinSuspendFunction1 {

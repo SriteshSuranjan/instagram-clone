@@ -31,4 +31,8 @@ public protocol PostsBaseRepository: Sendable {
 	func postsOf(userId: String?) async -> AsyncStream<[Post]>
 }
 
-public protocol DatabaseClient: UserBaseRepository, PostsBaseRepository {}
+public protocol SearchBaseRepository: Sendable {
+	func searchUsers(limit: Int, offset: Int, query: String, userId: String?, excludedUserIds: [String]) async throws -> [Shared.User]
+}
+
+public protocol DatabaseClient: UserBaseRepository, PostsBaseRepository, SearchBaseRepository {}
