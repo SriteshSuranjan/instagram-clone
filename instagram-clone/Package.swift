@@ -153,6 +153,10 @@ let package = Package(
 		.library(
 			name: "SearchFeature",
 			targets: ["SearchFeature"]
+		),
+		.library(
+			name: "CommentsFeature",
+			targets: ["CommentsFeature"]
 		)
 	],
 	dependencies: [
@@ -362,6 +366,7 @@ let package = Package(
 				"FeedUpdateRequestClient",
 				"PostEditFeature",
 				"PostOptionsSheet",
+				"CommentsFeature",
 				.product(name: "Tagged", package: "swift-tagged"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
@@ -568,7 +573,19 @@ let package = Package(
 				.product(name: "Kingfisher", package: "Kingfisher"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
-		)
+		),
+		.target(
+			name: "CommentsFeature",
+			dependencies: [
+				"AppUI",
+				"Shared",
+				"InstagramClient",
+				"InstagramBlocksUI",
+				"InstaBlocks",
+				.product(name: "Kingfisher", package: "Kingfisher"),
+				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+			]
+		),
 	],
 	swiftLanguageModes: [.v5]
 )

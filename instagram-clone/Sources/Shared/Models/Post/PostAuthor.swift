@@ -1,5 +1,4 @@
 import Foundation
-import Shared
 
 private let _confirmedUsers = [
 	User(

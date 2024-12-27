@@ -53,6 +53,10 @@ public struct UserDatabaseClient: Sendable {
 	public var deletePost: @Sendable (_ postId: String) async throws -> Void
 	public var updatePost: @Sendable (_ postId: String, _ caption: String) async throws -> Post?
 	public var postsOf: @Sendable (_ userId: String?) async -> AsyncStream<[Post]> = { _ in .never }
+	public var commentsOf: @Sendable (_ postId: String) async -> AsyncStream<[Shared.Comment]> = { _ in .never }
+	public var createComment: @Sendable (_ postId: String, _ userId: String, _ content: String, _ repliedToCommentId: String?) async throws -> Void
+	public var repliedCommentsOf: @Sendable (_ commentId: String) async -> AsyncStream<[Shared.Comment]> = { _ in .never }
+	public var deleteComment: @Sendable (_ commentId: String) async throws -> Void
 }
 
 @DependencyClient

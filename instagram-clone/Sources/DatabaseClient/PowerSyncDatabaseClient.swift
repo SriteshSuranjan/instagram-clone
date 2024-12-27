@@ -409,7 +409,6 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 		} else {
 			return posts
 		}
-		
 	}
 
 	public func getPostLikersInFollowings(postId: String, offset: Int = 0, limit: Int = 3) async throws -> [Shared.User] {
@@ -671,7 +670,7 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 			}
 		}
 	}
-	
+
 	public func searchUsers(
 		limit: Int = 8,
 		offset: Int = 0,
@@ -686,13 +685,13 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 			return []
 		}
 		let excludeUserIdsStatement = excludedUserIds.isEmpty ? "" : "AND id NOT IN (\(excludedUserIds)"
-		return (try await self.powerSyncRepository.db.getAll(
+		return try (await powerSyncRepository.db.getAll(
 			sql: """
-SELECT id, avatar_url, full_name, username
-FROM profiles
-WHERE (LOWER(username) LIKE LOWER('%\(query)%') OR LOWER(full_name) LIKE LOWER('%\(query)%')) AND id <> ?1 \(excludeUserIdsStatement)
-LIMIT ?2 OFFSET ?3
-""",
+			SELECT id, avatar_url, full_name, username
+			FROM profiles
+			WHERE (LOWER(username) LIKE LOWER('%\(query)%') OR LOWER(full_name) LIKE LOWER('%\(query)%')) AND id <> ?1 \(excludeUserIdsStatement)
+			LIMIT ?2 OFFSET ?3
+			""",
 			parameters: [currentUserId, limit, offset],
 			mapper: { cursor in
 				let userId = cursor.getString(index: 0) ?? ""
@@ -702,6 +701,153 @@ LIMIT ?2 OFFSET ?3
 				return Shared.User(id: userId, username: username, fullName: full_name, avatarUrl: avatarUrl)
 			}
 		) as? [Shared.User]) ?? []
+	}
+
+	public func commentsOf(postId: String) async -> AsyncStream<[Comment]> {
+		AsyncStream { continuation in
+			Task {
+				for await data in await self.powerSyncRepository.db.watch(
+					sql: """
+					SELECT 
+						c1.*,
+						p.avatar_url as avatar_url,
+						p.username as username,
+						p.full_name as full_name,
+						COUNT(c2.id) AS replies
+					FROM 
+						comments c1
+						INNER JOIN
+							profiles p ON p.id = c1.user_id
+						LEFT JOIN
+							comments c2 ON c1.id = c2.replied_to_comment_id
+					WHERE
+						c1.post_id = ? AND c1.replied_to_comment_id IS NULL
+					GROUP BY
+						c1.id, p.avatar_url, p.username, p.full_name
+					ORDER BY created_at ASC
+					""",
+					parameters: [postId],
+					mapper: { cursor in
+						/*"0: Optional(\"c32d505d-1d4d-4907-ab35-8e8b042a3635\")"
+						 "1: Optional(\"bf44ff60-b3fd-4f5c-8614-54daa58be73b\")"
+			 "2: Optional(\"a7afda31-d8fb-423f-9da3-3e11b77c1adc\")"
+			 "3: Optional(\"@Hyl 😮\")"
+			 "4: Optional(\"2024-12-27 04:14:19.726861Z\")"
+			 "5: nil"
+						 public let id: String
+						 public let postId: String
+						 public let author: PostAuthor
+						 public let repliedToCommentId: String?
+						 public let replies: Int?
+						 public let content: String
+						 public let createdAt: Date
+			 "6: Optional(\"https://uuhkqhxfbjovbighyxab.supabase.co/storage/v1/object/sign/avatars/2024-12-10T08:16:19.784734.jpg?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJhdmF0YXJzLzIwMjQtMTItMTBUMDg6MTY6MTkuNzg0NzM0LmpwZyIsImlhdCI6MTczMzc4OTc4NSwiZXhwIjoyMDQ5MTQ5Nzg1fQ.8ArYkrXr9Zq_k6DjbYF_MpAXUXNwaEz31F6QUlRRHoc\")"
+			 "7: Optional(\"Hyl\")"
+			 "8: Optional(\"Q\")"
+			 "9: Optional(\"0\")"
+			 "10: nil"
+			 "11: nil"
+			 "12: nil"
+			 "13: nil"
+			 "14: nil"
+			 "15: nil"*/
+						let commentId = cursor.getString(index: 0) ?? ""
+						let postId = cursor.getString(index: 1) ?? ""
+						let commentAuthorId = cursor.getString(index: 2) ?? ""
+						let content = cursor.getString(index: 3) ?? ""
+						let createdAt = (try? Date(cursor.getString(index: 4) ?? "", strategy: .dateTime)) ?? Date.now
+						let avatarUrl = cursor.getString(index: 6)
+						let username = cursor.getString(index: 7)
+						let fullName = cursor.getString(index: 8)
+						let repliesCount = cursor.getLong(index: 9)?.intValue
+						let comment = Shared.Comment(
+							id: commentId,
+							postId: postId,
+							author: PostAuthor(confirmed: commentAuthorId, avatarUrl: avatarUrl, username: username),
+							repliedToCommentId: nil,
+							replies: repliesCount,
+							content: content,
+							createdAt: createdAt
+						)
+						return comment
+					}
+				) {
+					if let comments = data as? [Comment] {
+						continuation.yield(comments)
+					}
+				}
+				continuation.finish()
+			}
+		}
+	}
+
+	public func createComment(postId: String, userId: String, content: String, repliedToCommentId: String?) async throws {
+		try await powerSyncRepository.db.execute(
+			sql: """
+			INSERT INTO 
+				comments(id, post_id, user_id, content, created_at, replied_to_comment_id)
+			VALUES(uuid(), ?, ?, ?, ?, ?)
+			""",
+			parameters: [postId, userId, content, Date.now.ISO8601Format(.iso8601), repliedToCommentId as Any]
+		)
+	}
+	
+	public func repliedCommentsOf(commentId: String) async -> AsyncStream<[Comment]> {
+		AsyncStream { continuation in
+			Task {
+				for await data in await self.powerSyncRepository.db.watch(
+					sql: """
+					SELECT 
+						c1.*,
+						p.avatar_url as avatar_url,
+						p.username as username,
+						p.full_name as full_name
+					FROM 
+						comments c1
+						INNER JOIN
+							profiles p ON p.id = c1.user_id
+					WHERE
+						c1.replied_to_comment_id = ?
+					GROUP BY
+						c1.id, p.avatar_url, p.username, p.full_name
+					ORDER BY created_at ASC
+					""",
+					parameters: [commentId],
+					mapper: { cursor in
+						let commentId = cursor.getString(index: 0) ?? ""
+						let postId = cursor.getString(index: 1) ?? ""
+						let commentAuthorId = cursor.getString(index: 2) ?? ""
+						let content = cursor.getString(index: 3) ?? ""
+						let createdAt = (try? Date(cursor.getString(index: 4) ?? "", strategy: .dateTime)) ?? Date.now
+						let repliedCommentId = cursor.getString(index: 5)
+						let avatarUrl = cursor.getString(index: 6)
+						let username = cursor.getString(index: 7)
+//						let fullName = cursor.getString(index: 8)
+						return Comment(
+							id: commentId,
+							postId: postId,
+							author: PostAuthor.init(confirmed: commentAuthorId, avatarUrl: avatarUrl, username: username),
+							repliedToCommentId: repliedCommentId,
+							replies: nil,
+							content: content,
+							createdAt: createdAt
+						)
+					}
+				) {
+					if let comments = data as? [Comment] {
+						continuation.yield(comments)
+					}
+				}
+				continuation.finish()
+			}
+		}
+	}
+	
+	public func deleteComment(commentId: String) async throws {
+		try await self.powerSyncRepository.db.execute(
+			sql: "DELETE FROM comments WHERE id = ?",
+			parameters: [commentId]
+		)
 	}
 }
 

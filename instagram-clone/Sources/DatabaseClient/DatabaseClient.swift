@@ -29,6 +29,10 @@ public protocol PostsBaseRepository: Sendable {
 	func deletePost(postId: String) async throws -> Void
 	func updatePost(postId: String, caption: String) async throws -> Post?
 	func postsOf(userId: String?) async -> AsyncStream<[Post]>
+	func commentsOf(postId: String) async -> AsyncStream<[Shared.Comment]>
+	func createComment(postId: String, userId: String, content: String, repliedToCommentId: String?) async throws -> Void
+	func repliedCommentsOf(commentId: String) async -> AsyncStream<[Shared.Comment]>
+	func deleteComment(commentId: String) async throws -> Void
 }
 
 public protocol SearchBaseRepository: Sendable {

@@ -64,6 +64,7 @@ public struct PostFooterReducer {
 		case isLikedUpdated(Bool)
 		case likersInFollowingsUpdated([User])
 		case task
+		case onTapCommentsButton
 	}
 
 	private enum Cancel: Hashable {
@@ -106,6 +107,8 @@ public struct PostFooterReducer {
 				return .none
 			case let .likersInFollowingsUpdated(likersInFollowings):
 				state.likersInFollowings = likersInFollowings
+				return .none
+			case .onTapCommentsButton:
 				return .none
 			}
 		}
@@ -231,7 +234,9 @@ public struct PostFooterView: View {
 	
 	@ViewBuilder
 	private func commentButton() -> some View {
-		Button {} label: {
+		Button {
+			store.send(.onTapCommentsButton)
+		} label: {
 			Image(systemName: "message")
 				.scaleEffect(x: -1, y: 1)
 				.imageScale(.large)

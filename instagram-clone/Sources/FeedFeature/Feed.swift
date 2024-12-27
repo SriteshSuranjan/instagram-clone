@@ -10,6 +10,7 @@ import PostOptionsSheet
 import Shared
 import SwiftUI
 import UserProfileFeature
+import CommentsFeature
 
 private let pageLimit = 10
 
@@ -29,6 +30,7 @@ public struct FeedReducer {
 		case userProfile(UserProfileReducer)
 		case postOptionsSheet(PostOptionsSheetReducer)
 		case postEdit(PostEditReducer)
+		case comments(CommentsReducer)
 	}
 
 	@ObservableState
@@ -185,7 +187,11 @@ public struct FeedReducer {
 					}
 					state.destination = .postOptionsSheet(PostOptionsSheetReducer.State(optionsSettings: isOwner ? .owner : .viewer, block: block))
 					return .none
-
+				case .footer(.onTapCommentsButton):
+					if let post = state.post[id: id]?.block {
+						state.destination = .comments(CommentsReducer.State(post: post, currentUserId: state.profileUserId))
+					}
+					return .none
 				default: return .none
 				}
 			case .post:
@@ -365,6 +371,16 @@ public struct FeedView: View {
 			)
 		) { userProfileStore in
 			UserProfileView(store: userProfileStore)
+		}
+		.sheet(
+			item: $store.scope(
+				state: \.destination?.comments,
+				action: \.destination.comments
+			)
+		) { commentsStore in
+			CommentsView(store: commentsStore)
+				.presentationDetents([.medium, .large])
+				.presentationBackground(.regularMaterial)
 		}
 		.sheet(
 			item: $store.scope(

@@ -110,7 +110,11 @@ extension UserDatabaseClient: DependencyKey {
 		likePost: unimplemented("Use live implementation please."),
 		deletePost: unimplemented("Use live implementation please."),
 		updatePost: unimplemented("Use live implementation please."),
-		postsOf: unimplemented("Use live implementation please.", placeholder: .never)
+		postsOf: unimplemented("Use live implementation please.", placeholder: .never),
+		commentsOf: unimplemented("Use live implementation please.", placeholder: .never),
+		createComment: unimplemented("Use live implementation please."),
+		repliedCommentsOf: unimplemented("Use live implementation please.", placeholder: .never),
+		deleteComment: unimplemented("Use live implementation please.")
 	)
 	public static func livePowerSyncDatabaseClient(
 		_ client: DatabaseClient
@@ -190,6 +194,18 @@ extension UserDatabaseClient: DependencyKey {
 			},
 			postsOf: { userId in
 				await client.postsOf(userId: userId)
+			},
+			commentsOf: { postId in
+				await client.commentsOf(postId: postId)
+			},
+			createComment: { postId, userId, content, repliedToCommentId in
+				try await client.createComment(postId: postId, userId: userId, content: content, repliedToCommentId: repliedToCommentId)
+			},
+			repliedCommentsOf: { commentId in
+				await client.repliedCommentsOf(commentId: commentId)
+			},
+			deleteComment: { commentId in
+				try await client.deleteComment(commentId: commentId)
 			}
 		)
 	}
