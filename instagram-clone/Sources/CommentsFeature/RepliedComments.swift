@@ -27,6 +27,11 @@ public struct RepliedCommentsReducer {
 		case task
 		case repliedComments(IdentifiedActionOf<CommentReducer>)
 		case repliedCommentsUpdate([Comment])
+		case delegate(Delegate)
+		
+		public enum Delegate {
+			case onTapCommentReply(Comment)
+		}
 	}
 	
 	@Dependency(\.instagramClient.databaseClient) var databaseClient
@@ -42,6 +47,12 @@ public struct RepliedCommentsReducer {
 			case .task:
 				return .run { [comment = state.comment, post = state.post] send in
 					await subscription(send: send, comment: comment, post: post)
+				}
+			case let .repliedComments(.element(_, subAction)):
+				switch subAction {
+				case let .userComment(.delegate(.onTapReplyButton(comment))):
+					return .send(.delegate(.onTapCommentReply(comment)), animation: .easeInOut)
+				default: return .none
 				}
 			case .repliedComments:
 				return .none
@@ -67,6 +78,8 @@ public struct RepliedCommentsReducer {
 				}
 				state.repliedComments.removeAll(where: { removeCommentIds.contains($0.id) })
 				return .none
+			case .delegate:
+				return .none
 			}
 		}
 		.forEach(\.repliedComments, action: \.repliedComments) {
@@ -77,7 +90,7 @@ public struct RepliedCommentsReducer {
 	private func subscription(send: Send<Action>, comment: Comment, post: InstaBlockWrapper) async {
 		async let repliedComments: Void = {
 			for await repliedComments in await databaseClient.repliedCommentsOf(comment.id) {
-				await send(.repliedCommentsUpdate(repliedComments), animation: .snappy)
+				await send(.repliedCommentsUpdate(repliedComments))
 			}
 		}()
 		_ = await repliedComments

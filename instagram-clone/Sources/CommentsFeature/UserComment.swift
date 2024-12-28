@@ -3,9 +3,9 @@ import ComposableArchitecture
 import Foundation
 import InstaBlocks
 import InstagramBlocksUI
+import InstagramClient
 import Shared
 import SwiftUI
-import InstagramClient
 
 @Reducer
 public struct UserCommentReducer {
@@ -53,8 +53,12 @@ public struct UserCommentReducer {
 		case onTapReplyButton
 		case onLongPressed
 		case task
+		case delegate(Delegate)
+		public enum Delegate {
+			case onTapReplyButton(Comment)
+		}
 	}
-	
+
 	@Dependency(\.instagramClient.databaseClient) var databaseClient
 
 	public var body: some ReducerOf<Self> {
@@ -64,11 +68,13 @@ public struct UserCommentReducer {
 			case .binding:
 				return .none
 			case .onTapLikeComment:
-				return .none
+				return .run { [commentId = state.comment.id] send in
+					try await databaseClient.likePost(commentId, false)
+				}
 			case .onTapAvatar:
 				return .none
 			case .onTapReplyButton:
-				return .none
+				return .send(.delegate(.onTapReplyButton(state.comment)), animation: .easeInOut)
 			case .onLongPressed:
 				return .none
 			case let .likesCountUpdate(likesCount):
@@ -84,27 +90,29 @@ public struct UserCommentReducer {
 				return .run { [comment = state.comment, post = state.post] send in
 					await subscriptions(send: send, comment: comment, post: post)
 				}
+			case .delegate:
+				return .none
 			}
 		}
 	}
-	
+
 	private func subscriptions(send: Send<Action>, comment: Comment, post: InstaBlockWrapper) async {
 		async let commentsLikesSubscription: Void = {
-			for await likes in await databaseClient.likesOfPost(post.id, false) {
+			for await likes in await databaseClient.likesOfPost(comment.id, false) {
 				await send(.likesCountUpdate(likes))
 			}
 		}()
 		async let isLikedSubscription: Void = {
-			for await isLiked in await databaseClient.isLiked(post.id, nil, false) {
+			for await isLiked in await databaseClient.isLiked(comment.id, nil, false) {
 				await send(.isLikedUpdate(isLiked))
 			}
 		}()
 		async let isLikedByOwnerSubscription: Void = {
-			for await isLikedByOwner in await databaseClient.isLiked(post.id, post.author.id, false) {
+			for await isLikedByOwner in await databaseClient.isLiked(comment.id, post.author.id, false) {
 				await send(.isLikedByOwnerUpdate(isLikedByOwner))
 			}
 		}()
-		
+
 		_ = await (commentsLikesSubscription, isLikedSubscription, isLikedByOwnerSubscription)
 	}
 }
@@ -124,35 +132,44 @@ public struct UserCommentView: View {
 				avatarUrl: store.comment.author.avatarUrl,
 				radius: store.isReplied ? AppSize.iconSizeXSmall : AppSize.iconSizeSmall
 			)
-			VStack(alignment: .leading, spacing: AppSpacing.xs) {
+			VStack(alignment: .leading, spacing: AppSpacing.sm) {
 				HStack {
 					Text(store.comment.author.username)
-						.font(textTheme.labelLarge.font)
+						.font(textTheme.titleSmall.font)
 						.bold()
 						.foregroundStyle(Assets.Colors.bodyColor)
 					Text("\(timeAgo(from: store.comment.createdAt))")
-						.font(textTheme.bodyMedium.font)
+						.font(textTheme.bodyLarge.font)
 						.foregroundStyle(Assets.Colors.gray)
 					// TODO: isLikedByOwner
 				}
 				Text(store.comment.content)
-					.font(textTheme.bodySmall.font)
-				Button("Reply") {}
-					.font(textTheme.labelLarge.font)
-					.foregroundStyle(Assets.Colors.gray)
-					.buttonStyle(.plain)
+					.font(textTheme.titleSmall.font)
+				Button("Reply") {
+					store.send(.onTapReplyButton)
+				}
+				.font(textTheme.bodyLarge.font)
+				.foregroundStyle(Assets.Colors.gray)
+				.buttonStyle(.plain)
 			}
 			Spacer()
-			// TODO: Like Button
-			VStack(spacing: 4) {
-				Image(systemName: store.isLiked ? "heart.fill" : "heart")
-					.imageScale(.large)
-					.foregroundStyle(store.isLiked ? Assets.Colors.red : Assets.Colors.gray)
-				Text("\(store.likesCount)")
-					.foregroundStyle(Assets.Colors.gray)
+			Button {
+				store.send(.onTapLikeComment)
+			} label: {
+				VStack(spacing: 4) {
+					Image(systemName: store.isLiked ? "heart.fill" : "heart")
+						.imageScale(.large)
+						.foregroundStyle(store.isLiked ? Assets.Colors.red : Assets.Colors.gray)
+					Text("\(store.likesCount)")
+						.foregroundStyle(Assets.Colors.gray)
+				}
+				.font(textTheme.titleMedium.font)
+				.contentShape(.rect)
 			}
-			.font(textTheme.titleMedium.font)
+			.fadeEffect()
+			
 		}
+		.padding(.vertical, AppSpacing.sm)
 		.task {
 			await store.send(.task).finish()
 		}

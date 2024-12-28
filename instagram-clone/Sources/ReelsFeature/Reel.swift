@@ -9,10 +9,17 @@ import Kingfisher
 import Shared
 import SwiftUI
 import VideoPlayer
+import CommentsFeature
 
 @Reducer
 public struct ReelReducer {
 	public init() {}
+	
+	@Reducer(state: .equatable)
+	public enum Destination {
+		case comments(CommentsReducer)
+	}
+	
 	@ObservableState
 	public struct State: Equatable, Identifiable {
 		var authorizedId: String
@@ -23,6 +30,7 @@ public struct ReelReducer {
 		var commentsCount: Int = 0
 		var isLike: Bool = false
 		var isFollowed: Bool?
+		@Presents var destination: Destination.State?
 		public init(
 			authorizedId: String,
 			block: PostReelBlock,
@@ -49,6 +57,8 @@ public struct ReelReducer {
 		case onTapLikeButton
 		case onTapFollowButton
 		case task
+		case onTapCommentsButton
+		case destination(PresentationAction<Destination.Action>)
 	}
 
 	@Dependency(\.continuousClock) var clock
@@ -93,7 +103,15 @@ public struct ReelReducer {
 					try await databaseClient.follow(postAuthorId, profileUserId)
 				}
 				.cancellable(id: Cancel.followRequest, cancelInFlight: true)
+			case .onTapCommentsButton:
+				state.destination = .comments(CommentsReducer.State(post: .postReel(state.block), currentUserId: state.authorizedId))
+				return .none
+			case .destination:
+				return .none
 			}
+		}
+		.ifLet(\.$destination, action: \.destination) {
+			Destination.body
 		}
 		._printChanges()
 	}
@@ -222,6 +240,11 @@ public struct ReelView: View {
 			}
 		}
 		.frame(maxHeight: .infinity)
+		.sheet(item: $store.scope(state: \.destination?.comments, action: \.destination.comments)) { commentsStore in
+			CommentsView(store: commentsStore)
+				.presentationDetents([.medium, .large])
+				.presentationBackground(.regularMaterial)
+		}
 		.safeAreaInset(edge: .bottom) {
 			SmoothProgressBar(
 				color: Assets.Colors.brightGray,

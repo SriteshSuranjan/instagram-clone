@@ -9,6 +9,7 @@ import PostPreviewFeature
 import Shared
 import SwiftUI
 import YPImagePicker
+import CommentsFeature
 
 enum ProfileTab: Hashable {
 	case posts
@@ -27,6 +28,7 @@ public struct UserProfileReducer {
 		case userStatistics(UserStatisticsReducer)
 		case profileEdit(UserProfileEditReducer)
 		case userProfilePosts(UserProfilePostsReducer)
+		case comments(CommentsReducer)
 	}
 
 	public init() {}
@@ -81,6 +83,7 @@ public struct UserProfileReducer {
 		case onTapSmallPost(postId: String)
 		case smallPosts(IdentifiedActionOf<PostSmallReducer>)
 		case onTapLikePost(postId: String)
+		case onTapCommentButton(post: PostSmallBlock)
 		case delegate(Delegate)
 		public enum Delegate {
 			case routeToFeed(scrollToTop: Bool)
@@ -215,6 +218,9 @@ public struct UserProfileReducer {
 			case .delegate:
 				return .none
 			case .smallPosts:
+				return .none
+			case let .onTapCommentButton(post):
+				state.destination = .comments(CommentsReducer.State(post: .postSmall(post), currentUserId: state.authenticatedUserId))
 				return .none
 			case let .onTapLikePost(postId):
 				return .run { _ in
@@ -370,7 +376,7 @@ public struct UserProfileView: View {
 							Label(smallPostStore.isLiked ? "Unlike" : "Like", systemImage: smallPostStore.isLiked ? "heart.fill" : "heart")
 						}
 						Button {
-							
+							store.send(.onTapCommentButton(post: smallPostStore.block))
 						} label: {
 							Label("Comments", systemImage: "message")
 						}
@@ -414,6 +420,16 @@ public struct UserProfileView: View {
 			)
 		) { userProfilePostsStore in
 			UserProfilePostsView(store: userProfilePostsStore)
+		}
+		.sheet(
+			item: $store.scope(
+				state: \.destination?.comments,
+				action: \.destination.comments
+			)
+		) { commentsStore in
+			CommentsView(store: commentsStore)
+				.presentationDetents([.medium, .large])
+				.presentationBackground(.regularMaterial)
 		}
 	}
 }

@@ -728,29 +728,6 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 					""",
 					parameters: [postId],
 					mapper: { cursor in
-						/*"0: Optional(\"c32d505d-1d4d-4907-ab35-8e8b042a3635\")"
-						 "1: Optional(\"bf44ff60-b3fd-4f5c-8614-54daa58be73b\")"
-			 "2: Optional(\"a7afda31-d8fb-423f-9da3-3e11b77c1adc\")"
-			 "3: Optional(\"@Hyl 😮\")"
-			 "4: Optional(\"2024-12-27 04:14:19.726861Z\")"
-			 "5: nil"
-						 public let id: String
-						 public let postId: String
-						 public let author: PostAuthor
-						 public let repliedToCommentId: String?
-						 public let replies: Int?
-						 public let content: String
-						 public let createdAt: Date
-			 "6: Optional(\"https://uuhkqhxfbjovbighyxab.supabase.co/storage/v1/object/sign/avatars/2024-12-10T08:16:19.784734.jpg?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJhdmF0YXJzLzIwMjQtMTItMTBUMDg6MTY6MTkuNzg0NzM0LmpwZyIsImlhdCI6MTczMzc4OTc4NSwiZXhwIjoyMDQ5MTQ5Nzg1fQ.8ArYkrXr9Zq_k6DjbYF_MpAXUXNwaEz31F6QUlRRHoc\")"
-			 "7: Optional(\"Hyl\")"
-			 "8: Optional(\"Q\")"
-			 "9: Optional(\"0\")"
-			 "10: nil"
-			 "11: nil"
-			 "12: nil"
-			 "13: nil"
-			 "14: nil"
-			 "15: nil"*/
 						let commentId = cursor.getString(index: 0) ?? ""
 						let postId = cursor.getString(index: 1) ?? ""
 						let commentAuthorId = cursor.getString(index: 2) ?? ""
@@ -758,7 +735,6 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 						let createdAt = (try? Date(cursor.getString(index: 4) ?? "", strategy: .dateTime)) ?? Date.now
 						let avatarUrl = cursor.getString(index: 6)
 						let username = cursor.getString(index: 7)
-						let fullName = cursor.getString(index: 8)
 						let repliesCount = cursor.getLong(index: 9)?.intValue
 						let comment = Shared.Comment(
 							id: commentId,

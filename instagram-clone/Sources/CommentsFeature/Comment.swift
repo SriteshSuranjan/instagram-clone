@@ -52,6 +52,12 @@ public struct CommentReducer {
 		case userComment(UserCommentReducer.Action)
 		case repliedComments(RepliedCommentsReducer.Action)
 		case task
+		case delegate(Delegate)
+		
+		public enum Delegate {
+			case onTapCommentReplyButton(Comment)
+		}
+		
 	}
 	
 	@Dependency(\.instagramClient.databaseClient) var databaseClient
@@ -69,8 +75,12 @@ public struct CommentReducer {
 				return .run { send in
 					
 				}
+			case .delegate:
+				return .none
 			case .userComment:
 				return .none
+//			case let .repliedComments(.delegate(.onTapCommentReply(comment))):
+//				return .send(.delegate(.onTapCommentReplyButton(comment)))
 			case .repliedComments:
 				return .none
 			}
