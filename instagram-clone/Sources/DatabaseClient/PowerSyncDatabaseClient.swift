@@ -767,7 +767,7 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 			parameters: [postId, userId, content, Date.now.ISO8601Format(.iso8601), repliedToCommentId as Any]
 		)
 	}
-	
+
 	public func repliedCommentsOf(commentId: String) async -> AsyncStream<[Comment]> {
 		AsyncStream { continuation in
 			Task {
@@ -802,7 +802,7 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 						return Comment(
 							id: commentId,
 							postId: postId,
-							author: PostAuthor.init(confirmed: commentAuthorId, avatarUrl: avatarUrl, username: username),
+							author: PostAuthor(confirmed: commentAuthorId, avatarUrl: avatarUrl, username: username),
 							repliedToCommentId: repliedCommentId,
 							replies: nil,
 							content: content,
@@ -818,13 +818,96 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 			}
 		}
 	}
-	
+
 	public func deleteComment(commentId: String) async throws {
-		try await self.powerSyncRepository.db.execute(
+		try await powerSyncRepository.db.execute(
 			sql: "DELETE FROM comments WHERE id = ?",
 			parameters: [commentId]
 		)
 	}
+
+	public func chatsOf(userId: String) async -> AsyncStream<[ChatInbox]> {
+		AsyncStream { continuation in
+			Task {
+				for await data in await self.powerSyncRepository.db.watch(
+					sql: """
+					select
+						c.id,
+						c.type,
+						c.name,
+						p2.id as participant_id,
+						p2.full_name as participant_name,
+						p2.email as participant_email,
+						p2.username as participant_username,
+						p2.avatar_url as participant_avatar_url,
+						p2.push_token as participant_push_token
+					from
+						conversations c
+						join participants pt on c.id = pt.conversation_id
+						join profiles p on pt.user_id = p.id
+						join participants pt2 on c.id = pt2.conversation_id
+						join profiles p2 on pt2.user_id = p2.id
+					where
+						pt.user_id = ?1
+						and pt2.user_id != ?1
+					""",
+					parameters: [userId],
+					mapper: { cursor in
+						let chatId = cursor.getString(index: 0) ?? ""
+						let type = cursor.getString(index: 1)
+						let _ = cursor.getString(index: 2) ?? ""
+						let participantId = cursor.getString(index: 3) ?? ""
+						let participantName = cursor.getString(index: 4) ?? ""
+						let participantEmail = cursor.getString(index: 5)
+						let participantUsername = cursor.getString(index: 6)
+						let participantAvatarUrl = cursor.getString(index: 7)
+						let participantPushToken = cursor.getString(index: 8)
+						return ChatInbox(
+							id: chatId,
+							type: type,
+							unreadMessagesCount: 0,
+							participant: Shared.User(
+								id: participantId,
+								email: participantEmail,
+								username: participantUsername,
+								fullName: participantName,
+								avatarUrl: participantAvatarUrl,
+								pushToken: participantPushToken,
+								isNewUser: false
+							)
+						)
+					}
+				) {
+					if let chats = data as? [ChatInbox] {
+						continuation.yield(chats)
+					}
+				}
+				continuation.finish()
+			}
+		}
+	}
+
+	public func deleteChat(chatId: String, userId: String) async throws {}
+
+	public func createChat(userId: String, participantId: String) async throws {}
+
+	public func messagesOf(chatId: String) async -> AsyncStream<[Shared.Message]> {
+		AsyncStream { _ in }
+	}
+
+	public func sendMessage(
+		chatId: String,
+		sender: Shared.User,
+		receiver: Shared.User,
+		message: Shared.Message,
+		postAuthor: PostAuthor?
+	) async throws {}
+
+	public func deleteMessage(messageId: String) async throws {}
+
+	public func readMessage(messageId: String) async throws {}
+
+	public func editMessage(oldMessage: Shared.Message, newMessage: Shared.Message) async throws {}
 }
 
 private class SuspendTaskWrapper<T>: KotlinSuspendFunction1 {

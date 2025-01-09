@@ -12,6 +12,7 @@ public struct InstagramClient: Sendable {
 	public let storageUploaderClient: SupabaseStorageUploaderClient
 	public let firebaseRemoteConfigClient: FirebaseRemoteConfigClient
 	public let searchClient: SearchClient
+	public let chatsClient: ChatsClient
 }
 
 @DependencyClient
@@ -77,4 +78,9 @@ public struct FirebaseRemoteConfigClient: Sendable {
 @DependencyClient
 public struct SearchClient: Sendable {
 	public var searchUsers: @Sendable (_ query: String, _ limit: Int, _ offset: Int, _ excludeUserIds: [String]) async throws -> [Shared.User]
+}
+
+@DependencyClient
+public struct ChatsClient: Sendable {
+	public var chats: @Sendable (_ userId: String) async -> AsyncStream<[ChatInbox]> = { _ in .never }
 }

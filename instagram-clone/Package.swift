@@ -530,6 +530,9 @@ let package = Package(
 			dependencies: [
 				"Shared",
 				"AppUI",
+				"InstagramClient",
+				"SearchFeature",
+				"InstagramBlocksUI",
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 			]
 		),

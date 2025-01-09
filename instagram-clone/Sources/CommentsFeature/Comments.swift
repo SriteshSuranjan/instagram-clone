@@ -147,11 +147,7 @@ public struct CommentsView: View {
 		.scrollIndicators(.hidden)
 		.overlay(alignment: .center) {
 			if store.comments.isEmpty {
-				Text("No Comments")
-					.font(textTheme.headlineLarge.font)
-					.bold()
-					.foregroundStyle(Assets.Colors.bodyColor)
-					.frame(maxWidth: .infinity, alignment: .center)
+				ContentUnavailableView("No Comments", systemImage: "text.bubble")
 			}
 		}
 	}

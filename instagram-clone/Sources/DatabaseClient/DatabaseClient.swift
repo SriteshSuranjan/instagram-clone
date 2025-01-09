@@ -35,8 +35,19 @@ public protocol PostsBaseRepository: Sendable {
 	func deleteComment(commentId: String) async throws -> Void
 }
 
+public protocol ChatsBaseRepository: Sendable {
+	func chatsOf(userId: String) async -> AsyncStream<[ChatInbox]>
+	func deleteChat(chatId: String, userId: String) async throws -> Void
+	func createChat(userId: String, participantId: String) async throws -> Void
+	func messagesOf(chatId: String) async -> AsyncStream<[Message]>
+	func sendMessage(chatId: String, sender: Shared.User, receiver: Shared.User, message: Message, postAuthor: PostAuthor?) async throws -> Void
+	func deleteMessage(messageId: String) async throws -> Void
+	func readMessage(messageId: String) async throws -> Void
+	func editMessage(oldMessage: Message, newMessage: Message) async throws -> Void
+}
+
 public protocol SearchBaseRepository: Sendable {
 	func searchUsers(limit: Int, offset: Int, query: String, userId: String?, excludedUserIds: [String]) async throws -> [Shared.User]
 }
 
-public protocol DatabaseClient: UserBaseRepository, PostsBaseRepository, SearchBaseRepository {}
+public protocol DatabaseClient: UserBaseRepository, PostsBaseRepository, SearchBaseRepository, ChatsBaseRepository {}

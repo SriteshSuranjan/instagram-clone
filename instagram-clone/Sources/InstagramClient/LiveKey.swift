@@ -13,7 +13,8 @@ extension InstagramClient: DependencyKey {
 		databaseClient: unimplemented("Use static live Implementation Inject please. ", placeholder: .liveValue),
 		storageUploaderClient: unimplemented("Use static live Implementation Inject please. ", placeholder: .liveValue),
 		firebaseRemoteConfigClient: unimplemented("Use static live Implementation Inject please. ", placeholder: .liveValue),
-		searchClient: unimplemented("Use static live Implementation Inject please. ", placeholder: .liveValue)
+		searchClient: unimplemented("Use static live Implementation Inject please. ", placeholder: .liveValue),
+		chatsClient: unimplemented("Use static live Implementation Inject please. ", placeholder: .liveValue)
 	)
 	public static func liveInstagramClient(
 		authClient: AuthenticationClient,
@@ -34,7 +35,8 @@ extension InstagramClient: DependencyKey {
 			firebaseRemoteConfigClient: FirebaseRemoteConfigClient.liveFirebaseRemoteConfigClient(
 				firebaseRemoteConfigRepository
 			),
-			searchClient: SearchClient.liveSearchClient(databaseClient)
+			searchClient: SearchClient.liveSearchClient(databaseClient),
+			chatsClient: ChatsClient.liveChatsClient(databaseClient)
 		)
 	}
 }
@@ -267,6 +269,17 @@ extension SearchClient: DependencyKey {
 		SearchClient(
 			searchUsers: { query, limit, offset, excludedUserIds in
 				try await client.searchUsers(limit: limit, offset: offset, query: query, userId: nil, excludedUserIds: excludedUserIds)
+			}
+		)
+	}
+}
+
+extension ChatsClient: DependencyKey {
+	public static var liveValue = ChatsClient(chats: unimplemented("Use live implementation please.", placeholder: .never))
+	public static func liveChatsClient(_ client: DatabaseClient) -> ChatsClient {
+		ChatsClient(
+			chats: { userId in
+				await client.chatsOf(userId: userId)
 			}
 		)
 	}

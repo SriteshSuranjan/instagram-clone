@@ -82,7 +82,7 @@ public struct HomeReducer {
 			self.authenticatedUser = authenticatedUser
 			self.feed = FeedReducer.State(profileUserId: authenticatedUser.id)
 			self.mediaPicker = MediaPickerReducer.State(pickerConfiguration: MediaPickerView.Configuration(maxItems: 10, reels: false, showVideo: true))
-			self.chats = ChatsReducer.State()
+			self.chats = ChatsReducer.State(authUser: authenticatedUser)
 			self.reels = ReelsReducer.State(authorizedId: authenticatedUser.id)
 			self.timeline = TimelineReducer.State(authorizedId: authenticatedUser.id)
 		}

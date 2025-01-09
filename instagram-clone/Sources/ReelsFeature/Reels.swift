@@ -2,8 +2,8 @@ import AppUI
 import ComposableArchitecture
 import Foundation
 import InstaBlocks
-import SwiftUI
 import InstagramClient
+import SwiftUI
 import VideoPlayer
 
 private let pageLimit = 10
@@ -28,14 +28,14 @@ public struct ReelsReducer {
 		case fetchReelsResponse(ReelsPage)
 		case task
 	}
-	
+
 	@Dependency(\.instagramClient.databaseClient) var databaseClient
 
 	public var body: some ReducerOf<Self> {
 		BindingReducer()
 		Reduce {
 			state,
-			action in
+				action in
 			switch action {
 			case .binding:
 				return .none
@@ -58,7 +58,7 @@ public struct ReelsReducer {
 					hasMore: reelsPage.hasMore
 				)
 				state.reelsPage = updatedReelsPage
-				
+
 				let reels = state.reelsPage.blocks.map {
 					ReelReducer.State(
 						authorizedId: state.authorizedId,
@@ -81,14 +81,14 @@ public struct ReelsReducer {
 			ReelReducer()
 		}
 	}
-	
+
 	private func fetchReelsPage(send: Send<Action>, page: Int = 0) async throws {
 		let currentPage = page
 		let posts = try await databaseClient.getPost(page * pageLimit, pageLimit, true)
 		let newPage = currentPage + 1
 		let hasMore = posts.count >= pageLimit
 		let instaBlocks: [InstaBlockWrapper] = posts.map { post in
-				.postReel(post.toPostReelBlock())
+			.postReel(post.toPostReelBlock())
 		}
 		let reelsPage = ReelsPage(
 			blocks: instaBlocks,
@@ -109,38 +109,37 @@ public struct ReelsView: View {
 	}
 
 	public var body: some View {
-		GeometryReader { proxy in
-			ScrollView(.vertical) {
-				LazyVStack(spacing: 0) {
-					ForEach(
-						store.scope(state: \.reels, action: \.reels)
-					) { reelStore in
-						ReelView(
-							store: reelStore,
-							play: Binding(
-								get: { playReelId == reelStore.block.id },
-								set: { playing in
-									debugPrint(playing, #line)
-									if !playing {
-										playReelId = nil
-									} else {
-										playReelId = reelStore.block.id
-									}
+		ScrollView(.vertical) {
+			LazyVStack(spacing: 0) {
+				ForEach(
+					store.scope(state: \.reels, action: \.reels)
+				) { reelStore in
+					ReelView(
+						store: reelStore,
+						play: Binding(
+							get: { playReelId == reelStore.block.id },
+							set: { playing in
+								debugPrint(playing, #line)
+								if !playing {
+									playReelId = nil
+								} else {
+									playReelId = reelStore.block.id
 								}
-							)
+							}
 						)
-							.scrollTargetLayout()
-							.frame(height: proxy.size.height)
-							.id(reelStore.block.id)
+					)
+					.scrollTargetLayout()
+					.id(reelStore.block.id)
+					.containerRelativeFrame(.vertical) { length, _ in
+						length
 					}
-					
 				}
 			}
-			.scrollPosition(id: $playReelId)
-			.scrollIndicators(.hidden)
-			.scrollTargetLayout()
-			.scrollTargetBehavior(.paging)
 		}
+		.scrollPosition(id: $playReelId)
+		.scrollIndicators(.hidden)
+		.scrollTargetLayout()
+		.scrollTargetBehavior(.paging)
 		.onDisappear {
 			playReelId = nil
 		}
@@ -151,4 +150,5 @@ public struct ReelsView: View {
 			playReelId = store.reels.first?.block.id
 		}
 	}
+	
 }
