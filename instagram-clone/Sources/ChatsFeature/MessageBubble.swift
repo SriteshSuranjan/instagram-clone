@@ -33,7 +33,6 @@ public struct MessageBubble: View {
 			)
 			.onPreferenceChange(ViewOffsetKey.self) {
 				offset = $0
-				debugPrint("bubbleOffset: \(offset)")
 			}
 			.frame(maxWidth: bubbleWidth, alignment: isMine ? .trailing : .leading)
 			.frame(maxWidth: .infinity, alignment: isMine ? .trailing : .leading)

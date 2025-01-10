@@ -13,7 +13,7 @@ xcuserdata/
 *.dSYM.zip
 *.dSYM
 .DS_Store
-**/GoogleService-Info.plist
+*.GoogleService-Info.plist
 **/env.debug.plist
 **/env.staging.plist
 **/env.production.plist
