@@ -20,8 +20,8 @@ public struct ChatInboxTile: View {
 			.foregroundStyle(Assets.Colors.bodyColor)
 			VStack(alignment: .leading, spacing: AppSpacing.xs) {
 				Text(self.chat.participant.displayUsername)
-					.font(textTheme.titleMedium.font)
-					.fontWeight(.bold)
+					.font(textTheme.titleLarge.font)
+					.fontWeight(.semibold)
 					.foregroundStyle(Assets.Colors.bodyColor)
 				Text(chat.lastMessage ?? "No last messages")
 					.font(textTheme.bodyLarge.font)

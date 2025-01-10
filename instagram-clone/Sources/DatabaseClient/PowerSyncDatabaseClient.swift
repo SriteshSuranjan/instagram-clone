@@ -184,8 +184,11 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 	public func followings(of userId: String) async throws -> [Shared.User] {
 		try (
 			await powerSyncRepository.db.readTransaction(
-				callback: SuspendTaskWrapper<[Shared.User]> { _ in
-					let followingIds = try await self.powerSyncRepository.db.getAll(
+				callback: SuspendTaskWrapper<[Shared.User]> { transaction in
+					guard let transaction = transaction as? PowerSyncTransaction else {
+						return []
+					}
+					let followingIds = try await transaction.getAll(
 						sql: "SELECT subscribed_to_id FROM subscriptions WHERE subscriber_id = ?",
 						parameters: [userId.lowercased()],
 						mapper: { cursor in
@@ -194,7 +197,7 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 					)
 					var followings: [Shared.User] = []
 					for followingId in followingIds as? [String] ?? [] {
-						let user = try await self.powerSyncRepository.db.get(
+						let user = try await transaction.get(
 							sql: "SELECT * FROM profiles WHERE id = ?",
 							parameters: [followingId.lowercased()],
 							mapper: { cursor in
@@ -296,8 +299,11 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 		guard let currentUserId = await currentUserId else {
 			return nil
 		}
-		return try await powerSyncRepository.db.writeTransaction(callback: SuspendTaskWrapper<Post?> { _ in
-			try await self.powerSyncRepository.db.execute(
+		return try await powerSyncRepository.db.writeTransaction(callback: SuspendTaskWrapper<Post?> { transaction in
+			guard let transaction = transaction as? PowerSyncTransaction else {
+				return nil
+			}
+			try await transaction.execute(
 				sql: """
 				INSERT INTO posts (id, user_id, caption, media, created_at)
 				VALUES(?, ?, ?, ?, ?)
@@ -311,7 +317,7 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 				]
 			)
 
-			let postData = try await self.powerSyncRepository.db.get(
+			let postData = try await transaction.get(
 				sql: "SELECT id, user_id, caption, media, created_at FROM posts WHERE id = ?",
 				parameters: [postId],
 				mapper: { cursor in
@@ -327,7 +333,7 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 				}
 			)
 
-			let author = try await self.powerSyncRepository.db.get(
+			let author = try await transaction.get(
 				sql: "SELECT * FROM profiles WHERE id = ?",
 				parameters: [currentUserId.lowercased()],
 				mapper: { cursor in
@@ -550,8 +556,11 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 		guard let currentUserId = await currentUserId else {
 			return nil
 		}
-		return try await powerSyncRepository.db.writeTransaction(callback: SuspendTaskWrapper<Post?> { _ in
-			try await self.powerSyncRepository.db.execute(
+		return try await powerSyncRepository.db.writeTransaction(callback: SuspendTaskWrapper<Post?> { transaction in
+			guard let transaction = transaction as? PowerSyncTransaction else {
+				return nil
+			}
+			try await transaction.execute(
 				sql: """
 				UPDATE posts
 				SET
@@ -561,7 +570,7 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 				""",
 				parameters: [caption, Date.now.ISO8601Format(.iso8601), postId]
 			)
-			let postData = try await self.powerSyncRepository.db.get(
+			let postData = try await transaction.get(
 				sql: "SELECT id, user_id, caption, media, created_at, updated_at FROM posts WHERE id = ?",
 				parameters: [postId],
 				mapper: { cursor in
@@ -578,7 +587,7 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 				}
 			)
 
-			let author = try await self.powerSyncRepository.db.get(
+			let author = try await transaction.get(
 				sql: "SELECT * FROM profiles WHERE id = ?",
 				parameters: [currentUserId.lowercased()],
 				mapper: { cursor in
@@ -615,7 +624,7 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 				updatedAt: updatedAt,
 				media: mediaItems
 			)
-			return post
+			return Post?.some(post)
 		}) as? Post
 	}
 
@@ -855,7 +864,7 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 					mapper: { cursor in
 						let chatId = cursor.getString(index: 0) ?? ""
 						let type = cursor.getString(index: 1)
-						let _ = cursor.getString(index: 2) ?? ""
+						_ = cursor.getString(index: 2) ?? ""
 						let participantId = cursor.getString(index: 3) ?? ""
 						let participantName = cursor.getString(index: 4) ?? ""
 						let participantEmail = cursor.getString(index: 5)
@@ -887,12 +896,102 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 		}
 	}
 
-	public func deleteChat(chatId: String, userId: String) async throws {}
+	public func deleteChat(chatId: String, userId: String) async throws {
+		try await powerSyncRepository.db.execute(
+			sql: "DELETE FROM conversations WHERE id = ?",
+			parameters: [chatId]
+		)
+	}
 
 	public func createChat(userId: String, participantId: String) async throws {}
 
 	public func messagesOf(chatId: String) async -> AsyncStream<[Shared.Message]> {
-		AsyncStream { _ in }
+		AsyncStream { continuation in
+			Task {
+				for await data in await self.powerSyncRepository.db.watch(
+					sql: """
+					SELECT
+						m.*,
+						m_sender.full_name as full_name,
+						m_sender.username as username,
+						m_sender.avatar_url as avatar_url,
+						a.id as attachment_id,
+						a.title as attachment_title,
+						a.text as attachment_text,
+						a.title_link as attachment_title_link,
+						a.image_url as attachment_image_url,
+						a.thumb_url as attachment_thumb_url,
+						a.author_name as attachment_author_name,
+						a.author_link as attachment_author_link,
+						a.asset_url as attachment_asset_url,
+						a.og_scrape_url as attachment_og_scrape_url,
+						a.type as attachment_type,
+						r.message as replied_message_message,
+						p.caption as shared_post_caption,
+						p.created_at as shared_post_created_at,
+						p.media as shared_post_media,
+						p_author.id as shared_post_author_id,
+						p_author.username as shared_post_author_username,
+						p_author.full_name as shared_post_author_full_name,
+						p_author.avatar_url as shared_post_author_avatar_url
+					FROM
+						messages m
+						left join attachments a on m.id = a.message_id
+						left join messages r on m.reply_message_id = r.id
+						left join posts p on m.shared_post_id = p.id
+						join profiles m_sender on m.from_id = m_sender.id
+						left join profiles p_author on p.user_id = p_author.id
+					where
+						m.conversation_id = ?   
+					order by created_at asc
+					""",
+					parameters: [chatId],
+					mapper: { cursor in
+						let messageId = cursor.getString(index: 0) ?? ""
+						let chatId = cursor.getString(index: 1) ?? ""
+						let fromId = cursor.getString(index: 2) ?? ""
+						let messageType = cursor.getString(index: 3) ?? "text"
+						let messageContent = cursor.getString(index: 4) ?? ""
+						let replyMessageId = cursor.getString(index: 5)
+						let createdAt = cursor.getString(index: 6) ?? ""
+						let updatedAt = cursor.getString(index: 7) ?? ""
+						let isRead = cursor.getBoolean(index: 8) ?? false
+						let isDeleted = cursor.getBoolean(index: 9) ?? false
+						let isEdited = cursor.getBoolean(index: 10) ?? false
+						let replyMessageUsername = cursor.getString(index: 11)
+						let replyMessageAttachmentUrl = cursor.getString(index: 12)
+						let sharePostId = cursor.getString(index: 13)
+						let senderFullName = cursor.getString(index: 14) ?? ""
+						let senderUserName = cursor.getString(index: 15) ?? ""
+						let senderAvatarUrl = cursor.getString(index: 16) ?? ""
+						return Shared.Message(
+							id: messageId,
+							sender: PostAuthor(
+								confirmed: fromId,
+								avatarUrl: senderAvatarUrl,
+								username: senderUserName
+							),
+							type: messageType.toMessageType,
+							message: messageContent,
+							replyMessageId: replyMessageId,
+							replyMessageUsername: replyMessageUsername,
+							replyMessageAttachmentUrl: replyMessageAttachmentUrl,
+							createdAt: createdAt.fromIso8601()!,
+							updatedAt: updatedAt.fromIso8601()!,
+							isRead: isRead.boolValue,
+							isDeleted: isDeleted.boolValue,
+							isEdited: isEdited.boolValue,
+							attachments: []
+						)
+					}
+				) {
+					if let messages = data as? [Shared.Message] {
+						continuation.yield(messages)
+					}
+				}
+				continuation.finish()
+			}
+		}
 	}
 
 	public func sendMessage(
@@ -901,7 +1000,44 @@ public actor PowerSyncDatabaseClient: DatabaseClient {
 		receiver: Shared.User,
 		message: Shared.Message,
 		postAuthor: PostAuthor?
-	) async throws {}
+	) async throws {
+		try await self.powerSyncRepository.db.writeTransaction(
+			callback: SuspendTaskWrapper<Void> { transaction in
+				guard let transaction = transaction as? PowerSyncTransaction else {
+					return
+				}
+				try await transaction.execute(
+					sql: """
+INSERT INTO messages(id, conversation_id, from_id, type, message, reply_message_id, created_at, updated_at, is_read, is_deleted, is_edited, reply_message_username, reply_message_attachment_url, shared_post_id)
+VALUES
+	(?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?, ?, ?)
+""",
+					parameters: [
+						message.id,
+						chatId,
+						sender.id,
+						message.type.rawValue,
+						message.message,
+						message.replyMessageId,
+						Date.now.toIso8601String(),
+						Date.now.toIso8601String(),
+						message.replyMessageUsername,
+						message.replyMessageAttachmentUrl,
+						nil
+					]
+				)
+				// TODO: insert attachments
+//				try await transaction.execute(
+//					sql: """
+//INSERT INTO attachments(id, message_id, title, text, title_link, image_url, thumb_url, author_name, author_link, asset_url, og_scrape_url, type)
+//VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+//""",
+//					parameters: [
+//						
+//					]
+//				)
+		})
+	}
 
 	public func deleteMessage(messageId: String) async throws {}
 

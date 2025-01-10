@@ -83,4 +83,7 @@ public struct SearchClient: Sendable {
 @DependencyClient
 public struct ChatsClient: Sendable {
 	public var chats: @Sendable (_ userId: String) async -> AsyncStream<[ChatInbox]> = { _ in .never }
+	public var deleteChat: @Sendable (_ chatId: String, _ userId: String) async throws -> Void
+	public var messagesOf: @Sendable (_ chatId: String) async -> AsyncStream<[Shared.Message]> = { _ in .never }
+	public var sendMessage: @Sendable (_ chatId: String, _ sender: Shared.User, _ receiver: Shared.User, _ message: Shared.Message) async throws -> Void
 }

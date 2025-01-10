@@ -275,11 +275,25 @@ extension SearchClient: DependencyKey {
 }
 
 extension ChatsClient: DependencyKey {
-	public static var liveValue = ChatsClient(chats: unimplemented("Use live implementation please.", placeholder: .never))
+	public static var liveValue = ChatsClient(
+		chats: unimplemented("Use live implementation please.", placeholder: .never),
+		deleteChat: unimplemented("Use live implementation please."),
+		messagesOf: unimplemented("Use live implementation please.", placeholder: .never),
+		sendMessage: unimplemented("Use live implementation please.")
+	)
 	public static func liveChatsClient(_ client: DatabaseClient) -> ChatsClient {
 		ChatsClient(
 			chats: { userId in
 				await client.chatsOf(userId: userId)
+			},
+			deleteChat: { chatId, userId in
+				try await client.deleteChat(chatId: chatId, userId: userId)
+			},
+			messagesOf: { chatId in
+				await client.messagesOf(chatId: chatId)
+			},
+			sendMessage: { chatId, sender, receiver, message in
+				try await client.sendMessage(chatId: chatId, sender: sender, receiver: receiver, message: message, postAuthor: nil)
 			}
 		)
 	}

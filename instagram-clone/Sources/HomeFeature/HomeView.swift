@@ -185,6 +185,9 @@ public struct HomeReducer {
 				return .send(.feed(.scrollToTop), animation: .snappy)
 			case .mediaPicker:
 				return .none
+			case .chats(.delegate(.onTapBackButton)):
+				state.pageType = .feedBody
+				return .none
 			case .chats:
 				return .none
 			case .destination:

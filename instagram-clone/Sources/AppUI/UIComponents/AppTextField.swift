@@ -61,7 +61,7 @@ public struct AppTextFieldModifier<LeadingView: View, TrailingView: View>: ViewM
 				}
 			}
 			.padding(padding)
-			.frame(maxWidth: maxWidth ?? .infinity)
+			.frame(maxWidth: maxWidth ?? .infinity, maxHeight: .infinity)
 			.frame(height: height ?? 50)
 			.background(backgroundColor ?? Color(.systemBackground))
 			.clipShape(RoundedRectangle(cornerRadius: cornerRadius))

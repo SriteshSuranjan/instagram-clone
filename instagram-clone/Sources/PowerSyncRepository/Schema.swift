@@ -144,6 +144,7 @@ extension Schema {
 						Column(name: "updated_at", type: .text),
 						Column(name: "is_read", type: .integer),
 						Column(name: "is_edited", type: .integer),
+						Column(name: "is_deleted", type: .integer),
 						Column(name: "reply_message_username", type: .text),
 						Column(name: "reply_message_attachment_url", type: .text),
 						Column(name: "shared_post_id", type: .text),
