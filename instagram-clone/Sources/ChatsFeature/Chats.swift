@@ -182,7 +182,7 @@ public struct ChatsView: View {
 			ChatView(store: chatStore)
 		}
 		.padding()
-		.navigationBarHidden(true)
+		.toolbar(.hidden, for: .navigationBar)
 		.task {
 			await store.send(.task).finish()
 		}

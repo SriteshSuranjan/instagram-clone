@@ -44,6 +44,7 @@ public struct ChatAppBarView: View {
 				Image(systemName: "chevron.backward")
 					.font(textTheme.headlineMedium.font)
 			}
+			.padding(.leading, AppSpacing.lg)
 			.padding(.trailing, AppSpacing.xlg)
 			UserProfileAvatar(
 				userId: store.participant.id,

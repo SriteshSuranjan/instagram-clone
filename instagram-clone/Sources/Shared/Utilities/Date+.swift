@@ -76,40 +76,51 @@ extension Date {
 				
 		return "\(year)-\(month)-\(day)T\(hour):\(minute):\(second).\(ms)\(us)Z"
 	}
+	
+	public func checkTimeDifference(_ another: Date) -> Bool {
+		let calendar = Calendar.current
+		let selfComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: self)
+		let anotherComponets = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: another)
+		return selfComponents.year == anotherComponets.year &&
+		selfComponents.month == anotherComponets.month &&
+		selfComponents.day == anotherComponets.day &&
+		selfComponents.hour == anotherComponets.hour &&
+		selfComponents.minute == anotherComponets.minute
+	}
 }
 
-extension String {
-		public func fromIso8601() -> Date? {
-				// 尝试不同的格式
-				let formats = [
-						"yyyy-MM-dd'T'HH:mm:ssZ",                 // 2025-01-10T10:03:50Z
-						"yyyy-MM-dd'T'HH:mm:ss.SSSZ",            // 带毫秒
-						"yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ",         // 带微秒
-						"yyyy-MM-dd HH:mm:ss.SSSSSSZ",           // 空格分隔，带微秒
-						"yyyy-MM-dd HH:mm:ssZ"                    // 空格分隔，无小数
-				]
+public extension String {
+	func fromIso8601() -> Date? {
+		// 尝试不同的格式
+		let formats = [
+			"yyyy-MM-dd'T'HH:mm:ssZ", // 2025-01-10T10:03:50Z
+			"yyyy-MM-dd'T'HH:mm:ss.SSSZ", // 带毫秒
+			"yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ", // 带微秒
+			"yyyy-MM-dd HH:mm:ss.SSSSSSZ", // 空格分隔，带微秒
+			"yyyy-MM-dd HH:mm:ssZ" // 空格分隔，无小数
+		]
 				
-				let formatter = DateFormatter()
-			formatter.locale = Locale.current
+		let formatter = DateFormatter()
+		formatter.locale = Locale.current
 				
-				for format in formats {
-						formatter.dateFormat = format
-						if let date = formatter.date(from: self) {
-								return date
-						}
-				}
-				
-				// 如果上述都失败，尝试 ISO8601DateFormatter
-				let iso8601Formatter = ISO8601DateFormatter()
-				iso8601Formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-				
-				// 尝试原始字符串
-				if let date = iso8601Formatter.date(from: self) {
-						return date
-				}
-				
-				// 尝试将空格替换为T的字符串
-				let formattedString = self.replacingOccurrences(of: " ", with: "T")
-				return iso8601Formatter.date(from: formattedString)
+		for format in formats {
+			formatter.dateFormat = format
+			if let date = formatter.date(from: self) {
+				return date
+			}
 		}
+				
+		// 如果上述都失败，尝试 ISO8601DateFormatter
+		let iso8601Formatter = ISO8601DateFormatter()
+		iso8601Formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+				
+		// 尝试原始字符串
+		if let date = iso8601Formatter.date(from: self) {
+			return date
+		}
+				
+		// 尝试将空格替换为T的字符串
+		let formattedString = self.replacingOccurrences(of: " ", with: "T")
+		return iso8601Formatter.date(from: formattedString)
+	}
 }
