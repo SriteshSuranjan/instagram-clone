@@ -1,4 +1,4 @@
-## Build based upon ![PowerSync](https://github.com/powersync-ja/powersync-swift.git) and ![Supabase](https://github.com/supabase/supabase-swift.git)
+## Build based upon [PowerSync](https://github.com/powersync-ja/powersync-swift.git) and [Supabase](https://github.com/supabase/supabase-swift.git)
 
 | Login | Home
 |-|-|
