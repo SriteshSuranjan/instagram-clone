@@ -27,7 +27,7 @@ graph LR
     HomeReducer ---> ReelsReducer
     HomeReducer ---> TimelineReducer
     HomeReducer ---> UserProfileReducer
-    LoginReducer: Sendable ---> LoginFormReducer
+    LoginReducer ---> LoginFormReducer
     MediaPickerReducer -- optional --> CreatePostReducer
     PostEditReducer ---> PostMediaReducer
     PostLargeReducer ---> PostFooterReducer
