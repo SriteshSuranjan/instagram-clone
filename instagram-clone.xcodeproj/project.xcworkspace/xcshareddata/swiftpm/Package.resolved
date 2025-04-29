@@ -1,5 +1,5 @@
 {
-  "originHash" : "1e46a7fd026a40f47752aa9fc0c3c53b1bba083730862cfea63552e1feca78e6",
+  "originHash" : "bfc7d4f334a29404802ec4683263168e390813934c72c7c0a9a6cf6359fffaa4",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -375,8 +375,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-perception",
       "state" : {
-        "revision" : "dccdf5aed1db969afa11d6fbd36b96a4932ebe8c",
-        "version" : "1.4.0"
+        "revision" : "d924c62a70fca5f43872f286dbd7cef0957f1c01",
+        "version" : "1.6.0"
       }
     },
     {
@@ -386,6 +386,15 @@
       "state" : {
         "revision" : "ebc7251dd5b37f627c93698e4374084d98409633",
         "version" : "1.28.2"
+      }
+    },
+    {
+      "identity" : "swift-sharing",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-sharing.git",
+      "state" : {
+        "revision" : "732871fabfc6b38fcdff5ad2f7336327dbf78e81",
+        "version" : "2.4.0"
       }
     },
     {

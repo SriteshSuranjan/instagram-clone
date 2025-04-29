@@ -175,7 +175,8 @@ let package = Package(
 		.package(url: "https://github.com/onevcat/Kingfisher.git", from: "8.0.0"),
 		.package(url: "https://github.com/Yummypets/YPImagePicker.git", from: "5.0.0"),
 		.package(url: "https://github.com/iankoex/UnifiedBlurHash.git", from: "1.0.0"),
-		.package(url: "https://github.com/wxxsw/VideoPlayer.git", from: "1.2.4")
+		.package(url: "https://github.com/wxxsw/VideoPlayer.git", from: "1.2.4"),
+		.package(url: "https://github.com/pointfreeco/swift-sharing.git", from: "2.4.0")
 	],
 	targets: [
 		.target(name: "ApiRepository"),
@@ -235,6 +236,7 @@ let package = Package(
 				.product(name: "Supabase", package: "supabase-swift"),
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
 				.product(name: "GoogleSignIn", package: "GoogleSignIn-iOS"),
+				.product(name: "Sharing", package: "swift-sharing")
 			]
 		),
 		.target(
@@ -478,6 +480,7 @@ let package = Package(
 			name: "AppLoadingIndeterminateClient",
 			dependencies: [
 				.product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+				.product(name: "Sharing", package: "swift-sharing")
 			]
 		),
 		.target(name: "BottomBarVisiblePreference"),

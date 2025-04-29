@@ -13,6 +13,7 @@ import BottomBarVisiblePreference
 import AppLoadingIndeterminateClient
 import UploadTaskClient
 import FeedUpdateRequestClient
+import Sharing
 
 @Reducer
 public struct AppReducer {
@@ -115,6 +116,9 @@ public struct AppReducer {
 				return .none
 			case let .showAppLoading(isLoading):
 				state.showLoading = isLoading
+//				state.$showLoading.withLock {
+//					$0 = isLoading
+//				}
 				return .none
 
 			case .view:
