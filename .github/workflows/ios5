@@ -1,13 +1,23 @@
+name: iOS CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
 jobs:
   build-and-test:
     runs-on: macos-latest
 
+    env:
+      SCHEME: instagram-clone
+      SDK: iphonesimulator
+      DESTINATION: platform=iOS Simulator,name=iPhone 14
+
     steps:
       - name: ✅ Checkout code
         uses: actions/checkout@v4
-
-      - name: Set Xcode version
-        run: sudo xcode-select -s /Applications/Xcode_14.2.app/Contents/Developer
 
       - name: 🛠 Set up Ruby for CocoaPods
         uses: ruby/setup-ruby@v1
@@ -50,5 +60,3 @@ jobs:
         with:
           name: xcode-results
           path: '**/*.xcresult'
-
-
