@@ -27,18 +27,19 @@ jobs:
       - name: 📦 Install xcpretty
         run: sudo gem install xcpretty
 
+      - name: 📦 Install xcodeproj gem (to downgrade project format)
+        run: |
+          gem install xcodeproj
+          cd App
+          ruby -e 'require "xcodeproj"; project = Xcodeproj::Project.open("instagram-clone.xcodeproj"); project.save_as("instagram-clone.xcodeproj")'
+
       - name: 📦 Install CocoaPods dependencies (if Podfile exists)
         run: pod install
         if: ${{ hashFiles('Podfile') != '' }}
 
-      - name: 📦 Install xcodeproj gem (to handle project file format)
-        run: |
-          gem install xcodeproj
-          cd ${{ github.workspace }}
-          ruby -e 'require "xcodeproj"; project = Xcodeproj::Project.open("instagram-clone.xcodeproj"); project.save_as("instagram-clone.xcodeproj")'
-
       - name: 🧱 Build the app
         run: |
+          cd App
           xcodebuild \
             -scheme "$SCHEME" \
             -sdk "$SDK" \
@@ -48,6 +49,7 @@ jobs:
 
       - name: 🧪 Run tests
         run: |
+          cd App
           xcodebuild \
             -scheme "$SCHEME" \
             -sdk "$SDK" \
