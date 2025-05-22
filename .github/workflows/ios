@@ -16,22 +16,22 @@ jobs:
       DESTINATION: platform=iOS Simulator,name=iPhone 14
 
     steps:
-      - name: ✅ Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 🛠 Set up Ruby for CocoaPods
+      - name: Set up Ruby (for CocoaPods)
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.1'
 
-      - name: 📦 Install xcpretty
+      - name: Install xcpretty
         run: sudo gem install xcpretty
 
-      - name: 📦 Install CocoaPods dependencies (if Podfile exists)
+      - name: Install CocoaPods dependencies (if Podfile exists)
         run: pod install
-        if: ${{ hashFiles('Podfile') != '' }}
+        if: ${{ always() && hashFiles('Podfile') != '' }}
 
-      - name: 🧱 Build the app
+      - name: Build the app
         run: |
           xcodebuild \
             -scheme "$SCHEME" \
@@ -40,7 +40,7 @@ jobs:
             -configuration Debug \
             clean build | xcpretty
 
-      - name: 🧪 Run tests
+      - name: Run tests
         run: |
           xcodebuild \
             -scheme "$SCHEME" \
@@ -48,7 +48,7 @@ jobs:
             -destination "$DESTINATION" \
             test | xcpretty
 
-      - name: 📤 Upload test results (optional)
+      - name: Upload test results (optional)
         if: always()
         uses: actions/upload-artifact@v4
         with:
