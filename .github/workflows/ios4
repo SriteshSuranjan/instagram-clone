@@ -35,7 +35,7 @@ jobs:
         run: |
           gem install xcodeproj
           cd ${{ github.workspace }}
-          ruby -e 'require "xcodeproj"; project = Xcodeproj::Project.open("instagram-clone.xcodeproj"); project.save("instagram-clone.xcodeproj")'
+          ruby -e 'require "xcodeproj"; project = Xcodeproj::Project.open("instagram-clone.xcodeproj"); project.save_as("instagram-clone.xcodeproj")'
 
       - name: 🧱 Build the app
         run: |
